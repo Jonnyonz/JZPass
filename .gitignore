@@ -1,0 +1,19 @@
+# Entornos virtuales y caché
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.env
+
+# Bases de datos locales
+*.db
+*.sqlite3
+
+# Archivos subidos por usuarios
+uploads/*
+!uploads/.gitkeep
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db

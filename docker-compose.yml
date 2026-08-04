@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # ⚙️ BACKEND - JZ PASS COMPATIBILIDAD POSTGRES
+  jzpass-app:
+    build: .
+    container_name: jzpass_server
+    restart: always
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    volumes:
+      - .:/app
+      - ./uploads:/app/uploads
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+      - TZ=${TZ}
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@jzpass-db:5432/${DB_NAME}
+    # 🛡️ INYECCIÓN EN CALIENTE: Asegura la dependencia asíncrona antes de levantar Uvicorn
+    command: sh -c "pip install --no-cache-dir asyncpg && uvicorn main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips='*'"
+    depends_on:
+      - jzpass-db
+    networks:
+      - jzpass-net
+
+  # 🛢️ MOTOR DE BASE DE DATOS ENTERPRISE
+  jzpass-db:
+    image: postgres:15-alpine
+    container_name: jzpass_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+      TZ: ${TZ}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    networks:
+      - jzpass-net
+
+networks:
+  jzpass-net:
+    driver: bridge
+
+volumes:
+  pgdata:

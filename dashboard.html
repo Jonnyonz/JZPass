@@ -1,0 +1,816 @@
+<!DOCTYPE html><html lang="es" data-theme="light"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="/api/archivo/favicon.png">
+<title>JZ PASS Admin</title>
+<style>
+    :root { --bg-body: #eef2f5; --bg-card: #ffffff; --bg-sidebar: #1a252f; --sidebar-text: #ffffff; --text-main: #333333; --text-muted: #666666; --border: #d1d9e6; --primary: #007bff; --hover-primary: #0056b3; --table-hover: #f8f9fa; --filter-bg: #e9ecef; }
+    [data-theme="dark"] { --bg-body: #0f172a; --bg-card: #1e293b; --bg-sidebar: #0b1120; --sidebar-text: #e2e8f0; --text-main: #f8fafc; --text-muted: #94a3b8; --border: #334155; --table-hover: #334155; --filter-bg: #0f172a; }
+    
+    body { font-family: 'Segoe UI', Roboto, sans-serif; background: var(--bg-body); color: var(--text-main); margin:0; display:flex; height:100vh; overflow:hidden; transition: background 0.3s, color 0.3s;}
+    .sidebar { width: 250px; background: var(--bg-sidebar); color: var(--sidebar-text); padding: 20px; display:flex; flex-direction:column; z-index: 999; transition: left 0.3s ease;}
+    .sidebar h3 { text-align: center; border-bottom: 1px solid var(--border); padding-bottom: 15px; margin-top: 0; font-size: 22px; color: var(--primary); }
+    .sidebar div.nav-btn { padding: 12px 15px; cursor:pointer; margin-bottom:8px; background: rgba(255,255,255,0.05); border-radius:6px; font-weight:bold; transition:0.2s;}
+    .sidebar div.nav-btn:hover, .sidebar .active { background: var(--primary); color:#fff; }
+    
+    .content { flex: 1; padding: 30px; overflow-y:auto; display:flex; flex-direction:column; align-items: center; position:relative;} 
+    .card { background: var(--bg-card); padding: 30px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 1500px; box-sizing: border-box; }
+    
+    .theme-toggle { position: absolute; top: 20px; right: 30px; cursor:pointer; font-size: 24px; background:var(--bg-card); padding:5px 10px; border-radius:50%; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index:900;}
+    .hub-header { text-align: center; margin-bottom: 40px; }
+    .hub-header h1 { margin: 0; color: var(--text-main); font-size: 32px; font-weight: 800; }
+    .hub-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; margin-top: 20px; }
+    .hub-card { background: var(--bg-card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-top: 5px solid var(--primary); cursor: pointer; transition: 0.2s;}
+    .hub-card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
+    .hub-card h3 { margin: 0 0 10px 0; font-size: 18px; display: flex; justify-content: space-between;}
+    .preview-box { background: var(--filter-bg); padding: 12px; border-radius: 6px; font-size: 13px; border: 1px solid var(--border); max-height: 160px; overflow-y: auto;}
+    
+    .subtabs-nav { display: flex; gap: 10px; border-bottom: 2px solid var(--border); padding-bottom: 10px; margin-bottom: 20px; flex-wrap: wrap;}
+    .subtabs-nav button { background: var(--filter-bg); color: var(--text-main); padding: 8px 14px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;}
+    .subtabs-nav button.active-sub { background: var(--primary); color: white; }
+
+    .table-responsive { width: 100%; overflow-x: auto; margin-top: 10px; border: 1px solid var(--border); border-radius: 6px;}
+    table { width: 100%; border-collapse: collapse; min-width: 800px; } 
+    th, td { padding: 12px; border-bottom: 1px solid var(--border); text-align: left; font-size:14px;} 
+    th { background: var(--primary); color: white; cursor:pointer;}
+    tr:hover { background: var(--table-hover); }
+    
+    button { padding: 8px 14px; background: var(--primary); color: white; border: none; cursor: pointer; border-radius:4px; font-weight:bold; transition:0.2s;}
+    button:hover { filter: brightness(1.1); }
+    .btn-red { background: #dc3545; } .btn-green { background: #28a745; } .btn-warn {background:#f0ad4e; color:#000;} .btn-info { background:#17a2b8; }
+    
+    .hidden { display: none !important; }
+    .filters { background: var(--filter-bg); padding:15px; border-radius:8px; margin-bottom:15px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; border: 1px solid var(--border);}
+    input, select { background:var(--bg-card); color:var(--text-main); border:1px solid var(--border); padding:8px; border-radius:4px; outline:none; transition: 0.2s;}
+    input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,123,255,0.2); }
+    
+    .kanban { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; align-items:start; margin-bottom: 20px;}
+    .k-col { background: var(--filter-bg); padding: 15px; border-radius: 8px; border-top: 4px solid var(--border); min-height:300px;}
+    .k-col h3 { margin-top: 0; margin-bottom: 10px; font-size: 16px; }
+    .k-card { background: var(--bg-card); padding: 15px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 15px; font-size:14px;}
+    .k-card h4 { margin-top: 0; margin-bottom: 5px; font-size: 15px; }
+    
+    .caducadas-box { background: rgba(253, 126, 20, 0.1); border: 1px solid #fd7e14; border-radius: 8px; padding: 15px; margin-bottom: 15px; max-height: 30vh; overflow-y: auto;}
+    .rechazadas-box { background: rgba(220, 53, 69, 0.1); border: 1px solid #dc3545; border-radius: 8px; padding: 15px; max-height: 30vh; overflow-y: auto;}
+
+    .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 15px; min-width: 500px;}
+    .cal-header { text-align: center; font-weight: bold; padding: 10px; background: var(--primary); color: white; border-radius: 4px; }
+    .cal-day { min-height: 90px; border: 1px solid var(--border); padding: 6px; background: var(--bg-card); border-radius: 4px; display:flex; flex-direction:column; transition:0.2s;}
+    .cal-num { font-weight: bold; font-size:16px; margin-bottom: 5px;}
+    .cal-badge { font-size: 10px; padding: 3px; border-radius: 3px; margin-bottom: 2px; color: white; font-weight:bold; word-wrap:break-word;}
+    
+    .modal { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:flex; justify-content:center; align-items:center; z-index:999;}
+    .modal-content { background:var(--bg-card); padding:25px; border-radius:12px; width:550px; max-width: 95%; max-height: 90vh; overflow-y: auto; position: relative;}
+    
+    .close-x { position: absolute; top: 15px; right: 20px; cursor: pointer; font-size: 22px; color: var(--text-muted); font-weight: bold; background: none; border: none; padding: 0; line-height: 1; transition: 0.2s; z-index: 1000;}
+    .close-x:hover { color: #dc3545; transform: scale(1.1); }
+    
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .settings-group { background: var(--filter-bg); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);}
+    .settings-group h4 { margin-top: 0; margin-bottom: 18px; color: var(--primary); font-size: 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .form-group { display: flex; flex-direction: column; }
+    .form-group label { margin-bottom: 6px; font-weight: 600; font-size: 13px; color: var(--text-muted); }
+
+    .lista-modal-item { border: 1px solid var(--border); border-left: 4px solid var(--primary); padding: 12px; border-radius: 6px; margin-bottom: 10px; background: var(--bg-card); font-size: 13px; }
+    .lista-modal-header { display: flex; justify-content: space-between; align-items: flex-start; }
+
+    @media (max-width: 768px) {
+        .sidebar { position: fixed; top: 0; left: -290px; height: 100vh; box-shadow: 5px 0 15px rgba(0,0,0,0.2); }
+        .sidebar.active-mobile { left: 0 !important; }
+        .content { padding: 15px; width: 100%; overflow-x: hidden; }
+        .kanban { grid-template-columns: 1fr; }
+        .form-grid { grid-template-columns: 1fr; }
+        #btn-toggle-mobile { display: block !important; }
+    }
+</style>
+</head><body>
+
+<div id="pantalla-error-shield" class="hidden" style="position:fixed; top:20px; left:20px; right:20px; background:#f8d7da; color:#721c24; border:2px solid #f5c6cb; padding:20px; border-radius:8px; z-index:9999; font-family:monospace;">
+    <h3>⚠️ Alerta Frontend</h3>
+    <p id="shield-error-texto"></p>
+    <button onclick="location.reload(true)">Recargar</button>
+</div>
+
+<button id="btn-toggle-mobile" onclick="toggleMenuMobile()" style="display:none; position:fixed; bottom:20px; right:20px; width:60px; height:60px; border-radius:50%; background:var(--primary); color:white; font-size:24px; z-index:1000; border:none; box-shadow:0 4px 12px rgba(0,0,0,0.3); font-weight:bold; cursor:pointer;">☰</button>
+
+<div class="sidebar hidden" id="mainSidebar">
+    <h3 style="display:flex; justify-content:space-between; align-items:center;">
+        <span id="sb-empresa-nombre">Admin</span>
+        <span onclick="toggleMenuMobile()" style="cursor:pointer; font-size:16px; padding:5px; background:rgba(255,255,255,0.1); border-radius:4px; display:inline-block;">✖</span>
+    </h3>
+    <div class="nav-btn" id="btn-hub" onclick="verHub()" style="background:#28a745;">Volver al Hub</div>
+    <div class="nav-btn" id="btn-asist" onclick="ver('t-asist')">Asistencias</div>
+    <div class="nav-btn" onclick="ver('t-solic')">Solicitudes</div>
+    <div class="nav-btn" onclick="ver('t-fer')">Calendario</div>
+    <div class="nav-btn" onclick="ver('t-francos')">Medios Francos</div>
+    <div class="nav-btn" id="btn-nav-corp" onclick="ver('t-corporativa')">Estructura Corporativa</div>
+    <div class="nav-btn" id="btn-nav-ajustes" onclick="ver('t-ajustes')">Ajustes del Sistema</div>
+    <div class="nav-btn" style="background:#dc3545; margin-top:20px;" onclick="logout()">Cerrar Sesión</div>
+    
+    <div style="margin-top: auto; text-align: center; font-size: 11px; color: rgba(255,255,255,0.5); padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+        v2.1<br>Powered by <a href="https://jz-tech.mywire.org/" target="_blank" style="color: rgba(255,255,255,0.8); text-decoration: none; font-weight: bold;">Jz TechSolutions</a>
+    </div>
+</div>
+
+<div class="content">
+    <div id="t-hub" style="width:100%; max-width:1500px; margin: 0 auto;" class="hidden">
+        <div class="hub-header">
+            <h1 id="hub-empresa-nombre">Panel Central</h1>
+            <p style="color:#555; font-size:16px;">Seleccione el módulo al que desea ingresar:</p>
+        </div>
+        <div class="hub-grid">
+            <div class="hub-card" onclick="ver('t-asist')"><h3>📍 Asistencias <span style="color:#007bff;">➡️</span></h3><div class="preview-box" id="p-asist">Cargando...</div></div>
+            <div class="hub-card" onclick="ver('t-solic')" style="border-top-color: #f0ad4e;"><h3>📝 Solicitudes <span style="color:#f0ad4e;">➡️</span></h3><div class="preview-box" id="p-solic">Cargando...</div></div>
+            <div class="hub-card" onclick="ver('t-fer')" style="border-top-color: #17a2b8;"><h3>📅 Calendario <span style="color:#17a2b8;">➡️</span></h3><div class="preview-box" id="p-cal">Cargando...</div></div>
+            <div class="hub-card" onclick="ver('t-francos')" style="border-top-color: #fd7e14;"><h3>🏖️ Medios Francos <span style="color:#fd7e14;">➡️</span></h3><div class="preview-box" id="p-francos">Cargando...</div></div>
+            <div id="hub-corp" class="hub-card" onclick="ver('t-corporativa')" style="border-top-color: #6c757d;"><h3>🏢 Estructura Corporativa <span style="color:#6c757d;">➡️</span></h3><div class="preview-box">Empresa, Sucursales y Personal</div></div>
+            <div id="hub-ajustes" class="hub-card" onclick="ver('t-ajustes')" style="border-top-color: #6f42c1;"><h3>🛠️ Ajustes del Sistema <span style="color:#6f42c1;">➡️</span></h3><div class="preview-box">Configuraciones, Conceptos y CSV</div></div>
+        </div>
+    </div>
+
+    <div id="t-asist" class="card hidden">
+        <h2>Asistencias (Cálculo Automático)</h2>
+        <div class="filters" style="background:#d4edda; border-color:#c3e6cb;">
+            <strong>Liquidación Mensual:</strong> <input type="date" id="rD"> a <input type="date" id="rH"> <select id="rS"></select> <button class="btn-green" onclick="bajarExcel()">Descargar Resumen Consolidado</button>
+        </div>
+        <div class="filters">
+            <strong>Filtros Rápidos:</strong>
+            <input type="date" id="fD" onchange="renderAsist()">
+            <select id="fSuc_asist" onchange="renderAsist()"><option value="">Todas las sucursales</option></select>
+            <input type="text" id="fA_n" placeholder="Buscar DNI o Nombre..." onkeyup="renderAsist()" style="flex-grow:1; min-width:200px;">
+            <label style="margin-left:10px; cursor:pointer; background:#e0f7fa; padding:8px 12px; border-radius:6px; font-weight:bold; color:#00695c; border:1px solid #b2ebf2;">
+                <input type="checkbox" id="fIncNoFichados" onchange="renderAsist()"> Incluir ausentes
+            </label>
+        </div>
+        <div class="table-responsive"><table><thead><tr><th>Fecha</th><th>Nombre</th><th>Sucursal</th><th>Ingreso</th><th>Salida</th><th>GPS</th><th>Acción</th></tr></thead><tbody id="b-asist"></tbody></table></div>
+    </div>
+    
+    <div id="t-solic" class="card hidden">
+        <h2>Gestión de Solicitudes</h2>
+        <div class="kanban">
+            <div class="k-col pend"><h3>Pendientes</h3><div id="k-PENDIENTE"></div></div>
+            <div class="k-col apro"><h3>Aprobadas</h3><div id="k-APROBADA"></div></div>
+            <div class="k-col curso"><h3>En Curso Hoy</h3><div id="k-EN_CURSO"></div></div>
+            <div class="k-col culm"><h3>Culminadas</h3><div id="k-CULMINADAS"></div></div>
+        </div>
+        <div class="caducadas-box"><h3 style="margin-top:0; color:#fd7e14;">Solicitudes Caducadas</h3><div id="k-CADUCADAS" style="display:flex; flex-wrap:wrap; gap:10px; overflow-x:auto;"></div></div>
+        <div class="rechazadas-box"><h3 style="margin-top:0; color:#dc3545;">Historial de Rechazadas</h3><div id="k-RECHAZADA" style="display:flex; flex-wrap:wrap; gap:10px; overflow-x:auto;"></div></div>
+    </div>
+    
+    <div id="t-fer" class="card hidden">
+        <h2>Calendario</h2>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <button onclick="cambiarMes(-1)" style="color:white; background:#6c757d;">Anterior</button>
+            <h3 id="cal-month-year" style="margin:0; font-size:24px; color:var(--primary); text-transform:uppercase;"></h3>
+            <button onclick="cambiarMes(1)" style="color:white; background:#6c757d;">Siguiente</button>
+        </div>
+        <div class="filters"><button class="btn-green" onclick="document.getElementById('m-feriado').classList.remove('hidden')">Cargar Feriado</button></div>
+        <div class="table-responsive" style="border:none;"><div id="calendar-grid" class="calendar"></div></div>
+    </div>
+
+    <div id="t-francos" class="card hidden">
+        <h2>Gestión de Medios Francos</h2>
+        <div class="filters"><button class="btn-green" onclick="document.getElementById('m-franco').classList.remove('hidden')">Asignar Medio Franco</button></div>
+        <div class="table-responsive"><table><thead><tr><th>Empleado</th><th>Sucursal</th><th>Fecha Asignada</th><th>Turno</th><th>Asignado Por</th><th>Acción</th></tr></thead><tbody id="b-francos"></tbody></table></div>
+    </div>
+
+    <div id="t-corporativa" class="card hidden">
+        <h2>Estructura Corporativa</h2>
+        <div class="subtabs-nav">
+            <button id="btn-sub-identidad" onclick="switchCorpTab('sub-identidad')" class="active-sub">Identidad de Empresa</button>
+            <button id="btn-sub-sucursales" onclick="switchCorpTab('sub-sucursales')">Sucursales y Locales</button>
+            <button id="btn-sub-personal" onclick="switchCorpTab('sub-personal')">Personal y Legajos</button>
+        </div>
+        <div id="sub-identidad" class="subtab-content">
+            <h3>Personalización de Marca</h3>
+            <div class="form-grid" style="max-width:550px; margin-bottom:15px;">
+                <div class="form-group"><label>Nombre de Empresa</label><input type="text" id="c_empresa"></div>
+                <div class="form-group"><label>Color Corporativo</label><input type="color" id="c_color" style="height:40px; padding:0; cursor:pointer;"></div>
+                <div class="form-group" style="grid-column: span 2;">
+                    <label>Logo de la Pestaña (Favicon PNG/JPG)</label>
+                    <div style="display:flex; gap:10px;">
+                        <input type="file" id="c_logo" accept=".png, .jpg, .jpeg" style="flex:1;">
+                        <button class="btn-info" onclick="if(document.getElementById('c_logo').files[0]) accion('guardar_logo', {logo: document.getElementById('c_logo').files[0]}); else alert('Archivo requerido.')">Aplicar Logo</button>
+                    </div>
+                </div>
+            </div>
+            <button class="btn-green" onclick="ejecutarGuardarConfig()" style="width:100%; max-width:550px;">Guardar Identidad</button>
+        </div>
+        <div id="sub-sucursales" class="subtab-content hidden">
+            <h3>Gestión de Sucursales</h3>
+            <div class="filters">
+                <input type="text" id="sN" placeholder="Nombre Local"><input type="text" id="sLa" placeholder="Latitud"><input type="text" id="sLo" placeholder="Longitud">
+                <button class="btn-green" onclick="accion('guardar_suc',{d1:v('sN'),d2:v('sLa'),d3:v('sLo'),d4:'20:00',d6:'10:00',d7:'14:00'})">Crear Local</button>
+            </div>
+            <div class="table-responsive"><table><thead><tr><th>Sucursal</th><th>Cierre Auto.</th><th>Horario Feriados</th><th>GPS</th><th>Acción</th></tr></thead><tbody id="b-suc"></tbody></table></div>
+        </div>
+        <div id="sub-personal" class="subtab-content hidden">
+            <h3>Legajos de Personal</h3>
+            <div class="filters">
+                <button class="btn-green" onclick="abrirU('')">Crear Empleado</button>
+                <select id="fSuc_users" onchange="renderUsers()"><option value="">Todas las sucursales</option></select>
+                <input type="text" id="fU_n" placeholder="Buscar DNI o Nombre..." onkeyup="renderUsers()" style="flex-grow:1;"> 
+                <label><input type="checkbox" id="fI" onchange="renderUsers()"> Mostrar Inactivos</label>
+            </div>
+            <div class="table-responsive"><table><thead><tr><th>DNI</th><th>Nombre</th><th>Sucursal</th><th>Días Vac.</th><th>Turno Fijo</th><th>Contacto</th><th>Estado</th><th>Doc/Mapa</th><th>Historial</th><th>Acción</th></tr></thead><tbody id="b-users"></tbody></table></div>
+        </div>
+    </div>
+
+    <div id="t-ajustes" class="card hidden">
+        <h2>Ajustes del Sistema</h2>
+        <div class="subtabs-nav">
+            <button id="btn-sub-parametros" onclick="switchAjustesTab('sub-parametros')" class="active-sub">Parámetros Globales</button>
+            <button id="btn-sub-conceptos" onclick="switchAjustesTab('sub-conceptos')">Conceptos de Permisos</button>
+            <button id="btn-sub-import" onclick="switchAjustesTab('sub-import')">Ingesta Masiva CSV</button>
+        </div>
+        
+        <div id="sub-parametros" class="subtab-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                <h3 style="margin: 0; font-size: 20px;">Reglas Operativas</h3>
+                <button class="btn-green" style="padding: 10px 20px; font-size: 14px;" onclick="ejecutarGuardarConfig()">Guardar Configuraciones</button>
+            </div>
+
+            <div class="settings-group">
+                <h4>Geolocalización y Fichaje</h4>
+                <div class="form-grid">
+                    <div class="form-group"><label>Distancia GPS Máxima (Metros)</label><input type="number" id="c_gps"></div>
+                    <div class="form-group"><label>Bloqueo GPS Estricto</label><select id="c_gps_est"><option value="1">SÍ (Rebota Fichaje)</option><option value="0">NO (Ficha con Alerta)</option></select></div>
+                    <div class="form-group"><label>Anti-Rebote Fichaje (Minutos)</label><input type="number" id="c_anti"></div>
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <h4>Jornada y Horarios</h4>
+                <div class="form-grid">
+                    <div class="form-group"><label>Jornada Mínima de Trabajo (Horas)</label><input type="number" step="0.5" id="c_jornada"></div>
+                    <div class="form-group"><label>Tolerancia de Llegada Tarde (Minutos)</label><input type="number" id="c_tol"></div>
+                    <div class="form-group"><label>Ingreso Automático en Franco Mañana</label><input type="time" id="c_fmanana"></div>
+                    <div class="form-group"><label>Salida Automática en Franco Tarde</label><input type="time" id="c_ftarde"></div>
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <h4>Políticas de Licencias</h4>
+                <div class="form-grid">
+                    <div class="form-group"><label>Días de Vacaciones Base (Nuevos Empleados)</label><input type="number" id="c_vac_base"></div>
+                    <div class="form-group"><label>Aviso Previo Mínimo para Vacaciones (Días)</label><input type="number" id="c_vac"></div>
+                    <div class="form-group"><label>Permitir a Encargados Aprobar Permisos</label><select id="c_enc_aprueba"><option value="1">SÍ</option><option value="0">NO (Solo RRHH)</option></select></div>
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <h4>Seguridad y Accesos</h4>
+                <div class="form-grid">
+                    <div class="form-group"><label>Bloqueo tras Intentos Fallidos de Login</label><input type="number" id="c_log"></div>
+                    <div class="form-group"><label>Prefijo para Claves Generadas</label><input type="text" id="c_pwpre"></div>
+                    <div class="form-group"><label>Sufijo para Claves Generadas</label><input type="text" id="c_pwsuf"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="sub-conceptos" class="subtab-content hidden">
+            <h3>Configuración de Motivos Dinámicos</h3>
+            <div class="filters">
+                <input type="text" id="tp_nombre" placeholder="Nombre (Ej: MUDANZA)">
+                <select id="tp_tipo"><option value="HORAS">HORAS</option><option value="DIAS">DÍAS</option></select>
+                <select id="tp_foto"><option value="0">Certificado Opcional</option><option value="1">Certificado Obligatorio</option></select>
+                <select id="tp_desc"><option value="0">No descuenta Vacaciones</option><option value="1">Descuenta Vacaciones</option></select>
+                <input type="number" id="tp_horas" placeholder="Horas pagas x Día" value="0">
+                <button class="btn-green" onclick="accion('guardar_concepto', {nombre:v('tp_nombre').toUpperCase(), tipo:v('tp_tipo'), foto:v('tp_foto'), desc:v('tp_desc'), horas:v('tp_horas')})">Crear Parámetro</button>
+            </div>
+            <div class="table-responsive"><table><thead><tr><th>Concepto</th><th>Naturaleza</th><th>Exige Certificado</th><th>Resta Vacaciones</th><th>Carga Horaria</th><th>Acción</th></tr></thead><tbody id="b-conceptos"></tbody></table></div>
+        </div>
+        <div id="sub-import" class="subtab-content hidden">
+            <h3>Carga Masiva Transaccional</h3>
+            <div style="background:var(--filter-bg); border:1px solid var(--border); padding:20px; border-radius:8px; display:inline-block;">
+                <input type="file" id="csv_file" accept=".csv" style="margin-bottom:15px; display:block; border:none; background:transparent;">
+                <button class="btn-green" onclick="if(document.getElementById('csv_file').files[0]) accion('importar_csv', {archivo_csv: document.getElementById('csv_file').files[0]}); else alert('Archivo requerido.')">Ejecutar Importación</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="theme-toggle" onclick="toggleTheme()" id="theme-icon">🌙</div>
+
+<!-- MODAL VER MÁS (PAGINACIÓN VISUAL) -->
+<div id="m-ver-mas" class="modal hidden">
+    <div class="modal-content" style="max-width: 650px; width: 95%;">
+        <button class="close-x" onclick="cerrarM('m-ver-mas')">✖</button>
+        <h3 id="vm-titulo" style="margin-top:0; color:var(--primary); border-bottom:1px solid var(--border); padding-bottom:10px;">Detalle de Solicitudes</h3>
+        <div id="vm-lista" style="max-height: 60vh; overflow-y: auto; padding-right:10px;"></div>
+        <button onclick="cerrarM('m-ver-mas')" style="background:#6c757d; width:100%; margin-top:15px;">Cerrar Panel</button>
+    </div>
+</div>
+
+<div id="m-convocatoria" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-convocatoria')">✖</button><h3>Lista de Convocados</h3><input type="hidden" id="conv-fecha"><select id="conv-sucursal" onchange="dibujarChecklistConvocados()"></select><div id="conv-checklist" style="max-height: 250px; overflow-y: auto; padding:10px; margin-bottom:15px; border:1px solid var(--border);"></div><button class="btn-green" onclick="guardarConvocatoria()" style="width:100%;">Guardar Convocatoria</button><button onclick="cerrarM('m-convocatoria')" style="background:#6c757d; width:100%; margin-top:5px;">Cancelar</button></div></div>
+
+<div id="m-o" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-o')">✖</button><h3>Salida Manual Forzosa</h3><input type="hidden" id="eoI"><div class="form-group"><label>Hora de Salida:</label><input type="time" id="eoH"></div><div class="form-group"><label>Motivo:</label><input type="text" id="eoM"></div><button class="btn-warn" onclick="if(v('eoH')&&v('eoM')){accion('salida_manual',{d1:v('eoI'), d2:v('eoH'), d3:v('eoM')}); cerrarM('m-o')}" style="width:100%;">Forzar Operación</button><button onclick="cerrarM('m-o')" style="background:#6c757d; width:100%; margin-top:5px;">Cancelar</button></div></div>
+
+<div id="m-corregir-entrada" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-corregir-entrada')">✖</button><h3>Corregir Horario de Ingreso</h3><input type="hidden" id="ceI"><div class="form-group"><label>Nueva Hora de Entrada:</label><input type="time" id="ceH"></div><div class="form-group"><label>Justificante Obligatorio:</label><input type="text" id="ceM" required></div><button class="btn-green" onclick="if(v('ceH')&&v('ceM').trim()!==''){accion('corregir_entrada',{d1:v('ceI'), d2:v('ceH'), d3:v('ceM')}); cerrarM('m-corregir-entrada')}else{alert('Información incompleta.')}" style="width:100%; margin-top:10px;">Aplicar Corrección</button><button onclick="cerrarM('m-corregir-entrada')" style="background:#6c757d; width:100%; margin-top:5px;">Cancelar</button></div></div>
+
+<div id="m-u" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-u')">✖</button><h3 id="u-modal-title">Legajo Empleado</h3><input type="hidden" id="eOld"><form id="form-user" onsubmit="guardarUsuario(event)"><div class="form-grid"><div class="form-group"><label>DNI</label><input type="text" id="eD" required></div><div class="form-group"><label>Nombre</label><input type="text" id="eN" required></div><div class="form-group"><label>Rol</label><select id="eR"><option value="2">Empleado</option><option value="1">Encargado</option><option value="0">Admin</option></select></div><div class="form-group"><label>Sucursal</label><select id="eS"></select></div><div class="form-group"><label>Hora Entrada</label><input type="time" id="eHE" required></div><div class="form-group"><label>Hora Salida</label><input type="time" id="eHS" required></div><div class="form-group"><label>Días Vacaciones</label><input type="number" id="eVac" required></div><div class="form-group"><label>Estado</label><select id="eA"><option value="1">Activo</option><option value="0">Inactivo</option></select></div><div class="form-group"><label>Mail</label><input type="email" id="eMail"></div><div class="form-group"><label>Teléfono</label><input type="text" id="eTel"></div><div class="form-group"><label>Calle</label><input type="text" id="eCalle"></div><div class="form-group"><label>Altura</label><input type="text" id="eAltura"></div><div class="form-group"><label>Depto</label><input type="text" id="eDepto"></div><div class="form-group"><label>CP</label><input type="text" id="eCP"></div><div class="form-group" style="grid-column: span 2;"><label>Adjuntar Mapa/Documento</label><input type="file" id="eMapa"><div id="link-mapa-actual"></div></div></div><button type="button" class="btn-red" id="btn-reset-pw" onclick="accion('reset_pass',{d1:v('eOld')}); cerrarM('m-u');" style="width:100%; display:none; margin:10px 0;">Reseteo de Password</button><button type="submit" class="btn-green" style="width:100%; margin-top: 10px;">Guardar Legajo</button><button type="button" onclick="cerrarM('m-u')" style="background:#6c757d; width:100%; margin-top:5px;">Cancelar</button></form></div></div>
+
+<div id="m-h" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-h')">✖</button><h3>Historial: <span id="hNombre"></span></h3><div id="h-solicitudes" style="max-height: 40vh; overflow-y: auto; padding: 15px; border-radius: 6px; font-size: 13px; margin-bottom: 15px;"></div><button onclick="cerrarM('m-h')" style="background:#6c757d; width:100%;">Cerrar</button></div></div>
+
+<div id="m-franco" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-franco')">✖</button><h3>Asignar Medio Franco</h3><div class="form-group"><label>Empleado</label><input type="text" id="cFranDni" list="cFranDniList" autocomplete="off"><datalist id="cFranDniList"></datalist></div><div class="form-group"><label>Fecha</label><input type="date" id="cFranFecha"></div><div class="form-group"><label>Turno Libre</label><select id="cFranTurno"><option value="MAÑANA">MAÑANA</option><option value="TARDE">TARDE</option></select></div><button class="btn-green" onclick="if(v('cFranDni')&&v('cFranFecha')) { accion('asignar_franco', {d1:v('cFranDni'), d2:v('cFranFecha'), d3:v('cFranTurno')}); cerrarM('m-franco'); }" style="width:100%;">Guardar Asignación</button><button onclick="cerrarM('m-franco')" style="background:#6c757d; width:100%; margin-top:5px;">Cancelar</button></div></div>
+
+<div id="m-e-franco" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-e-franco')">✖</button><h3>Editar Franco</h3><input type="hidden" id="eFranId"><b id="eFranEmp" style="display:block; margin-bottom:10px;"></b><div class="form-group"><label>Fecha</label><input type="date" id="eFranFecha"></div><div class="form-group"><label>Turno Libre</label><select id="eFranTurno"><option value="MAÑANA">MAÑANA</option><option value="TARDE">TARDE</option></select></div><button class="btn-green" onclick="accion('editar_franco', {d1:v('eFranId'), d2:v('eFranFecha'), d3:v('eFranTurno')}); cerrarM('m-e-franco')" style="width:100%;">Actualizar Registro</button><button onclick="cerrarM('m-e-franco')" style="background:#6c757d; width:100%; margin-top:5px;">Cancelar</button></div></div>
+
+<div id="m-feriado" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-feriado')">✖</button><h3>Cargar Feriado</h3><div class="form-group"><label>Fecha del Feriado</label><input type="date" id="cFerFecha"></div><div class="form-group"><label>Motivo</label><input type="text" id="cFerMotivo"></div><div class="form-group"><label>Sucursales que Abren</label><select id="cFerSucs"><option value="TODAS">TODAS</option></select></div><button class="btn-green" onclick="if(v('cFerFecha')&&v('cFerMotivo')){accion('guardar_feriado', {d1:v('cFerFecha'), d2:v('cFerMotivo'), d3:v('cFerSucs')}); cerrarM('m-feriado')}" style="width:100%;">Guardar Feriado</button><button onclick="cerrarM('m-feriado')" style="background:#6c757d; width:100%; margin-top:5px;">Cancelar</button></div></div>
+
+<div id="m-s" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-s')">✖</button><h3>Editar Local</h3><input type="hidden" id="esOld"><div class="form-grid"><div class="form-group"><label>Nombre</label><input type="text" id="esN"></div><div class="form-group"><label>Hora de Cierre Regular</label><input type="time" id="esC"></div><div class="form-group"><label>Apertura en Feriados</label><input type="time" id="esApF"></div><div class="form-group"><label>Cierre en Feriados</label><input type="time" id="esCieF"></div><div class="form-group"><label>Latitud GPS</label><input type="text" id="esLa"></div><div class="form-group"><label>Longitud GPS</label><input type="text" id="esLo"></div></div><button class="btn-green" onclick="accion('editar_suc',{d1:v('esOld'), d2:v('esN'), d3:v('esLa'), d4:v('esLo'), d5:v('esC'), d6:v('esApF'), d7:v('esCieF')}); cerrarM('m-s')" style="width:100%; margin-top:10px;">Guardar Local</button><button onclick="cerrarM('m-s')" style="background:#6c757d; width:100%; margin-top:5px;">Cancelar</button></div></div>
+
+<div id="m-cal-opts" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-cal-opts')">✖</button><h3 id="cal-modal-title"></h3><input type="hidden" id="cal-selected-date"><div id="box-admin-cal" class="hidden"><h4>Feriado Nacional</h4><div class="form-group"><input type="text" id="cFerMotivo2" placeholder="Identificador del Feriado"></div><div class="form-group"><select id="cFerSucs2"><option value="TODAS">TODAS</option></select></div><button class="btn-green" onclick="accion('guardar_feriado', {d1:v('cal-selected-date'), d2:v('cFerMotivo2'), d3:v('cFerSucs2')}); cerrarM('m-cal-opts')" style="width:100%;">Registrar Feriado</button></div><hr style="margin:20px 0; border:0; border-top:1px solid var(--border);"><h4 style="margin-top:0;">Gestionar Convocatoria</h4><button class="btn-info" onclick="abrirConvocatoria()" style="width:100%; margin-bottom:15px;">Ver/Editar Personal Convocado</button><hr style="margin:20px 0; border:0; border-top:1px solid var(--border);"><h4 style="margin-top:0;">Asignar Franco</h4><div class="form-group"><input type="text" id="cFranDni2" list="cFranDniList2" placeholder="Búsqueda de empleado..." autocomplete="off"><datalist id="cFranDniList2"></datalist></div><div class="form-group"><select id="cFranTurno2"><option value="MAÑANA">MAÑANA</option><option value="TARDE">TARDE</option></select></div><button class="btn-green" onclick="accion('asignar_franco', {d1:v('cFranDni2'), d2:v('cal-selected-date'), d3:v('cFranTurno2')}); cerrarM('m-cal-opts')" style="width:100%;">Confirmar Asignación</button><button onclick="cerrarM('m-cal-opts')" style="background:#6c757d; width:100%; margin-top:15px;">Cerrar Panel</button></div></div>
+
+<script>
+    window.onerror = function(msg, url, line) {
+        document.getElementById('pantalla-error-shield').classList.remove('hidden');
+        document.getElementById('shield-error-texto').innerText = msg + " (Línea: " + line + ")";
+        return false;
+    };
+
+    window.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.modal').forEach(m => m.classList.add('hidden'));
+        }
+    });
+
+    let dG = {}, csrfToken = "", fechaCalendario = new Date();
+    let sA = { col: 'fecha_hora', dir: -1 }, sU = { col: 'nombre', dir: 1 };
+    let lastKanbanBuckets = {}; 
+    
+    function initTheme() {
+        let t = localStorage.getItem('theme');
+        if(!t) t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', t);
+        document.getElementById('theme-icon').innerText = t === 'dark' ? '☀️' : '🌙';
+    }
+    function toggleTheme() {
+        let t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', t);
+        localStorage.setItem('theme', t);
+        document.getElementById('theme-icon').innerText = t === 'dark' ? '☀️' : '🌙';
+    }
+    initTheme();
+
+    function toggleMenuMobile() {
+        document.getElementById('mainSidebar').classList.toggle('active-mobile');
+    }
+
+    function esc(s) { return String(s||"").replace(/[&<>'"]/g, m => ({'&':'&','<':'<','>':'>',"'":"'",'"':'"'}[m])); }
+    function v(id) { return document.getElementById(id).value; }
+    function timeToMins(t) { if(!t) return 0; let p = t.split(':'); return parseInt(p[0])*60 + parseInt(p[1]); }
+    
+    async function init() {
+        let r_c = await fetch('/api/csrf-token'); if(!r_c.ok) return location.href='/'; csrfToken = (await r_c.json()).token;
+        let r = await fetch('/api/datos_panel'); if(!r.ok) return location.href='/'; dG = await r.json(); 
+        
+        if(dG.config) {
+            if(dG.config.color_primario) document.documentElement.style.setProperty('--primary', dG.config.color_primario);
+            if(dG.config.empresa_nombre) {
+                document.title = dG.config.empresa_nombre + " Admin";
+                let sb_empresa = document.getElementById('sb-empresa-nombre'); if(sb_empresa) sb_empresa.innerText = dG.config.empresa_nombre + " Admin";
+                let hub_empresa = document.getElementById('hub-empresa-nombre'); if(hub_empresa) hub_empresa.innerText = "Panel Central " + dG.config.empresa_nombre;
+            }
+        }
+        
+        document.getElementById('fD').value = new Date().toLocaleDateString('en-CA');
+        
+        if(dG.rol === 1) {
+            document.getElementById('btn-nav-ajustes').classList.add('hidden');
+            document.getElementById('hub-ajustes').classList.add('hidden');
+            document.getElementById('btn-sub-identidad').classList.add('hidden');
+            document.getElementById('btn-sub-sucursales').classList.add('hidden');
+            
+            ['fSuc_asist', 'fSuc_users', 'conv-sucursal', 'rS', 'cFerSucs', 'cFerSucs2', 'eS'].forEach(id => {
+                let el = document.getElementById(id);
+                if(el) {
+                    el.innerHTML = `<option value="${esc(dG.sucursal)}">${esc(dG.sucursal)}</option>`;
+                    el.disabled = true;
+                }
+            });
+        } else {
+            let selSucs = `<option value="">Todas</option>` + dG.sucursales.map(s => `<option value="${esc(s.nombre)}">${esc(s.nombre)}</option>`).join('');
+            ['rS','fSuc_asist', 'fSuc_users', 'eS', 'cFerSucs', 'cFerSucs2'].forEach(id => {if(document.getElementById(id)) document.getElementById(id).innerHTML = (id==='cFerSucs'||id==='cFerSucs2')?`<option value="TODAS">TODAS</option>`+selSucs:selSucs;});
+            document.getElementById('conv-sucursal').innerHTML = dG.sucursales.map(s => `<option value="${esc(s.nombre)}">${esc(s.nombre)}</option>`).join('');
+        }
+        
+        let selEmpsDataList = dG.usuarios.map(u => `<option value="${esc(u.nombre)} - ${esc(u.dni)}">`).join('');
+        ['cFranDniList', 'cFranDniList2'].forEach(id => {if(document.getElementById(id)) document.getElementById(id).innerHTML = selEmpsDataList;});
+        
+        if(dG.rol > 1) return location.href='/'; 
+        verHub(); 
+    }
+    
+    function verHub() {
+        document.getElementById('mainSidebar').classList.add('hidden');
+        document.getElementById('mainSidebar').classList.remove('active-mobile');
+        document.querySelectorAll('.content > .card').forEach(c => c.classList.add('hidden'));
+        document.getElementById('t-hub').classList.remove('hidden');
+        renderHubPreviews();
+    }
+    
+    function ver(id) {
+        document.getElementById('t-hub').classList.add('hidden');
+        document.getElementById('mainSidebar').classList.remove('hidden');
+        document.getElementById('mainSidebar').classList.remove('active-mobile'); 
+        document.querySelectorAll('.content > .card').forEach(c => { if(c.id !== 't-hub') c.classList.add('hidden'); });
+        document.getElementById(id).classList.remove('hidden');
+        
+        if(id==='t-asist') renderAsist();
+        if(id==='t-users') renderUsers();
+        if(id==='t-suc') renderSucs();
+        if(id==='t-solic') renderKanban();
+        if(id==='t-fer') renderCalendario();
+        if(id==='t-corporativa') { 
+            if(dG.rol === 1) switchCorpTab('sub-personal'); 
+            else switchCorpTab('sub-identidad'); 
+            renderUsers(); renderSucs(); renderConfig(); 
+        }
+        if(id==='t-ajustes') { switchAjustesTab('sub-parametros'); renderConfig(); renderConceptos(); }
+        if(id==='t-francos') renderFrancos();
+    }
+
+    function renderHubPreviews() {
+        document.getElementById('p-asist').innerHTML = dG.fichajes.slice(0, 3).map(x => `<div class="preview-item"><b>${x.fecha_hora.split(' ')[1].substring(0,5)}</b> - ${esc(x.nombre)}</div>`).join('') || '<i>Sin registros.</i>';
+        document.getElementById('p-solic').innerHTML = dG.solicitudes.filter(s => s.estado === 'PENDIENTE').slice(0, 3).map(s => `<div class="preview-item"><b>${esc(s.concepto)}</b> - ${esc(s.nombre)}</div>`).join('') || '<i>Sin registros.</i>';
+        document.getElementById('p-cal').innerHTML = `<div class="preview-item">Hoy: ${new Date().toLocaleDateString()}</div>`;
+        document.getElementById('p-francos').innerHTML = dG.francos.slice(0,3).map(f => `<div class="preview-item"><b>${esc(f.nombre || f.dni)}</b> - ${esc(f.fecha)}</div>`).join('') || '<i>Sin registros.</i>';
+    }
+
+    async function postData(url, data) { 
+        let fd = new FormData(); 
+        for(let k in data) fd.append(k, data[k]);
+        let r = await fetch(url, {method:'POST', body:fd, headers:{'X-CSRF-Token': csrfToken}}); 
+        let resp = await r.json();
+        if(!r.ok) alert(resp.msg || "Fallo operacional."); else if(resp.msg !== "ok" && !resp.msg.includes("Reseteo")) alert(resp.msg); else if(resp.msg.includes("Reseteo")) alert(resp.msg);
+        return r.ok; 
+    }
+    async function accion(path, data) { if(await postData('/api/admin/'+path, data)) { dG = await (await fetch('/api/datos_panel')).json(); if(document.getElementById('t-hub').classList.contains('hidden')) ver(document.querySelector('.content > .card:not(.hidden)').id); else verHub(); } }
+    async function logout() { await postData('/api/logout', {}); location.href='/'; }
+    function cerrarM(id) { document.getElementById(id).classList.add('hidden'); }
+    function abrirSalida(id) { document.getElementById('eoI').value=id; document.getElementById('m-o').classList.remove('hidden'); }
+    
+    function abrirCorregirEntrada(id, horaActual) {
+        document.getElementById('ceI').value = id;
+        document.getElementById('ceH').value = horaActual;
+        document.getElementById('ceM').value = '';
+        document.getElementById('m-corregir-entrada').classList.remove('hidden');
+    }
+
+    function abrirU(d) { 
+        document.getElementById('form-user').reset(); document.getElementById('link-mapa-actual').innerHTML = '';
+        if(d) {
+            document.getElementById('u-modal-title').innerText = "Editar Legajo Empleado"; document.getElementById('btn-reset-pw').style.display = 'block';
+            let u=dG.usuarios.find(x=>x.dni===d); 
+            document.getElementById('eOld').value=u.dni; document.getElementById('eD').value=u.dni; document.getElementById('eN').value=u.nombre; document.getElementById('eR').value=u.rol; document.getElementById('eS').value=u.sucursal; document.getElementById('eHE').value=u.hora_entrada; document.getElementById('eHS').value=u.hora_salida; document.getElementById('eA').value=u.activo; document.getElementById('eVac').value=u.dias_vacaciones;
+            document.getElementById('eMail').value=u.mail||''; document.getElementById('eTel').value=u.telefono||''; document.getElementById('eCalle').value=u.calle||''; document.getElementById('eAltura').value=u.altura||''; document.getElementById('eDepto').value=u.depto||''; document.getElementById('eCP').value=u.cp||'';
+            if(u.mapa) document.getElementById('link-mapa-actual').innerHTML = `<a href="/api/archivo/${u.mapa}" target="_blank">Ver Documento Adjunto</a>`;
+        } else {
+            document.getElementById('u-modal-title').innerText = "Registro de Nuevo Empleado"; document.getElementById('eOld').value=''; document.getElementById('btn-reset-pw').style.display = 'none';
+        }
+        document.getElementById('m-u').classList.remove('hidden'); 
+    }
+    async function guardarUsuario(e) {
+        e.preventDefault();
+        let payload = { d1: v('eD'), d2: v('eN'), d3: v('eR'), d4: v('eS'), d5: v('eHE'), d6: v('eHS'), d8: v('eA'), d9: v('eVac'), calle: v('eCalle'), altura: v('eAltura'), depto: v('eDepto'), cp: v('eCP'), mail: v('eMail'), tel: v('eTel') };
+        let fileInput = document.getElementById('eMapa'); if(fileInput.files.length > 0) payload.mapa = fileInput.files[0];
+        let action = v('eOld') === '' ? 'crear_user' : 'editar_user';
+        if(action === 'editar_user') { payload.d_new = payload.d1; payload.d1 = v('eOld'); }
+        await accion(action, payload); cerrarM('m-u');
+    }
+    function abrirHistorial(d) {
+        let u = dG.usuarios.find(x => x.dni === d); document.getElementById('hNombre').innerText = u.nombre;
+        document.getElementById('h-solicitudes').innerHTML = dG.solicitudes.filter(s => s.dni === d).map(s => {
+            let color = s.estado === 'APROBADA' ? '#28a745' : (s.estado === 'RECHAZADA' ? '#dc3545' : '#f0ad4e');
+            return `<div style="border-bottom:1px solid var(--border); padding-bottom:10px; margin-bottom:10px;"><b>[${s.estado}]</b> ${esc(s.concepto)}: ${esc(s.fecha_ausencia)}<br><small>${esc(s.motivo)}</small></div>`;
+        }).join('') || '<i>Sin registros previos.</i>';
+        document.getElementById('m-h').classList.remove('hidden');
+    }
+
+    function abrirS(n) { 
+        let s=dG.sucursales.find(x=>x.nombre===n); 
+        document.getElementById('esOld').value=s.nombre; document.getElementById('esN').value=s.nombre; document.getElementById('esC').value=s.hora_cierre; document.getElementById('esLa').value=s.lat; document.getElementById('esLo').value=s.lon; 
+        document.getElementById('esApF').value=s.hora_apertura_feriado || '10:00'; document.getElementById('esCieF').value=s.hora_cierre_feriado || '14:00'; 
+        document.getElementById('m-s').classList.remove('hidden'); 
+    }
+
+    function abrirConvocatoria() {
+        document.getElementById('conv-fecha').value = v('cal-selected-date');
+        dibujarChecklistConvocados();
+        document.getElementById('m-convocatoria').classList.remove('hidden');
+    }
+    function dibujarChecklistConvocados() {
+        let suc = v('conv-sucursal'), fecha = v('conv-fecha');
+        let convs_hoy = new Set(dG.convocados.filter(c => c.fecha === fecha).map(c => c.dni));
+        document.getElementById('conv-checklist').innerHTML = dG.usuarios.filter(u => u.activo === 1 && u.sucursal === suc).map(e => `<label style="display:block; padding:8px; cursor:pointer;"><input type="checkbox" class="chk-conv" value="${esc(e.dni)}" ${convs_hoy.has(e.dni) ? 'checked' : ''}> ${esc(e.nombre)}</label>`).join('') || '<i>No hay empleados.</i>';
+    }
+    async function guardarConvocatoria() {
+        let seleccionados = Array.from(document.querySelectorAll('.chk-conv:checked')).map(cb => cb.value);
+        await accion('guardar_convocados', { d1: seleccionados.join(','), d2: v('conv-fecha'), d3: v('conv-sucursal') });
+        cerrarM('m-convocatoria');
+    }
+
+    function switchCorpTab(id) {
+        ['sub-identidad', 'sub-sucursales', 'sub-personal'].forEach(t => document.getElementById(t).classList.add('hidden'));
+        ['btn-sub-identidad', 'btn-sub-sucursales', 'btn-sub-personal'].forEach(b => document.getElementById(b).classList.remove('active-sub'));
+        document.getElementById(id).classList.remove('hidden');
+        document.getElementById('btn-' + id).classList.add('active-sub');
+    }
+    function switchAjustesTab(id) {
+        ['sub-parametros', 'sub-conceptos', 'sub-import'].forEach(t => document.getElementById(t).classList.add('hidden'));
+        ['btn-sub-parametros', 'btn-sub-conceptos', 'btn-sub-import'].forEach(b => document.getElementById(b).classList.remove('active-sub'));
+        document.getElementById(id).classList.remove('hidden');
+        document.getElementById('btn-' + id).classList.add('active-sub');
+    }
+
+    function renderAsist() {
+        let tN = v('fA_n').toLowerCase(), tS = v('fSuc_asist').toLowerCase(), d = v('fD');
+        let incNoFich = document.getElementById('fIncNoFichados').checked;
+        let filtrados = dG.fichajes.filter(x => (!tN || x.nombre.toLowerCase().includes(tN) || x.dni.includes(tN)) && (!tS || x.sucursal.toLowerCase().includes(tS)) && (!d || x.fecha_hora.startsWith(d)));
+        
+        if (incNoFich && d) {
+            let dnisFichados = new Set(filtrados.map(f => f.dni));
+            dG.usuarios.forEach(u => {
+                if (u.activo === 1 && !dnisFichados.has(u.dni)) {
+                    if ( (!tN || u.nombre.toLowerCase().includes(tN) || u.dni.includes(tN)) && (!tS || u.sucursal.toLowerCase().includes(tS)) ) {
+                        let fersHoy = dG.feriados.find(f => f.fecha === d);
+                        let es_feriado_abierto = fersHoy && (fersHoy.sucs_abren === 'TODAS' || u.sucursal === fersHoy.sucs_abren || fersHoy.sucs_abren.includes(u.sucursal));
+                        let es_convocado = dG.convocados.find(c => c.dni === u.dni && c.fecha === d);
+                        let razon = "Falta Injustificada";
+                        let franco = dG.francos.find(f => f.fecha === d && f.dni === u.dni);
+                        let sol = dG.solicitudes.find(s => s.dni === u.dni && s.estado === 'APROBADA' && s.fecha_ausencia <= d && (s.fecha_fin >= d || s.fecha_fin === ''));
+                        
+                        if(fersHoy && !es_feriado_abierto) razon = `Feriado Cerrado`;
+                        else if (es_feriado_abierto) { razon = es_convocado ? `Falta (Feriado Convocado)` : `Feriado Libre`; }
+                        else if(franco) razon = `Falta Injustificada (Medio Franco ${esc(franco.turno)})`;
+                        else if(sol) razon = `Permiso: ${esc(sol.concepto)}`;
+
+                        filtrados.push({ is_missing: true, fecha_hora: d + " 00:00:00", fecha_display: d, nombre: u.nombre, sucursal: u.sucursal, razon: razon });
+                    }
+                }
+            });
+        }
+        filtrados.sort((a, b) => String(a[sA.col] || '').localeCompare(String(b[sA.col] || ''), undefined, {numeric: true}) * sA.dir);
+        
+        let today_str = new Date().toLocaleDateString('en-CA');
+        
+        document.getElementById('b-asist').innerHTML = filtrados.map(x => {
+            if(x.is_missing) return `<tr style="background:var(--table-hover);"><td>${esc(x.fecha_display)}</td><td><b>${esc(x.nombre)}</b></td><td>${esc(x.sucursal)}</td><td><b>--:--</b><br><small style="color:var(--text-muted)">${x.razon}</small></td><td>--</td><td>--</td><td>--</td></tr>`;
+            
+            let f_date = x.fecha_hora.split(' ')[0];
+            let u = dG.usuarios.find(u => u.dni === x.dni) || {};
+            let sucObj = dG.sucursales.find(s => s.nombre === x.sucursal) || {};
+            let f_franco = dG.francos.find(f => f.dni === x.dni && f.fecha === f_date);
+            let esFer = dG.feriados.find(f => f.fecha === f_date && (f.sucs_abren === 'TODAS' || f.sucs_abren.includes(x.sucursal)));
+            
+            let t_ent, t_sal;
+            if (esFer) { 
+                t_ent = timeToMins(sucObj.hora_apertura_feriado || "10:00"); 
+                t_sal = timeToMins(sucObj.hora_cierre_feriado || "14:00"); 
+            } else {
+                t_ent = timeToMins(u.hora_entrada || "09:00"); 
+                t_sal = timeToMins(u.hora_salida || "18:00");
+                if (f_franco) { 
+                    if (f_franco.turno === 'MAÑANA') t_ent = timeToMins(dG.config.franco_manana_ingreso || "15:00"); 
+                    if (f_franco.turno === 'TARDE') t_sal = timeToMins(dG.config.franco_tarde_salida || "12:00"); 
+                }
+            }
+            
+            let f_in = x.fecha_hora.split(' ')[1].substring(0,5), t_in = timeToMins(f_in);
+            let est_in = "A tiempo";
+            
+            if (f_franco) {
+                est_in = "<span style='color:#28a745;'>A tiempo (Franco)</span>";
+            } else {
+                est_in = t_in > t_ent + (dG.config.tolerancia_tarde||10) ? "<span style='color:#dc3545;'>Llegada tarde</span>" : "<span style='color:#28a745;'>A tiempo</span>";
+            }
+            
+            if (x.motivo_entrada) {
+                est_in += `<br><small style="color:var(--primary); font-weight:bold;">Registro auditado: ${esc(x.motivo_entrada)}</small>`;
+            }
+            
+            let out_str = "--:--", est_out = "En curso";
+            if (x.salida_manual) {
+                out_str = x.salida_manual; let t_out = timeToMins(x.salida_manual);
+                est_out = t_out < t_sal - 10 ? "<span style='color:#dc3545;'>Salida anticipada</span>" : "<span style='color:#28a745;'>A tiempo</span>";
+                if(x.motivo_salida && x.motivo_salida !== "App JZ PASS") est_out += `<br><small>(${esc(x.motivo_salida)})</small>`;
+            } else if (f_date < today_str) {
+                let out_auto = "";
+                if (esFer) { out_auto = sucObj.hora_cierre_feriado || "14:00"; }
+                else {
+                    out_auto = u.hora_salida || "18:00";
+                    if (f_franco && f_franco.turno === 'TARDE') out_auto = dG.config.franco_tarde_salida || "12:00";
+                }
+                out_str = `<b>${out_auto}</b>`;
+                est_out = `<span style='color:#6c757d; font-weight:bold;'>Cierre Automático</span>`;
+            }
+            
+            let btnAcciones = "";
+            if (!x.salida_manual) {
+                btnAcciones += `<button class="btn-warn" onclick="abrirSalida(${x.id})" style="margin-right:5px;">Forzar Salida</button>`;
+            }
+            btnAcciones += `<button class="btn-info" onclick="abrirCorregirEntrada(${x.id}, '${f_in}')">Corregir Entrada</button>`;
+            
+            return `<tr><td>${esc(f_date)}</td><td><b>${esc(x.nombre)}</b></td><td>${esc(x.sucursal)}</td><td><b>${f_in}</b><br><small>${est_in}</small></td><td><b>${out_str}</b><br><small>${est_out}</small></td><td>${x.distancia}m</td><td>${btnAcciones}</td></tr>`;
+        }).join('');
+    }
+    
+    function renderUsers() { 
+        let tN = v('fU_n').toLowerCase(), tS = v('fSuc_users').toLowerCase(), i = document.getElementById('fI').checked;
+        let filtrados = dG.usuarios.filter(x => (i || x.activo === 1) && (!tN || x.nombre.toLowerCase().includes(tN) || x.dni.includes(tN)) && (!tS || x.sucursal.toLowerCase().includes(tS)));
+        
+        let now = new Date();
+        let pad = n => String(n).padStart(2, '0');
+        let ahoraYMDHMS = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+        
+        document.getElementById('b-users').innerHTML = filtrados.map(x => {
+            let btnMapa = (x.mapa && x.mapa !== "null" && String(x.mapa).trim() !== "") ? `<a href="/api/archivo/${x.mapa}" target="_blank" style="background:#17a2b8; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:11px; font-weight:bold; display:inline-block;">Ver Documento</a>` : `<span style="color:#999; font-size:11px;">-</span>`;
+            
+            let estaBloqueado = x.bloqueado_hasta && x.bloqueado_hasta.trim() !== "" && x.bloqueado_hasta > ahoraYMDHMS;
+            let estadoText = x.activo ? 'Activo' : 'Inactivo';
+            if (estaBloqueado) estadoText = `<span style="color:#dc3545; font-weight:bold;">Bloqueo Temporal</span>`;
+            
+            let btnDesbloquear = estaBloqueado ? `<button class="btn-warn" onclick="accion('desbloquear_user', {d1:'${esc(x.dni)}'})" style="margin-right:5px; padding:4px 8px; font-size:11px;">Desbloquear</button>` : '';
+
+            return `<tr><td>${esc(x.dni)}</td><td><b>${esc(x.nombre)}</b></td><td>${esc(x.sucursal)}</td><td><b>${x.dias_vacaciones}</b></td><td>${esc(x.hora_entrada)} a ${esc(x.hora_salida)}</td><td>${esc(x.telefono)}</td><td>${estadoText}</td><td>${btnMapa}</td><td><button class="btn-info" onclick="abrirHistorial('${esc(x.dni)}')">Historial</button></td><td>${btnDesbloquear}<button onclick="abrirU('${esc(x.dni)}')">Modificar</button></td></tr>`;
+        }).join(''); 
+    }
+    
+    function renderFrancos() { 
+        document.getElementById('b-francos').innerHTML = dG.francos.map(f => `<tr><td><b>${esc(f.nombre || f.dni)}</b></td><td>${esc(f.sucursal)}</td><td>${esc(f.fecha)}</td><td><b>${esc(f.turno)}</b></td><td><small>${esc(f.asignado_por)}</small></td><td><button class="btn-warn" onclick="document.getElementById('eFranId').value='${f.id}'; document.getElementById('eFranFecha').value='${f.fecha}'; document.getElementById('eFranTurno').value='${f.turno}'; document.getElementById('m-e-franco').classList.remove('hidden')">Modificar</button> <button class="btn-red" onclick="if(confirm('¿Confirmar eliminación?')) accion('borrar_franco',{d1:'${f.id}'})">Eliminar</button></td></tr>`).join(''); 
+    }
+    
+    function renderSucs() { document.getElementById('b-suc').innerHTML = dG.sucursales.map(x => `<tr><td><b>${esc(x.nombre)}</b></td><td>${esc(x.hora_cierre)} hs</td><td>Ap: ${esc(x.hora_apertura_feriado)}<br>Cie: ${esc(x.hora_cierre_feriado)}</td><td>${x.lat}, ${x.lon}</td><td><button onclick="abrirS('${esc(x.nombre)}')">Modificar</button> <button class="btn-red" onclick="if(confirm('¿Confirmar eliminación?')) accion('borrar_suc',{d1:'${esc(x.nombre)}'})">Eliminar</button></td></tr>`).join(''); }
+    
+    function renderKanban() {
+        let hoyStr = new Date().toLocaleDateString('en-CA'), now = new Date(), currentTime = now.toTimeString().substring(0,5);
+        let buckets = { 'PENDIENTE': [], 'APROBADA': [], 'EN_CURSO': [], 'CULMINADAS': [], 'RECHAZADA': [], 'CADUCADAS': [] };
+        
+        dG.solicitudes.forEach(s => {
+            if (s.estado === 'RECHAZADA') { buckets['RECHAZADA'].push(s); return; }
+            if (s.estado === 'PENDIENTE') {
+                if (hoyStr > s.fecha_ausencia) { buckets['CADUCADAS'].push(s); return; }
+                buckets['PENDIENTE'].push(s); return;
+            }
+            if (s.estado === 'APROBADA') {
+                let ts = dG.tipos_solicitud.find(t=>t.nombre===s.concepto);
+                let isMultidia = ts?.tipo === 'DIAS';
+                let enCurso = false, culminada = false;
+                if (isMultidia) {
+                    if (hoyStr >= s.fecha_ausencia && hoyStr <= s.fecha_fin) enCurso = true;
+                    else if (hoyStr > s.fecha_fin) culminada = true;
+                } else {
+                    if (hoyStr === s.fecha_ausencia && currentTime >= s.hora_inicio && currentTime <= s.hora_fin) enCurso = true;
+                    else if (hoyStr > s.fecha_ausencia || (hoyStr === s.fecha_ausencia && currentTime > s.hora_fin)) culminada = true;
+                }
+                if (enCurso) buckets['EN_CURSO'].push(s);
+                else if (culminada) buckets['CULMINADAS'].push(s);
+                else buckets['APROBADA'].push(s);
+            }
+        });
+
+        lastKanbanBuckets = buckets;
+
+        let buildHorizontal = (list, col, color, btnHtml) => {
+            let limit = 5;
+            let topList = list.slice(0, limit);
+            let html = topList.map(s => `<div style="background:var(--bg-card); padding:12px; border-radius:6px; border-left:4px solid ${color}; box-shadow:0 2px 4px rgba(0,0,0,0.05); width:280px; flex:0 0 auto; font-size:13px;"><b>[#${s.id}] ${esc(s.nombre)}</b> <span>(${esc(s.fecha_ausencia)})</span><br><small>${esc(s.concepto)} - ${esc(s.motivo)}</small><br>${btnHtml(s)}</div>`).join('');
+            if(list.length > limit) html += `<div style="display:flex; align-items:center; padding:10px;"><button class="btn-info" onclick="abrirVerMas('${col}')">Ver más registros (${list.length - limit})</button></div>`;
+            return html;
+        };
+
+        document.getElementById('k-CADUCADAS').innerHTML = buildHorizontal(buckets['CADUCADAS'], 'CADUCADAS', '#fd7e14', s => `<button class="btn-red" style="margin-top:8px; width:100%;" onclick="accion('estado_solicitud',{d1:${s.id}, d2:'RECHAZADA'})">Archivar Solicitud</button>`) || '<i style="color:#666; font-size:13px;">Sin registros operacionales.</i>';
+        document.getElementById('k-RECHAZADA').innerHTML = buildHorizontal(buckets['RECHAZADA'], 'RECHAZADA', '#dc3545', s => ``) || '<i style="color:#666; font-size:13px;">Sin registros operacionales.</i>';
+
+        ['PENDIENTE', 'APROBADA', 'EN_CURSO', 'CULMINADAS'].forEach(col => {
+            let list = buckets[col];
+            let topList = list.slice(0, 5);
+            let html = topList.map(s => {
+                let ts = dG.tipos_solicitud.find(t=>t.nombre===s.concepto);
+                let isMultidia = ts?.tipo === 'DIAS';
+                let infoStr = isMultidia ? `<p style="color:var(--primary); font-weight:bold; margin:5px 0;">Del ${esc(s.fecha_ausencia)} al ${esc(s.fecha_fin)}</p>` : `<p style="color:#dc3545; font-weight:bold; margin:5px 0;">El ${esc(s.fecha_ausencia)} de ${esc(s.hora_inicio)} a ${esc(s.hora_fin)}</p>`;
+                
+                let adjunto = (s.archivo && s.archivo !== "null" && String(s.archivo).trim() !== "") ? `<a href="/api/archivo/${s.archivo}" target="_blank" style="display:inline-block; background:#007bff; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:11px; font-weight:bold; margin-top:5px; margin-bottom:5px;">Ver Documento Adjunto</a><br>` : '';
+                
+                let boxEditMulti = col === 'PENDIENTE' && isMultidia ? `<div><input type="date" id="v-inicio-${s.id}" value="${s.fecha_ausencia}" style="margin-bottom:5px; font-size:11px;"><input type="date" id="v-fin-${s.id}" value="${s.fecha_fin}" style="font-size:11px;"></div>` : '';
+                let btns = col === 'PENDIENTE' ? `${boxEditMulti}<div style="display:flex; gap:5px; margin-top:5px;"><button class="btn-green" onclick="${isMultidia ? `accion('estado_solicitud',{d1:${s.id}, d2:'APROBADA', d3:v('v-inicio-${s.id}'), d4:v('v-fin-${s.id}')})` : `accion('estado_solicitud',{d1:${s.id}, d2:'APROBADA'})`}">Aprobar</button><button class="btn-red" onclick="accion('estado_solicitud',{d1:${s.id}, d2:'RECHAZADA'})">Denegar</button></div>` : `<button class="btn-red" onclick="if(confirm('¿Confirmar anulación de estado?')) accion('estado_solicitud',{d1:${s.id}, d2:'RECHAZADA'})">Revocar Aprobación</button>`;
+                return `<div class="k-card"><h4>[#${s.id}] ${esc(s.nombre)}</h4><span style="font-weight:bold; font-size:12px;">${esc(s.concepto)}</span>${infoStr}<div style="font-size:12px; margin-bottom:5px; color:#555;">${esc(s.motivo)}</div>${adjunto}${btns}</div>`;
+            }).join('');
+            
+            if(list.length > 5) {
+                html += `<button class="btn-info" style="width:100%; margin-top:10px;" onclick="abrirVerMas('${col}')">Mostrar lista completa (${list.length - 5})</button>`;
+            }
+            document.getElementById(`k-${col}`).innerHTML = html;
+        });
+    }
+
+    function abrirVerMas(col) {
+        let list = lastKanbanBuckets[col] || [];
+        let titles = {
+            'PENDIENTE': 'Solicitudes Pendientes de Revisión',
+            'APROBADA': 'Solicitudes Aprobadas',
+            'EN_CURSO': 'Solicitudes en Transcurso',
+            'CULMINADAS': 'Registro de Solicitudes Culminadas',
+            'CADUCADAS': 'Registro de Solicitudes Caducadas',
+            'RECHAZADA': 'Historial de Solicitudes Rechazadas'
+        };
+        document.getElementById('vm-titulo').innerText = titles[col] || 'Detalle de Solicitudes';
+        
+        document.getElementById('vm-lista').innerHTML = list.map(s => {
+            let ts = dG.tipos_solicitud.find(t=>t.nombre===s.concepto);
+            let isMultidia = ts?.tipo === 'DIAS';
+            let infoStr = isMultidia ? `Del ${esc(s.fecha_ausencia)} al ${esc(s.fecha_fin)}` : `El ${esc(s.fecha_ausencia)} de ${esc(s.hora_inicio)} a ${esc(s.hora_fin)}`;
+            let adjunto = (s.archivo && s.archivo !== "null" && String(s.archivo).trim() !== "") ? `<a href="/api/archivo/${s.archivo}" target="_blank" style="color:var(--primary); text-decoration:none; font-weight:bold; font-size:12px; margin-left:10px;">[Ver Documento Adjunto]</a>` : '';
+            
+            let btns = '';
+            if(col === 'PENDIENTE') {
+                let boxEditMulti = isMultidia ? `<div style="display:inline-block; margin-right:10px;"><input type="date" id="vm-inicio-${s.id}" value="${s.fecha_ausencia}" style="padding:4px; font-size:11px;"><input type="date" id="vm-fin-${s.id}" value="${s.fecha_fin}" style="padding:4px; font-size:11px;"></div>` : '';
+                let actionAprobar = isMultidia ? `accion('estado_solicitud',{d1:${s.id}, d2:'APROBADA', d3:v('vm-inicio-${s.id}'), d4:v('vm-fin-${s.id}')}); cerrarM('m-ver-mas');` : `accion('estado_solicitud',{d1:${s.id}, d2:'APROBADA'}); cerrarM('m-ver-mas');`;
+                btns = `<div style="margin-top:8px;">${boxEditMulti}<button class="btn-green" style="padding:4px 8px; font-size:12px; margin-right:5px;" onclick="${actionAprobar}">Aprobar Solicitud</button><button class="btn-red" style="padding:4px 8px; font-size:12px;" onclick="accion('estado_solicitud',{d1:${s.id}, d2:'RECHAZADA'}); cerrarM('m-ver-mas');">Denegar Solicitud</button></div>`;
+            } else if(col === 'APROBADA' || col === 'EN_CURSO' || col === 'CULMINADAS') {
+                btns = `<div style="margin-top:8px;"><button class="btn-red" style="padding:4px 8px; font-size:12px;" onclick="if(confirm('¿Confirmar anulación de estado?')) { accion('estado_solicitud',{d1:${s.id}, d2:'RECHAZADA'}); cerrarM('m-ver-mas'); }">Revocar Aprobación</button></div>`;
+            } else if(col === 'CADUCADAS') {
+                btns = `<div style="margin-top:8px;"><button class="btn-red" style="padding:4px 8px; font-size:12px;" onclick="accion('estado_solicitud',{d1:${s.id}, d2:'RECHAZADA'}); cerrarM('m-ver-mas');">Archivar Registro</button></div>`;
+            }
+
+            return `<div class="lista-modal-item">
+                <div class="lista-modal-header">
+                    <div>
+                        <strong style="font-size:14px;">[#${s.id}] ${esc(s.nombre)}</strong> - <span style="color:var(--text-muted); font-weight:bold;">${esc(s.concepto)}</span>
+                        <div style="color:#555; margin-top:4px; font-weight:bold;">${infoStr}</div>
+                        <div style="margin-top:4px; font-style:italic;">"${esc(s.motivo)}"</div>
+                    </div>
+                    ${adjunto}
+                </div>
+                ${btns}
+            </div>`;
+        }).join('');
+        
+        document.getElementById('m-ver-mas').classList.remove('hidden');
+    }
+
+    function renderCalendario() {
+        let y = fechaCalendario.getFullYear(), m = fechaCalendario.getMonth();
+        document.getElementById('calendar-grid').innerHTML = '';
+        document.getElementById('cal-month-year').innerText = new Date(y, m).toLocaleString('es-ES', {month:'long', year:'numeric'});
+        let html = `<div>Dom</div><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div>`.replace(/div/g, 'div class="cal-header"');
+        for(let i=0; i<new Date(y, m, 1).getDay(); i++) html += `<div class="cal-day" style="border:none; background:transparent;"></div>`;
+        for(let d=1; d<=new Date(y, m + 1, 0).getDate(); d++) {
+            let f_str = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            let feriadosDia = dG.feriados.filter(x => x.fecha === f_str);
+            let francosDia = dG.francos.filter(x => x.fecha === f_str);
+            let solicitudesDia = dG.solicitudes.filter(s => s.estado === 'APROBADA' && f_str >= s.fecha_ausencia && (s.fecha_fin === '' ? f_str === s.fecha_ausencia : f_str <= s.fecha_fin));
+            
+            let badges = '';
+            feriadosDia.forEach(f => badges += `<div class="cal-badge" style="background:#dc3545;">Feriado: ${esc(f.nombre)}</div>`);
+            francosDia.forEach(fr => badges += `<div class="cal-badge" style="background:#17a2b8;">Franco: ${esc(fr.nombre.split(' ')[0])} (${esc(fr.turno[0])})</div>`);
+            solicitudesDia.forEach(s => {
+                let em = s.concepto === 'VACACIONES' ? 'Vac:' : 'Lic:';
+                badges += `<div class="cal-badge" style="background:#28a745;">${em} ${esc(s.nombre.split(' ')[0])}</div>`;
+            });
+            html += `<div class="cal-day interact" onclick="abrirOpcionesDia('${f_str}')"><div class="cal-num">${d}</div>${badges}</div>`;
+        }
+        document.getElementById('calendar-grid').innerHTML = html;
+    }
+    function cambiarMes(dir) { fechaCalendario.setMonth(fechaCalendario.getMonth() + dir); renderCalendario(); }
+    function abrirOpcionesDia(fecha) { document.getElementById('cal-selected-date').value = fecha; document.getElementById('cal-modal-title').innerText = "Gestión: " + fecha; document.getElementById('box-admin-cal').classList.remove('hidden'); document.getElementById('m-cal-opts').classList.remove('hidden'); }
+    function bajarExcel() { let d=v('rD'), h=v('rH'); if(d&&h) window.open(`/api/reporte_excel?d_desde=${d}&d_hasta=${h}&suc=${v('rS')}`, '_blank'); else alert("Fechas requeridas."); }
+
+    function ejecutarGuardarConfig() {
+        let p = {
+            empresa: v('c_empresa'), color: v('c_color'), gps: v('c_gps'), tol: v('c_tol'), anti: v('c_anti'), vac_ant: v('c_vac'), intentos: v('c_log'),
+            jornada: v('c_jornada'), f_manana: v('c_fmanana'), f_tarde: v('c_ftarde'), gps_est: v('c_gps_est'), enc_aprueba: v('c_enc_aprueba'),
+            pw_pre: v('c_pwpre'), pw_suf: v('c_pwsuf'), vac_base: v('c_vac_base')
+        };
+        accion('guardar_config', p);
+    }
+
+    function renderConfig() {
+        if(dG.config) {
+            document.getElementById('c_empresa').value = dG.config.empresa_nombre; 
+            document.getElementById('c_color').value = dG.config.color_primario;
+            
+            document.getElementById('c_gps').value = dG.config.distancia_gps; 
+            document.getElementById('c_gps_est').value = dG.config.gps_estricto !== undefined ? dG.config.gps_estricto : 1;
+            document.getElementById('c_anti').value = dG.config.anti_rebote_min; 
+
+            document.getElementById('c_jornada').value = dG.config.jornada_minima_hs || 3.0;
+            document.getElementById('c_tol').value = dG.config.tolerancia_tarde;
+            document.getElementById('c_fmanana').value = dG.config.franco_manana_ingreso || "15:00";
+            document.getElementById('c_ftarde').value = dG.config.franco_tarde_salida || "12:00";
+            
+            document.getElementById('c_vac_base').value = dG.config.vacaciones_base || 14;
+            document.getElementById('c_vac').value = dG.config.vac_anticipo_dias;
+            document.getElementById('c_enc_aprueba').value = dG.config.encargados_aprueban || 0;
+
+            document.getElementById('c_log').value = dG.config.intentos_login;
+            document.getElementById('c_pwpre').value = dG.config.pw_prefijo || "Jz";
+            document.getElementById('c_pwsuf').value = dG.config.pw_sufijo || "*";
+        }
+    }
+    function renderConceptos() {
+        document.getElementById('b-conceptos').innerHTML = dG.tipos_solicitud.map(t => `<tr><td><b>${esc(t.nombre)}</b></td><td>${esc(t.tipo)}</td><td>${t.requiere_foto===1?'Sí':'No'}</td><td>${t.descuenta_dias===1?'Sí':'No'}</td><td>${t.horas_por_dia} hs</td><td><button class="btn-red" onclick="if(confirm('¿Confirmar eliminación de parámetro?')) accion('borrar_concepto',{nombre:'${esc(t.nombre)}'})">Eliminar</button></td></tr>`).join('');
+    }
+    
+    init();
+</script>
+</body></html>
