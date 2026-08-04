@@ -54,7 +54,7 @@ else
 fi
 
 # 5. Clonación del Repositorio
-REPO_URL="https://github.com/tu-usuario/tu-repositorio.git"
+REPO_URL="https://github.com/jonnyonz/jzpass.git"
 DIR_NAME="jzpass_erp"
 
 if [ -d "$DIR_NAME" ]; then
