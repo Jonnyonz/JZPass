@@ -33,7 +33,7 @@
 
         .modal { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:flex; justify-content:center; align-items:center; z-index:999;}
         .modal-content { background:white; padding:25px; border-radius:12px; width:90%; max-width: 450px; max-height: 90vh; overflow-y: auto; position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.3);}
-        .close-x { position: absolute; top: 15px; right: 20px; cursor: pointer; font-size: 22px; color: #666; font-weight: bold; background: none; border: none; padding: 0; line-height: 1; transition: 0.2s; box-shadow:none; width:auto; margin:0;}
+        .close-x { position: absolute; top: 15px; right: 20px; cursor: pointer; font-size: 18px; color: #666; font-weight: bold; background: none; border: none; padding: 0; line-height: 1; transition: 0.2s; box-shadow:none; width:auto; margin:0;}
         .close-x:hover { color: #dc3545; transform: scale(1.1); }
         
         .cal-header { text-align: center; font-weight: bold; padding: 8px; background: #007bff; color: white; border-radius: 4px; font-size:12px;}
@@ -47,7 +47,7 @@
 </head>
 <body>
     <div class="header" id="h-container">
-        <h1 id="h-title">SISTEMA SRE</h1>
+        <h1 id="h-title">Portal de Empleados</h1>
         <span>Acceso Personal</span>
     </div>
 
@@ -123,8 +123,7 @@
 
         <div id="panel-encargado" class="hidden" style="margin-top:35px; background:#eef4fc; padding:15px; border-radius:12px; border:1px solid #b6d4fe;">
             <h3 style="margin-top:0; margin-bottom:5px; color:#0056b3; text-align:center; font-size:18px;">Gestión de Sucursal</h3>
-            <p style="font-size:12px; color:#666; text-align:center; margin-bottom:15px;">Herramientas operativas del local</p>
-            <div style="display:flex; gap:10px;">
+            <div style="display:flex; gap:10px; margin-top:15px;">
                 <button onclick="document.getElementById('m-e-franco').classList.remove('hidden')" style="background:#fd7e14; margin-top:0; font-size:14px; box-shadow:0 4px 10px rgba(253,126,20,0.3);">Asignar Franco</button>
                 <button onclick="abrirCalendarioLocal()" style="background:#17a2b8; margin-top:0; font-size:14px; box-shadow:0 4px 10px rgba(23,162,184,0.3);">Calendario</button>
             </div>
@@ -138,7 +137,7 @@
     <!-- Modal para Asignar Franco (Encargados) -->
     <div id="m-e-franco" class="modal hidden">
         <div class="modal-content">
-            <button class="close-x" onclick="cerrarModal('m-e-franco')">✖</button>
+            <button class="close-x" onclick="cerrarModal('m-e-franco')">X</button>
             <h3 style="margin-top:0; color:#333;">Asignar Medio Franco</h3>
             <input type="text" id="ef-dni" list="ef-dniList" placeholder="Búsqueda de empleado..." autocomplete="off">
             <datalist id="ef-dniList"></datalist>
@@ -155,7 +154,7 @@
     <!-- Modal para Calendario (Encargados) -->
     <div id="m-e-cal" class="modal hidden">
         <div class="modal-content" style="max-width: 800px; width: 95%;">
-            <button class="close-x" onclick="cerrarModal('m-e-cal')">✖</button>
+            <button class="close-x" onclick="cerrarModal('m-e-cal')">X</button>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; margin-top:10px;">
                 <button onclick="cambiarMesLocal(-1)" style="width:auto; padding:8px 12px; background:#6c757d; margin:0;">Anterior</button>
                 <h3 id="ecal-month-year" style="margin:0; font-size:16px; color:#007bff; text-transform:uppercase;"></h3>
@@ -170,7 +169,7 @@
     <!-- Modal Historial Completo Empleado -->
     <div id="m-emp-historial" class="modal hidden">
         <div class="modal-content" style="max-width: 500px; width: 95%;">
-            <button class="close-x" onclick="cerrarModal('m-emp-historial')">✖</button>
+            <button class="close-x" onclick="cerrarModal('m-emp-historial')">X</button>
             <h3 style="margin-top:0; color:#333; border-bottom:1px solid #d1d9e6; padding-bottom:10px;">Historial Completo</h3>
             <div id="m-emp-historial-lista" style="max-height: 60vh; overflow-y: auto; padding-right:5px;"></div>
             <button onclick="cerrarModal('m-emp-historial')" style="background:#6c757d; width:100%; margin-top:15px;">Cerrar</button>
@@ -374,7 +373,7 @@
         function ficharGPS() {
             let msg = document.getElementById('f-msg');
             let btn = document.getElementById('btn-fichar');
-            msg.style.color = '#007bff'; msg.innerText = "Calculando posicionamiento...";
+            msg.style.color = '#007bff'; msg.innerText = "Obteniendo ubicación...";
             btn.disabled = true;
             
             if(!navigator.geolocation) {

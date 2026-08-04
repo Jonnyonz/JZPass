@@ -1,4 +1,8 @@
-<!DOCTYPE html><html lang="es" data-theme="light"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="/api/archivo/favicon.png">
 <title>JZ PASS Admin</title>
 <style>
@@ -14,7 +18,7 @@
     .content { flex: 1; padding: 30px; overflow-y:auto; display:flex; flex-direction:column; align-items: center; position:relative;} 
     .card { background: var(--bg-card); padding: 30px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 1500px; box-sizing: border-box; }
     
-    .theme-toggle { position: absolute; top: 20px; right: 30px; cursor:pointer; font-size: 24px; background:var(--bg-card); padding:5px 10px; border-radius:50%; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index:900;}
+    .theme-toggle { position: absolute; top: 20px; right: 30px; cursor:pointer; font-size: 13px; font-weight:bold; background:var(--bg-card); padding:8px 12px; border-radius:6px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index:900;}
     .hub-header { text-align: center; margin-bottom: 40px; }
     .hub-header h1 { margin: 0; color: var(--text-main); font-size: 32px; font-weight: 800; }
     .hub-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; margin-top: 20px; }
@@ -60,7 +64,7 @@
     .modal { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:flex; justify-content:center; align-items:center; z-index:999;}
     .modal-content { background:var(--bg-card); padding:25px; border-radius:12px; width:550px; max-width: 95%; max-height: 90vh; overflow-y: auto; position: relative;}
     
-    .close-x { position: absolute; top: 15px; right: 20px; cursor: pointer; font-size: 22px; color: var(--text-muted); font-weight: bold; background: none; border: none; padding: 0; line-height: 1; transition: 0.2s; z-index: 1000;}
+    .close-x { position: absolute; top: 15px; right: 20px; cursor: pointer; font-size: 18px; color: var(--text-muted); font-weight: bold; background: none; border: none; padding: 0; line-height: 1; transition: 0.2s; z-index: 1000;}
     .close-x:hover { color: #dc3545; transform: scale(1.1); }
     
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
@@ -84,7 +88,7 @@
 </head><body>
 
 <div id="pantalla-error-shield" class="hidden" style="position:fixed; top:20px; left:20px; right:20px; background:#f8d7da; color:#721c24; border:2px solid #f5c6cb; padding:20px; border-radius:8px; z-index:9999; font-family:monospace;">
-    <h3>⚠️ Alerta Frontend</h3>
+    <h3>Error del Sistema</h3>
     <p id="shield-error-texto"></p>
     <button onclick="location.reload(true)">Recargar</button>
 </div>
@@ -94,14 +98,14 @@
 <div class="sidebar hidden" id="mainSidebar">
     <h3 style="display:flex; justify-content:space-between; align-items:center;">
         <span id="sb-empresa-nombre">Admin</span>
-        <span onclick="toggleMenuMobile()" style="cursor:pointer; font-size:16px; padding:5px; background:rgba(255,255,255,0.1); border-radius:4px; display:inline-block;">✖</span>
+        <span onclick="toggleMenuMobile()" style="cursor:pointer; font-size:16px; padding:5px; background:rgba(255,255,255,0.1); border-radius:4px; display:inline-block;">X</span>
     </h3>
     <div class="nav-btn" id="btn-hub" onclick="verHub()" style="background:#28a745;">Volver al Hub</div>
     <div class="nav-btn" id="btn-asist" onclick="ver('t-asist')">Asistencias</div>
     <div class="nav-btn" onclick="ver('t-solic')">Solicitudes</div>
     <div class="nav-btn" onclick="ver('t-fer')">Calendario</div>
     <div class="nav-btn" onclick="ver('t-francos')">Medios Francos</div>
-    <div class="nav-btn" id="btn-nav-corp" onclick="ver('t-corporativa')">Estructura Corporativa</div>
+    <div class="nav-btn" id="btn-nav-corp" onclick="ver('t-corporativa')">Organización</div>
     <div class="nav-btn" id="btn-nav-ajustes" onclick="ver('t-ajustes')">Ajustes del Sistema</div>
     <div class="nav-btn" style="background:#dc3545; margin-top:20px;" onclick="logout()">Cerrar Sesión</div>
     
@@ -113,26 +117,26 @@
 <div class="content">
     <div id="t-hub" style="width:100%; max-width:1500px; margin: 0 auto;" class="hidden">
         <div class="hub-header">
-            <h1 id="hub-empresa-nombre">Panel Central</h1>
+            <h1 id="hub-empresa-nombre">Panel de Administración</h1>
             <p style="color:#555; font-size:16px;">Seleccione el módulo al que desea ingresar:</p>
         </div>
         <div class="hub-grid">
-            <div class="hub-card" onclick="ver('t-asist')"><h3>📍 Asistencias <span style="color:#007bff;">➡️</span></h3><div class="preview-box" id="p-asist">Cargando...</div></div>
-            <div class="hub-card" onclick="ver('t-solic')" style="border-top-color: #f0ad4e;"><h3>📝 Solicitudes <span style="color:#f0ad4e;">➡️</span></h3><div class="preview-box" id="p-solic">Cargando...</div></div>
-            <div class="hub-card" onclick="ver('t-fer')" style="border-top-color: #17a2b8;"><h3>📅 Calendario <span style="color:#17a2b8;">➡️</span></h3><div class="preview-box" id="p-cal">Cargando...</div></div>
-            <div class="hub-card" onclick="ver('t-francos')" style="border-top-color: #fd7e14;"><h3>🏖️ Medios Francos <span style="color:#fd7e14;">➡️</span></h3><div class="preview-box" id="p-francos">Cargando...</div></div>
-            <div id="hub-corp" class="hub-card" onclick="ver('t-corporativa')" style="border-top-color: #6c757d;"><h3>🏢 Estructura Corporativa <span style="color:#6c757d;">➡️</span></h3><div class="preview-box">Empresa, Sucursales y Personal</div></div>
-            <div id="hub-ajustes" class="hub-card" onclick="ver('t-ajustes')" style="border-top-color: #6f42c1;"><h3>🛠️ Ajustes del Sistema <span style="color:#6f42c1;">➡️</span></h3><div class="preview-box">Configuraciones, Conceptos y CSV</div></div>
+            <div class="hub-card" onclick="ver('t-asist')"><h3>Asistencias</h3><div class="preview-box" id="p-asist">Cargando...</div></div>
+            <div class="hub-card" onclick="ver('t-solic')" style="border-top-color: #f0ad4e;"><h3>Solicitudes</h3><div class="preview-box" id="p-solic">Cargando...</div></div>
+            <div class="hub-card" onclick="ver('t-fer')" style="border-top-color: #17a2b8;"><h3>Calendario</h3><div class="preview-box" id="p-cal">Cargando...</div></div>
+            <div class="hub-card" onclick="ver('t-francos')" style="border-top-color: #fd7e14;"><h3>Medios Francos</h3><div class="preview-box" id="p-francos">Cargando...</div></div>
+            <div id="hub-corp" class="hub-card" onclick="ver('t-corporativa')" style="border-top-color: #6c757d;"><h3>Organización</h3><div class="preview-box">Empresa, Sucursales y Personal</div></div>
+            <div id="hub-ajustes" class="hub-card" onclick="ver('t-ajustes')" style="border-top-color: #6f42c1;"><h3>Ajustes del Sistema</h3><div class="preview-box">Configuraciones, Conceptos y Datos</div></div>
         </div>
     </div>
 
     <div id="t-asist" class="card hidden">
-        <h2>Asistencias (Cálculo Automático)</h2>
+        <h2>Asistencias</h2>
         <div class="filters" style="background:#d4edda; border-color:#c3e6cb;">
             <strong>Liquidación Mensual:</strong> <input type="date" id="rD"> a <input type="date" id="rH"> <select id="rS"></select> <button class="btn-green" onclick="bajarExcel()">Descargar Resumen Consolidado</button>
         </div>
         <div class="filters">
-            <strong>Filtros Rápidos:</strong>
+            <strong>Filtros:</strong>
             <input type="date" id="fD" onchange="renderAsist()">
             <select id="fSuc_asist" onchange="renderAsist()"><option value="">Todas las sucursales</option></select>
             <input type="text" id="fA_n" placeholder="Buscar DNI o Nombre..." onkeyup="renderAsist()" style="flex-grow:1; min-width:200px;">
@@ -173,14 +177,14 @@
     </div>
 
     <div id="t-corporativa" class="card hidden">
-        <h2>Estructura Corporativa</h2>
+        <h2>Organización</h2>
         <div class="subtabs-nav">
-            <button id="btn-sub-identidad" onclick="switchCorpTab('sub-identidad')" class="active-sub">Identidad de Empresa</button>
+            <button id="btn-sub-identidad" onclick="switchCorpTab('sub-identidad')" class="active-sub">Personalización</button>
             <button id="btn-sub-sucursales" onclick="switchCorpTab('sub-sucursales')">Sucursales y Locales</button>
-            <button id="btn-sub-personal" onclick="switchCorpTab('sub-personal')">Personal y Legajos</button>
+            <button id="btn-sub-personal" onclick="switchCorpTab('sub-personal')">Gestión de Empleados</button>
         </div>
         <div id="sub-identidad" class="subtab-content">
-            <h3>Personalización de Marca</h3>
+            <h3>Personalización del Sistema</h3>
             <div class="form-grid" style="max-width:550px; margin-bottom:15px;">
                 <div class="form-group"><label>Nombre de Empresa</label><input type="text" id="c_empresa"></div>
                 <div class="form-group"><label>Color Corporativo</label><input type="color" id="c_color" style="height:40px; padding:0; cursor:pointer;"></div>
@@ -217,9 +221,9 @@
     <div id="t-ajustes" class="card hidden">
         <h2>Ajustes del Sistema</h2>
         <div class="subtabs-nav">
-            <button id="btn-sub-parametros" onclick="switchAjustesTab('sub-parametros')" class="active-sub">Parámetros Globales</button>
-            <button id="btn-sub-conceptos" onclick="switchAjustesTab('sub-conceptos')">Conceptos de Permisos</button>
-            <button id="btn-sub-import" onclick="switchAjustesTab('sub-import')">Ingesta Masiva CSV</button>
+            <button id="btn-sub-parametros" onclick="switchAjustesTab('sub-parametros')" class="active-sub">Configuración General</button>
+            <button id="btn-sub-conceptos" onclick="switchAjustesTab('sub-conceptos')">Tipos de Solicitudes</button>
+            <button id="btn-sub-import" onclick="switchAjustesTab('sub-import')">Importación de Datos (CSV)</button>
         </div>
         
         <div id="sub-parametros" class="subtab-content">
@@ -267,7 +271,7 @@
         </div>
 
         <div id="sub-conceptos" class="subtab-content hidden">
-            <h3>Configuración de Motivos Dinámicos</h3>
+            <h3>Configuración de Solicitudes</h3>
             <div class="filters">
                 <input type="text" id="tp_nombre" placeholder="Nombre (Ej: MUDANZA)">
                 <select id="tp_tipo"><option value="HORAS">HORAS</option><option value="DIAS">DÍAS</option></select>
@@ -279,7 +283,7 @@
             <div class="table-responsive"><table><thead><tr><th>Concepto</th><th>Naturaleza</th><th>Exige Certificado</th><th>Resta Vacaciones</th><th>Carga Horaria</th><th>Acción</th></tr></thead><tbody id="b-conceptos"></tbody></table></div>
         </div>
         <div id="sub-import" class="subtab-content hidden">
-            <h3>Carga Masiva Transaccional</h3>
+            <h3>Importación de Datos</h3>
             <div style="background:var(--filter-bg); border:1px solid var(--border); padding:20px; border-radius:8px; display:inline-block;">
                 <input type="file" id="csv_file" accept=".csv" style="margin-bottom:15px; display:block; border:none; background:transparent;">
                 <button class="btn-green" onclick="if(document.getElementById('csv_file').files[0]) accion('importar_csv', {archivo_csv: document.getElementById('csv_file').files[0]}); else alert('Archivo requerido.')">Ejecutar Importación</button>
@@ -288,37 +292,37 @@
     </div>
 </div>
 
-<div class="theme-toggle" onclick="toggleTheme()" id="theme-icon">🌙</div>
+<div class="theme-toggle" onclick="toggleTheme()" id="theme-icon">Modo Oscuro</div>
 
 <!-- MODAL VER MÁS (PAGINACIÓN VISUAL) -->
 <div id="m-ver-mas" class="modal hidden">
     <div class="modal-content" style="max-width: 650px; width: 95%;">
-        <button class="close-x" onclick="cerrarM('m-ver-mas')">✖</button>
+        <button class="close-x" onclick="cerrarM('m-ver-mas')">X</button>
         <h3 id="vm-titulo" style="margin-top:0; color:var(--primary); border-bottom:1px solid var(--border); padding-bottom:10px;">Detalle de Solicitudes</h3>
         <div id="vm-lista" style="max-height: 60vh; overflow-y: auto; padding-right:10px;"></div>
         <button onclick="cerrarM('m-ver-mas')" style="background:#6c757d; width:100%; margin-top:15px;">Cerrar Panel</button>
     </div>
 </div>
 
-<div id="m-convocatoria" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-convocatoria')">✖</button><h3>Lista de Convocados</h3><input type="hidden" id="conv-fecha"><select id="conv-sucursal" onchange="dibujarChecklistConvocados()"></select><div id="conv-checklist" style="max-height: 250px; overflow-y: auto; padding:10px; margin-bottom:15px; border:1px solid var(--border);"></div><button class="btn-green" onclick="guardarConvocatoria()" style="width:100%;">Guardar Convocatoria</button><button onclick="cerrarM('m-convocatoria')" style="background:#6c757d; width:100%; margin-top:5px;">Cancelar</button></div></div>
+<div id="m-convocatoria" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-convocatoria')">X</button><h3>Lista de Convocados</h3><input type="hidden" id="conv-fecha"><select id="conv-sucursal" onchange="dibujarChecklistConvocados()"></select><div id="conv-checklist" style="max-height: 250px; overflow-y: auto; padding:10px; margin-bottom:15px; border:1px solid var(--border);"></div><button class="btn-green" onclick="guardarConvocatoria()" style="width:100%;">Guardar Convocatoria</button><button onclick="cerrarM('m-convocatoria')" style="background:#6c757d; width:100%; margin-top:5px;">Cancelar</button></div></div>
 
-<div id="m-o" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-o')">✖</button><h3>Salida Manual Forzosa</h3><input type="hidden" id="eoI"><div class="form-group"><label>Hora de Salida:</label><input type="time" id="eoH"></div><div class="form-group"><label>Motivo:</label><input type="text" id="eoM"></div><button class="btn-warn" onclick="if(v('eoH')&&v('eoM')){accion('salida_manual',{d1:v('eoI'), d2:v('eoH'), d3:v('eoM')}); cerrarM('m-o')}" style="width:100%;">Forzar Operación</button><button onclick="cerrarM('m-o')" style="background:#6c757d; width:100%; margin-top:5px;">Cancelar</button></div></div>
+<div id="m-o" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-o')">X</button><h3>Salida Manual Forzosa</h3><input type="hidden" id="eoI"><div class="form-group"><label>Hora de Salida:</label><input type="time" id="eoH"></div><div class="form-group"><label>Motivo:</label><input type="text" id="eoM"></div><button class="btn-warn" onclick="if(v('eoH')&&v('eoM')){accion('salida_manual',{d1:v('eoI'), d2:v('eoH'), d3:v('eoM')}); cerrarM('m-o')}" style="width:100%;">Forzar Operación</button><button onclick="cerrarM('m-o')" style="background:#6c757d; width:100%; margin-top:5px;">Cancelar</button></div></div>
 
-<div id="m-corregir-entrada" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-corregir-entrada')">✖</button><h3>Corregir Horario de Ingreso</h3><input type="hidden" id="ceI"><div class="form-group"><label>Nueva Hora de Entrada:</label><input type="time" id="ceH"></div><div class="form-group"><label>Justificante Obligatorio:</label><input type="text" id="ceM" required></div><button class="btn-green" onclick="if(v('ceH')&&v('ceM').trim()!==''){accion('corregir_entrada',{d1:v('ceI'), d2:v('ceH'), d3:v('ceM')}); cerrarM('m-corregir-entrada')}else{alert('Información incompleta.')}" style="width:100%; margin-top:10px;">Aplicar Corrección</button><button onclick="cerrarM('m-corregir-entrada')" style="background:#6c757d; width:100%; margin-top:5px;">Cancelar</button></div></div>
+<div id="m-corregir-entrada" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-corregir-entrada')">X</button><h3>Corregir Horario de Ingreso</h3><input type="hidden" id="ceI"><div class="form-group"><label>Nueva Hora de Entrada:</label><input type="time" id="ceH"></div><div class="form-group"><label>Justificante Obligatorio:</label><input type="text" id="ceM" required></div><button class="btn-green" onclick="if(v('ceH')&&v('ceM').trim()!==''){accion('corregir_entrada',{d1:v('ceI'), d2:v('ceH'), d3:v('ceM')}); cerrarM('m-corregir-entrada')}else{alert('Información incompleta.')}" style="width:100%; margin-top:10px;">Aplicar Corrección</button><button onclick="cerrarM('m-corregir-entrada')" style="background:#6c757d; width:100%; margin-top:5px;">Cancelar</button></div></div>
 
-<div id="m-u" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-u')">✖</button><h3 id="u-modal-title">Legajo Empleado</h3><input type="hidden" id="eOld"><form id="form-user" onsubmit="guardarUsuario(event)"><div class="form-grid"><div class="form-group"><label>DNI</label><input type="text" id="eD" required></div><div class="form-group"><label>Nombre</label><input type="text" id="eN" required></div><div class="form-group"><label>Rol</label><select id="eR"><option value="2">Empleado</option><option value="1">Encargado</option><option value="0">Admin</option></select></div><div class="form-group"><label>Sucursal</label><select id="eS"></select></div><div class="form-group"><label>Hora Entrada</label><input type="time" id="eHE" required></div><div class="form-group"><label>Hora Salida</label><input type="time" id="eHS" required></div><div class="form-group"><label>Días Vacaciones</label><input type="number" id="eVac" required></div><div class="form-group"><label>Estado</label><select id="eA"><option value="1">Activo</option><option value="0">Inactivo</option></select></div><div class="form-group"><label>Mail</label><input type="email" id="eMail"></div><div class="form-group"><label>Teléfono</label><input type="text" id="eTel"></div><div class="form-group"><label>Calle</label><input type="text" id="eCalle"></div><div class="form-group"><label>Altura</label><input type="text" id="eAltura"></div><div class="form-group"><label>Depto</label><input type="text" id="eDepto"></div><div class="form-group"><label>CP</label><input type="text" id="eCP"></div><div class="form-group" style="grid-column: span 2;"><label>Adjuntar Mapa/Documento</label><input type="file" id="eMapa"><div id="link-mapa-actual"></div></div></div><button type="button" class="btn-red" id="btn-reset-pw" onclick="accion('reset_pass',{d1:v('eOld')}); cerrarM('m-u');" style="width:100%; display:none; margin:10px 0;">Reseteo de Password</button><button type="submit" class="btn-green" style="width:100%; margin-top: 10px;">Guardar Legajo</button><button type="button" onclick="cerrarM('m-u')" style="background:#6c757d; width:100%; margin-top:5px;">Cancelar</button></form></div></div>
+<div id="m-u" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-u')">X</button><h3 id="u-modal-title">Legajo Empleado</h3><input type="hidden" id="eOld"><form id="form-user" onsubmit="guardarUsuario(event)"><div class="form-grid"><div class="form-group"><label>DNI</label><input type="text" id="eD" required></div><div class="form-group"><label>Nombre</label><input type="text" id="eN" required></div><div class="form-group"><label>Rol</label><select id="eR"><option value="2">Empleado</option><option value="1">Encargado</option><option value="0">Admin</option></select></div><div class="form-group"><label>Sucursal</label><select id="eS"></select></div><div class="form-group"><label>Hora Entrada</label><input type="time" id="eHE" required></div><div class="form-group"><label>Hora Salida</label><input type="time" id="eHS" required></div><div class="form-group"><label>Días Vacaciones</label><input type="number" id="eVac" required></div><div class="form-group"><label>Estado</label><select id="eA"><option value="1">Activo</option><option value="0">Inactivo</option></select></div><div class="form-group"><label>Mail</label><input type="email" id="eMail"></div><div class="form-group"><label>Teléfono</label><input type="text" id="eTel"></div><div class="form-group"><label>Calle</label><input type="text" id="eCalle"></div><div class="form-group"><label>Altura</label><input type="text" id="eAltura"></div><div class="form-group"><label>Depto</label><input type="text" id="eDepto"></div><div class="form-group"><label>CP</label><input type="text" id="eCP"></div><div class="form-group" style="grid-column: span 2;"><label>Adjuntar Mapa/Documento</label><input type="file" id="eMapa"><div id="link-mapa-actual"></div></div></div><button type="button" class="btn-red" id="btn-reset-pw" onclick="accion('reset_pass',{d1:v('eOld')}); cerrarM('m-u');" style="width:100%; display:none; margin:10px 0;">Reseteo de Password</button><button type="submit" class="btn-green" style="width:100%; margin-top: 10px;">Guardar Legajo</button><button type="button" onclick="cerrarM('m-u')" style="background:#6c757d; width:100%; margin-top:5px;">Cancelar</button></form></div></div>
 
-<div id="m-h" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-h')">✖</button><h3>Historial: <span id="hNombre"></span></h3><div id="h-solicitudes" style="max-height: 40vh; overflow-y: auto; padding: 15px; border-radius: 6px; font-size: 13px; margin-bottom: 15px;"></div><button onclick="cerrarM('m-h')" style="background:#6c757d; width:100%;">Cerrar</button></div></div>
+<div id="m-h" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-h')">X</button><h3>Historial: <span id="hNombre"></span></h3><div id="h-solicitudes" style="max-height: 40vh; overflow-y: auto; padding: 15px; border-radius: 6px; font-size: 13px; margin-bottom: 15px;"></div><button onclick="cerrarM('m-h')" style="background:#6c757d; width:100%;">Cerrar</button></div></div>
 
-<div id="m-franco" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-franco')">✖</button><h3>Asignar Medio Franco</h3><div class="form-group"><label>Empleado</label><input type="text" id="cFranDni" list="cFranDniList" autocomplete="off"><datalist id="cFranDniList"></datalist></div><div class="form-group"><label>Fecha</label><input type="date" id="cFranFecha"></div><div class="form-group"><label>Turno Libre</label><select id="cFranTurno"><option value="MAÑANA">MAÑANA</option><option value="TARDE">TARDE</option></select></div><button class="btn-green" onclick="if(v('cFranDni')&&v('cFranFecha')) { accion('asignar_franco', {d1:v('cFranDni'), d2:v('cFranFecha'), d3:v('cFranTurno')}); cerrarM('m-franco'); }" style="width:100%;">Guardar Asignación</button><button onclick="cerrarM('m-franco')" style="background:#6c757d; width:100%; margin-top:5px;">Cancelar</button></div></div>
+<div id="m-franco" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-franco')">X</button><h3>Asignar Medio Franco</h3><div class="form-group"><label>Empleado</label><input type="text" id="cFranDni" list="cFranDniList" autocomplete="off"><datalist id="cFranDniList"></datalist></div><div class="form-group"><label>Fecha</label><input type="date" id="cFranFecha"></div><div class="form-group"><label>Turno Libre</label><select id="cFranTurno"><option value="MAÑANA">MAÑANA</option><option value="TARDE">TARDE</option></select></div><button class="btn-green" onclick="if(v('cFranDni')&&v('cFranFecha')) { accion('asignar_franco', {d1:v('cFranDni'), d2:v('cFranFecha'), d3:v('cFranTurno')}); cerrarM('m-franco'); }" style="width:100%;">Guardar Asignación</button><button onclick="cerrarM('m-franco')" style="background:#6c757d; width:100%; margin-top:5px;">Cancelar</button></div></div>
 
-<div id="m-e-franco" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-e-franco')">✖</button><h3>Editar Franco</h3><input type="hidden" id="eFranId"><b id="eFranEmp" style="display:block; margin-bottom:10px;"></b><div class="form-group"><label>Fecha</label><input type="date" id="eFranFecha"></div><div class="form-group"><label>Turno Libre</label><select id="eFranTurno"><option value="MAÑANA">MAÑANA</option><option value="TARDE">TARDE</option></select></div><button class="btn-green" onclick="accion('editar_franco', {d1:v('eFranId'), d2:v('eFranFecha'), d3:v('eFranTurno')}); cerrarM('m-e-franco')" style="width:100%;">Actualizar Registro</button><button onclick="cerrarM('m-e-franco')" style="background:#6c757d; width:100%; margin-top:5px;">Cancelar</button></div></div>
+<div id="m-e-franco" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-e-franco')">X</button><h3>Editar Franco</h3><input type="hidden" id="eFranId"><b id="eFranEmp" style="display:block; margin-bottom:10px;"></b><div class="form-group"><label>Fecha</label><input type="date" id="eFranFecha"></div><div class="form-group"><label>Turno Libre</label><select id="eFranTurno"><option value="MAÑANA">MAÑANA</option><option value="TARDE">TARDE</option></select></div><button class="btn-green" onclick="accion('editar_franco', {d1:v('eFranId'), d2:v('eFranFecha'), d3:v('eFranTurno')}); cerrarM('m-e-franco')" style="width:100%;">Actualizar Registro</button><button onclick="cerrarM('m-e-franco')" style="background:#6c757d; width:100%; margin-top:5px;">Cancelar</button></div></div>
 
-<div id="m-feriado" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-feriado')">✖</button><h3>Cargar Feriado</h3><div class="form-group"><label>Fecha del Feriado</label><input type="date" id="cFerFecha"></div><div class="form-group"><label>Motivo</label><input type="text" id="cFerMotivo"></div><div class="form-group"><label>Sucursales que Abren</label><select id="cFerSucs"><option value="TODAS">TODAS</option></select></div><button class="btn-green" onclick="if(v('cFerFecha')&&v('cFerMotivo')){accion('guardar_feriado', {d1:v('cFerFecha'), d2:v('cFerMotivo'), d3:v('cFerSucs')}); cerrarM('m-feriado')}" style="width:100%;">Guardar Feriado</button><button onclick="cerrarM('m-feriado')" style="background:#6c757d; width:100%; margin-top:5px;">Cancelar</button></div></div>
+<div id="m-feriado" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-feriado')">X</button><h3>Cargar Feriado</h3><div class="form-group"><label>Fecha del Feriado</label><input type="date" id="cFerFecha"></div><div class="form-group"><label>Motivo</label><input type="text" id="cFerMotivo"></div><div class="form-group"><label>Sucursales que Abren</label><select id="cFerSucs"><option value="TODAS">TODAS</option></select></div><button class="btn-green" onclick="if(v('cFerFecha')&&v('cFerMotivo')){accion('guardar_feriado', {d1:v('cFerFecha'), d2:v('cFerMotivo'), d3:v('cFerSucs')}); cerrarM('m-feriado')}" style="width:100%;">Guardar Feriado</button><button onclick="cerrarM('m-feriado')" style="background:#6c757d; width:100%; margin-top:5px;">Cancelar</button></div></div>
 
-<div id="m-s" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-s')">✖</button><h3>Editar Local</h3><input type="hidden" id="esOld"><div class="form-grid"><div class="form-group"><label>Nombre</label><input type="text" id="esN"></div><div class="form-group"><label>Hora de Cierre Regular</label><input type="time" id="esC"></div><div class="form-group"><label>Apertura en Feriados</label><input type="time" id="esApF"></div><div class="form-group"><label>Cierre en Feriados</label><input type="time" id="esCieF"></div><div class="form-group"><label>Latitud GPS</label><input type="text" id="esLa"></div><div class="form-group"><label>Longitud GPS</label><input type="text" id="esLo"></div></div><button class="btn-green" onclick="accion('editar_suc',{d1:v('esOld'), d2:v('esN'), d3:v('esLa'), d4:v('esLo'), d5:v('esC'), d6:v('esApF'), d7:v('esCieF')}); cerrarM('m-s')" style="width:100%; margin-top:10px;">Guardar Local</button><button onclick="cerrarM('m-s')" style="background:#6c757d; width:100%; margin-top:5px;">Cancelar</button></div></div>
+<div id="m-s" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-s')">X</button><h3>Editar Local</h3><input type="hidden" id="esOld"><div class="form-grid"><div class="form-group"><label>Nombre</label><input type="text" id="esN"></div><div class="form-group"><label>Hora de Cierre Regular</label><input type="time" id="esC"></div><div class="form-group"><label>Apertura en Feriados</label><input type="time" id="esApF"></div><div class="form-group"><label>Cierre en Feriados</label><input type="time" id="esCieF"></div><div class="form-group"><label>Latitud GPS</label><input type="text" id="esLa"></div><div class="form-group"><label>Longitud GPS</label><input type="text" id="esLo"></div></div><button class="btn-green" onclick="accion('editar_suc',{d1:v('esOld'), d2:v('esN'), d3:v('esLa'), d4:v('esLo'), d5:v('esC'), d6:v('esApF'), d7:v('esCieF')}); cerrarM('m-s')" style="width:100%; margin-top:10px;">Guardar Local</button><button onclick="cerrarM('m-s')" style="background:#6c757d; width:100%; margin-top:5px;">Cancelar</button></div></div>
 
-<div id="m-cal-opts" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-cal-opts')">✖</button><h3 id="cal-modal-title"></h3><input type="hidden" id="cal-selected-date"><div id="box-admin-cal" class="hidden"><h4>Feriado Nacional</h4><div class="form-group"><input type="text" id="cFerMotivo2" placeholder="Identificador del Feriado"></div><div class="form-group"><select id="cFerSucs2"><option value="TODAS">TODAS</option></select></div><button class="btn-green" onclick="accion('guardar_feriado', {d1:v('cal-selected-date'), d2:v('cFerMotivo2'), d3:v('cFerSucs2')}); cerrarM('m-cal-opts')" style="width:100%;">Registrar Feriado</button></div><hr style="margin:20px 0; border:0; border-top:1px solid var(--border);"><h4 style="margin-top:0;">Gestionar Convocatoria</h4><button class="btn-info" onclick="abrirConvocatoria()" style="width:100%; margin-bottom:15px;">Ver/Editar Personal Convocado</button><hr style="margin:20px 0; border:0; border-top:1px solid var(--border);"><h4 style="margin-top:0;">Asignar Franco</h4><div class="form-group"><input type="text" id="cFranDni2" list="cFranDniList2" placeholder="Búsqueda de empleado..." autocomplete="off"><datalist id="cFranDniList2"></datalist></div><div class="form-group"><select id="cFranTurno2"><option value="MAÑANA">MAÑANA</option><option value="TARDE">TARDE</option></select></div><button class="btn-green" onclick="accion('asignar_franco', {d1:v('cFranDni2'), d2:v('cal-selected-date'), d3:v('cFranTurno2')}); cerrarM('m-cal-opts')" style="width:100%;">Confirmar Asignación</button><button onclick="cerrarM('m-cal-opts')" style="background:#6c757d; width:100%; margin-top:15px;">Cerrar Panel</button></div></div>
+<div id="m-cal-opts" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-cal-opts')">X</button><h3 id="cal-modal-title"></h3><input type="hidden" id="cal-selected-date"><div id="box-admin-cal" class="hidden"><h4>Feriado Nacional</h4><div class="form-group"><input type="text" id="cFerMotivo2" placeholder="Identificador del Feriado"></div><div class="form-group"><select id="cFerSucs2"><option value="TODAS">TODAS</option></select></div><button class="btn-green" onclick="accion('guardar_feriado', {d1:v('cal-selected-date'), d2:v('cFerMotivo2'), d3:v('cFerSucs2')}); cerrarM('m-cal-opts')" style="width:100%;">Registrar Feriado</button></div><hr style="margin:20px 0; border:0; border-top:1px solid var(--border);"><h4 style="margin-top:0;">Gestionar Convocatoria</h4><button class="btn-info" onclick="abrirConvocatoria()" style="width:100%; margin-bottom:15px;">Ver/Editar Personal Convocado</button><hr style="margin:20px 0; border:0; border-top:1px solid var(--border);"><h4 style="margin-top:0;">Asignar Franco</h4><div class="form-group"><input type="text" id="cFranDni2" list="cFranDniList2" placeholder="Búsqueda de empleado..." autocomplete="off"><datalist id="cFranDniList2"></datalist></div><div class="form-group"><select id="cFranTurno2"><option value="MAÑANA">MAÑANA</option><option value="TARDE">TARDE</option></select></div><button class="btn-green" onclick="accion('asignar_franco', {d1:v('cFranDni2'), d2:v('cal-selected-date'), d3:v('cFranTurno2')}); cerrarM('m-cal-opts')" style="width:100%;">Confirmar Asignación</button><button onclick="cerrarM('m-cal-opts')" style="background:#6c757d; width:100%; margin-top:15px;">Cerrar Panel</button></div></div>
 
 <script>
     window.onerror = function(msg, url, line) {
@@ -341,13 +345,13 @@
         let t = localStorage.getItem('theme');
         if(!t) t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         document.documentElement.setAttribute('data-theme', t);
-        document.getElementById('theme-icon').innerText = t === 'dark' ? '☀️' : '🌙';
+        document.getElementById('theme-icon').innerText = t === 'dark' ? 'Modo Claro' : 'Modo Oscuro';
     }
     function toggleTheme() {
         let t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
         document.documentElement.setAttribute('data-theme', t);
         localStorage.setItem('theme', t);
-        document.getElementById('theme-icon').innerText = t === 'dark' ? '☀️' : '🌙';
+        document.getElementById('theme-icon').innerText = t === 'dark' ? 'Modo Claro' : 'Modo Oscuro';
     }
     initTheme();
 
@@ -813,4 +817,5 @@
     
     init();
 </script>
-</body></html>
+</body>
+</html>
