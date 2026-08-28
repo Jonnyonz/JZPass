@@ -4,336 +4,472 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="/api/archivo/favicon.png">
-<title>JZ PASS Admin</title>
+<title>JZPass - Panel Admin</title>
 <style>
-    :root { --bg-body: #eef2f5; --bg-card: #ffffff; --bg-sidebar: #1a252f; --sidebar-text: #ffffff; --text-main: #333333; --text-muted: #666666; --border: #d1d9e6; --primary: #007bff; --hover-primary: #0056b3; --table-hover: #f8f9fa; --filter-bg: #e9ecef; }
-    [data-theme="dark"] { --bg-body: #0f172a; --bg-card: #1e293b; --bg-sidebar: #0b1120; --sidebar-text: #e2e8f0; --text-main: #f8fafc; --text-muted: #94a3b8; --border: #334155; --table-hover: #334155; --filter-bg: #0f172a; }
+    :root {
+        --bg-page: #f4f6f9;
+        --bg-surface: #ffffff;
+        --accent: #2962ff;
+        --accent-hover: #1f4fd1;
+        --success: #00c853;
+        --danger: #d50000;
+        --warning: #ffc107;
+        --text-primary: #212529;
+        --text-secondary: #666666;
+        --text-muted: #999999;
+        --border: #e0e0e0;
+        
+        --badge-success-bg: #e8f5e9; --badge-success-text: #1b5e20;
+        --badge-danger-bg: #ffebee; --badge-danger-text: #b71c1c;
+        --badge-warning-bg: #fff8e1; --badge-warning-text: #f57f17;
+        --badge-info-bg: #e3f2fd; --badge-info-text: #0d47a1;
+        --badge-neutral-bg: #f5f5f5; --badge-neutral-text: #616161;
+        --table-hover: #f8f9fa;
+        --filter-bg: #fdfdfd;
+    }
+    [data-theme="dark"] {
+        --bg-page: #121212;
+        --bg-surface: #1e1e1e;
+        --accent: #4475ff;
+        --accent-hover: #5c8aff;
+        --success: #00e676;
+        --danger: #ff5252;
+        --warning: #ffd740;
+        --text-primary: #e0e0e0;
+        --text-secondary: #aaaaaa;
+        --text-muted: #777777;
+        --border: #333333;
+        
+        --badge-success-bg: rgba(0, 200, 83, 0.15); --badge-success-text: #69f0ae;
+        --badge-danger-bg: rgba(213, 0, 0, 0.15); --badge-danger-text: #ff8a80;
+        --badge-warning-bg: rgba(255, 193, 7, 0.15); --badge-warning-text: #ffe57f;
+        --badge-info-bg: rgba(41, 98, 255, 0.15); --badge-info-text: #82b1ff;
+        --badge-neutral-bg: rgba(255,255,255,0.1); --badge-neutral-text: #cccccc;
+        --table-hover: #2a2a2a;
+        --filter-bg: #181818;
+    }
     
-    body { font-family: 'Segoe UI', Roboto, sans-serif; background: var(--bg-body); color: var(--text-main); margin:0; display:flex; height:100vh; overflow:hidden; transition: background 0.3s, color 0.3s;}
-    .sidebar { width: 250px; background: var(--bg-sidebar); color: var(--sidebar-text); padding: 20px; display:flex; flex-direction:column; z-index: 999; transition: left 0.3s ease;}
-    .sidebar h3 { text-align: center; border-bottom: 1px solid var(--border); padding-bottom: 15px; margin-top: 0; font-size: 22px; color: var(--primary); }
-    .sidebar div.nav-btn { padding: 12px 15px; cursor:pointer; margin-bottom:8px; background: rgba(255,255,255,0.05); border-radius:6px; font-weight:bold; transition:0.2s;}
-    .sidebar div.nav-btn:hover, .sidebar .active { background: var(--primary); color:#fff; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg-page); color: var(--text-primary); margin:0; display:flex; height:100vh; overflow:hidden; transition: background 0.3s, color 0.3s;}
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
     
-    .content { flex: 1; padding: 30px; overflow-y:auto; display:flex; flex-direction:column; align-items: center; position:relative;} 
-    .card { background: var(--bg-card); padding: 30px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 1500px; box-sizing: border-box; }
+    .top-bar { position: fixed; top: 0; left: 0; right: 0; height: 4px; background: var(--accent); z-index: 9999; }
     
-    .theme-toggle { position: absolute; top: 20px; right: 30px; cursor:pointer; font-size: 13px; font-weight:bold; background:var(--bg-card); padding:8px 12px; border-radius:6px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index:900;}
-    .hub-header { text-align: center; margin-bottom: 40px; }
-    .hub-header h1 { margin: 0; color: var(--text-main); font-size: 32px; font-weight: 800; }
-    .hub-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; margin-top: 20px; }
-    .hub-card { background: var(--bg-card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-top: 5px solid var(--primary); cursor: pointer; transition: 0.2s;}
-    .hub-card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
-    .hub-card h3 { margin: 0 0 10px 0; font-size: 18px; display: flex; justify-content: space-between;}
-    .preview-box { background: var(--filter-bg); padding: 12px; border-radius: 6px; font-size: 13px; border: 1px solid var(--border); max-height: 160px; overflow-y: auto;}
+    /* Rail Nav */
+    .rail-nav { width: 72px; background: var(--bg-surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; padding: 20px 0; z-index: 900; transition: background 0.3s, border 0.3s;}
+    .rail-logo { margin-bottom: 25px; }
+    .rail-items { flex: 1; display: flex; flex-direction: column; gap: 12px; width: 100%; align-items: center; }
+    .rail-btn { background: transparent; border: none; width: 44px; height: 44px; border-radius: 8px; cursor: pointer; display: flex; justify-content: center; align-items: center; color: var(--text-secondary); transition: 0.2s; position: relative;}
+    .rail-btn:hover { background: var(--bg-page); color: var(--text-primary); }
+    .rail-btn.active { background: rgba(41, 98, 255, 0.1); color: var(--accent); }
+    .rail-bottom { display: flex; flex-direction: column; gap: 12px; align-items: center; margin-bottom: 10px; width: 100%;}
     
-    .subtabs-nav { display: flex; gap: 10px; border-bottom: 2px solid var(--border); padding-bottom: 10px; margin-bottom: 20px; flex-wrap: wrap;}
-    .subtabs-nav button { background: var(--filter-bg); color: var(--text-main); padding: 8px 14px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;}
-    .subtabs-nav button.active-sub { background: var(--primary); color: white; }
+    .content-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .content-header { background: var(--bg-surface); border-bottom: 1px solid var(--border); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; min-height: 64px; box-sizing: border-box;}
+    .content-header h1 { margin: 0; font-size: 20px; font-weight: 600; color: var(--text-primary); display:flex; align-items:center; gap:10px;}
+    .content { flex: 1; padding: 30px; overflow-y:auto; display:flex; flex-direction:column; align-items: center; } 
+    
+    .card { flex-shrink: 0; background: var(--bg-surface); border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); width: 100%; max-width: 1500px; box-sizing: border-box; border: 1px solid var(--border); overflow: visible; }
+    .card-body { padding: 30px; }
+    
+    .hub-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; }
+    .hub-card { background: var(--bg-surface); padding: 20px; border-radius: 10px; border: 1px solid var(--border); cursor: pointer; transition: 0.2s; display:flex; flex-direction:column; gap:15px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
+    .hub-card:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.06); border-color: var(--accent);}
+    .hub-card h3 { margin: 0; font-size: 16px; font-weight: 600; display: flex; align-items: center; gap:8px; color: var(--text-primary);}
+    .preview-box { background: var(--bg-page); padding: 12px; border-radius: 6px; font-size: 13px; color: var(--text-secondary); max-height: 120px; overflow-y: auto;}
+    
+    .subtabs-nav { display: flex; gap: 10px; border-bottom: 1px solid var(--border); padding-bottom: 15px; margin-bottom: 25px; flex-wrap: wrap;}
+    .subtabs-nav button { background: transparent; color: var(--text-secondary); padding: 8px 16px; border: 1px solid var(--border); border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s;}
+    .subtabs-nav button:hover { background: var(--bg-page); color: var(--text-primary); }
+    .subtabs-nav button.active-sub { background: var(--accent); color: white; border-color: var(--accent); }
 
-    .table-responsive { width: 100%; overflow-x: auto; margin-top: 10px; border: 1px solid var(--border); border-radius: 6px;}
-    table { width: 100%; border-collapse: collapse; min-width: 800px; } 
-    th, td { padding: 12px; border-bottom: 1px solid var(--border); text-align: left; font-size:14px;} 
-    th { background: var(--primary); color: white; cursor:pointer;}
+    .table-responsive { width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: 8px;}
+    table { width: 100%; border-collapse: collapse; min-width: 800px; background: var(--bg-surface); } 
+    th, td { padding: 14px; border-bottom: 1px solid var(--border); text-align: left; font-size:14px;} 
+    th { background: var(--bg-page); color: var(--text-secondary); font-weight: 600; text-transform: none;}
+    tr:last-child td { border-bottom: none; }
     tr:hover { background: var(--table-hover); }
     
-    button { padding: 8px 14px; background: var(--primary); color: white; border: none; cursor: pointer; border-radius:4px; font-weight:bold; transition:0.2s;}
-    button:hover { filter: brightness(1.1); }
-    .btn-red { background: #dc3545; } .btn-green { background: #28a745; } .btn-warn {background:#f0ad4e; color:#000;} .btn-info { background:#17a2b8; }
+    button { padding: 10px 16px; background: var(--accent); color: white; border: none; cursor: pointer; border-radius:8px; font-weight:600; transition:0.2s; display:inline-flex; align-items:center; gap:6px; justify-content: center;}
+    button:hover { background: var(--accent-hover); }
+    .btn-secondary { background: transparent; color: var(--text-secondary); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: var(--bg-page); color: var(--text-primary); }
+    .btn-red { background: var(--danger); } .btn-red:hover { filter:brightness(1.1); background:var(--danger); }
+    .btn-warn { background: var(--warning); color: #000; } .btn-warn:hover { filter:brightness(1.05); background:var(--warning); }
     
     .hidden { display: none !important; }
-    .filters { background: var(--filter-bg); padding:15px; border-radius:8px; margin-bottom:15px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; border: 1px solid var(--border);}
-    input, select { background:var(--bg-card); color:var(--text-main); border:1px solid var(--border); padding:8px; border-radius:4px; outline:none; transition: 0.2s;}
-    input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,123,255,0.2); }
+    .filters { background: var(--filter-bg); padding:15px; border-radius:8px; margin-bottom:20px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; border: 1px solid var(--border);}
+    input, select { background:var(--bg-surface); color:var(--text-primary); border:1px solid var(--border); padding:10px 12px; border-radius:8px; outline:none; transition: 0.2s; font-size:14px;}
+    input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(41,98,255,0.15); }
     
-    .kanban { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; align-items:start; margin-bottom: 20px;}
-    .k-col { background: var(--filter-bg); padding: 15px; border-radius: 8px; border-top: 4px solid var(--border); min-height:300px;}
-    .k-col h3 { margin-top: 0; margin-bottom: 10px; font-size: 16px; }
-    .k-card { background: var(--bg-card); padding: 15px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 15px; font-size:14px;}
-    .k-card h4 { margin-top: 0; margin-bottom: 5px; font-size: 15px; }
-    
-    .caducadas-box { background: rgba(253, 126, 20, 0.1); border: 1px solid #fd7e14; border-radius: 8px; padding: 15px; margin-bottom: 15px; max-height: 30vh; overflow-y: auto;}
-    .rechazadas-box { background: rgba(220, 53, 69, 0.1); border: 1px solid #dc3545; border-radius: 8px; padding: 15px; max-height: 30vh; overflow-y: auto;}
+    .badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight:700; display: inline-flex; align-items: center; gap: 4px; letter-spacing: 0.3px;}
+    .badge-info { background: var(--badge-info-bg); color: var(--badge-info-text); }
+    .badge-warning { background: var(--badge-warning-bg); color: var(--badge-warning-text); }
+    .badge-success { background: var(--badge-success-bg); color: var(--badge-success-text); }
+    .badge-danger { background: var(--badge-danger-bg); color: var(--badge-danger-text); }
+    .badge-neutral { background: var(--badge-neutral-bg); color: var(--badge-neutral-text); }
 
-    .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 15px; min-width: 500px;}
-    .cal-header { text-align: center; font-weight: bold; padding: 10px; background: var(--primary); color: white; border-radius: 4px; }
-    .cal-day { min-height: 90px; border: 1px solid var(--border); padding: 6px; background: var(--bg-card); border-radius: 4px; display:flex; flex-direction:column; transition:0.2s;}
-    .cal-num { font-weight: bold; font-size:16px; margin-bottom: 5px;}
-    .cal-badge { font-size: 10px; padding: 3px; border-radius: 3px; margin-bottom: 2px; color: white; font-weight:bold; word-wrap:break-word;}
+    /* Kanban con tarjetas de altura estricta y truncamiento */
+    .kanban { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; align-items:start; margin-bottom: 20px;}
+    .k-col { background: var(--bg-page); padding: 15px; border-radius: 8px; border: 1px solid var(--border); display: flex; flex-direction: column; }
+    .k-col h3 { margin-top: 0; margin-bottom: 15px; font-size: 15px; color: var(--text-secondary); display:flex; align-items:center; gap:6px; flex-shrink: 0;}
+    .k-list { display: flex; flex-direction: column; gap: 12px; }
+
+    .k-card { background: var(--bg-surface); padding: 15px; border-radius: 8px; border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.02); font-size:13px; display:flex; flex-direction:column; gap:8px; height: 240px; box-sizing: border-box;}
+    .k-card h4 { margin: 0; font-size: 14px; font-weight: 600; color:var(--text-primary); flex-shrink:0;}
+    .text-clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+    .list-box { background: var(--bg-page); border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-bottom: 15px; }
+
+    .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 15px; min-width: 500px;}
+    .cal-header { text-align: center; font-weight: 600; padding: 10px; background: var(--bg-page); color: var(--text-secondary); border-radius: 6px; border: 1px solid var(--border); font-size:13px;}
+    .cal-day { min-height: 90px; border: 1px solid var(--border); padding: 8px; background: var(--bg-surface); border-radius: 6px; display:flex; flex-direction:column; transition:0.2s;}
+    .cal-num { font-weight: 600; font-size:15px; margin-bottom: 8px; color:var(--text-primary);}
+    .cal-badge { font-size: 10px; padding: 4px; border-radius: 4px; margin-bottom: 4px; font-weight:600;}
     
-    .modal { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:flex; justify-content:center; align-items:center; z-index:999;}
-    .modal-content { background:var(--bg-card); padding:25px; border-radius:12px; width:550px; max-width: 95%; max-height: 90vh; overflow-y: auto; position: relative;}
+    .modal { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:flex; justify-content:center; align-items:center; z-index:999; backdrop-filter: blur(2px);}
+    .modal-content { background:var(--bg-surface); padding:30px; border-radius:12px; width:550px; max-width: 95%; max-height: 90vh; overflow-y: auto; position: relative; border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.1);}
     
-    .close-x { position: absolute; top: 15px; right: 20px; cursor: pointer; font-size: 18px; color: var(--text-muted); font-weight: bold; background: none; border: none; padding: 0; line-height: 1; transition: 0.2s; z-index: 1000;}
-    .close-x:hover { color: #dc3545; transform: scale(1.1); }
+    .close-x { position: absolute; top: 15px; right: 15px; cursor: pointer; color: var(--text-muted); background: none; border: none; padding: 5px; transition: 0.2s; z-index: 1000; width:auto; margin:0;}
+    .close-x:hover { color: var(--danger); background: var(--bg-page); border-radius: 4px;}
     
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-    .settings-group { background: var(--filter-bg); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);}
-    .settings-group h4 { margin-top: 0; margin-bottom: 18px; color: var(--primary); font-size: 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .settings-group { background: var(--bg-page); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+    .settings-group h4 { margin-top: 0; margin-bottom: 18px; color: var(--text-primary); font-size: 15px; border-bottom: 1px solid var(--border); padding-bottom: 8px; display:flex; align-items:center; gap:6px;}
     .form-group { display: flex; flex-direction: column; }
-    .form-group label { margin-bottom: 6px; font-weight: 600; font-size: 13px; color: var(--text-muted); }
+    .form-group label { margin-bottom: 6px; font-weight: 600; font-size: 13px; color: var(--text-secondary); }
 
-    .lista-modal-item { border: 1px solid var(--border); border-left: 4px solid var(--primary); padding: 12px; border-radius: 6px; margin-bottom: 10px; background: var(--bg-card); font-size: 13px; }
-    .lista-modal-header { display: flex; justify-content: space-between; align-items: flex-start; }
+    .lista-modal-item { border: 1px solid var(--border); padding: 15px; border-radius: 8px; margin-bottom: 10px; background: var(--bg-surface); font-size: 13px; }
+    .lista-modal-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom:10px; }
+    
+    .watermark-footer { flex-shrink: 0; margin-top: auto; padding: 20px; text-align: center; color: var(--text-muted); font-size: 12px; display:flex; flex-direction:column; align-items:center; gap:8px;}
+    .watermark-footer a { color: var(--text-secondary); text-decoration: none; font-weight:600; }
+    .watermark-footer a:hover { color: var(--accent); }
 
     @media (max-width: 768px) {
-        .sidebar { position: fixed; top: 0; left: -290px; height: 100vh; box-shadow: 5px 0 15px rgba(0,0,0,0.2); }
-        .sidebar.active-mobile { left: 0 !important; }
+        .rail-nav { position: fixed; top: 0; left: -80px; height: 100vh; box-shadow: 2px 0 10px rgba(0,0,0,0.1); }
+        .rail-nav.active-mobile { left: 0 !important; }
         .content { padding: 15px; width: 100%; overflow-x: hidden; }
         .kanban { grid-template-columns: 1fr; }
         .form-grid { grid-template-columns: 1fr; }
-        #btn-toggle-mobile { display: block !important; }
+        #btn-toggle-mobile { display: flex !important; }
+        .content-header { padding: 15px; flex-direction: column; gap: 10px; align-items: flex-start;}
     }
 </style>
 </head><body>
+<div class="top-bar"></div>
 
-<div id="pantalla-error-shield" class="hidden" style="position:fixed; top:20px; left:20px; right:20px; background:#f8d7da; color:#721c24; border:2px solid #f5c6cb; padding:20px; border-radius:8px; z-index:9999; font-family:monospace;">
-    <h3>Error del Sistema</h3>
+<div id="pantalla-error-shield" class="hidden" style="position:fixed; top:20px; left:20px; right:20px; background:var(--badge-danger-bg); color:var(--badge-danger-text); border:1px solid var(--danger); padding:20px; border-radius:8px; z-index:9999; font-family:monospace;">
+    <h3 style="margin-top:0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:bottom;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> Error del Sistema</h3>
     <p id="shield-error-texto"></p>
-    <button onclick="location.reload(true)">Recargar</button>
+    <button onclick="location.reload(true)" class="btn-secondary" style="background:var(--bg-surface);">Recargar</button>
 </div>
 
-<button id="btn-toggle-mobile" onclick="toggleMenuMobile()" style="display:none; position:fixed; bottom:20px; right:20px; width:60px; height:60px; border-radius:50%; background:var(--primary); color:white; font-size:24px; z-index:1000; border:none; box-shadow:0 4px 12px rgba(0,0,0,0.3); font-weight:bold; cursor:pointer;">☰</button>
+<button id="btn-toggle-mobile" onclick="toggleMenuMobile()" style="display:none; position:fixed; bottom:20px; right:20px; width:50px; height:50px; border-radius:25px; background:var(--accent); color:white; font-size:24px; z-index:1000; border:none; box-shadow:0 4px 12px rgba(0,0,0,0.2); justify-content:center; align-items:center;">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+</button>
 
-<div class="sidebar hidden" id="mainSidebar">
-    <h3 style="display:flex; justify-content:space-between; align-items:center;">
-        <span id="sb-empresa-nombre">Admin</span>
-        <span onclick="toggleMenuMobile()" style="cursor:pointer; font-size:16px; padding:5px; background:rgba(255,255,255,0.1); border-radius:4px; display:inline-block;">X</span>
-    </h3>
-    <div class="nav-btn" id="btn-hub" onclick="verHub()" style="background:#28a745;">Volver al Hub</div>
-    <div class="nav-btn" id="btn-asist" onclick="ver('t-asist')">Asistencias</div>
-    <div class="nav-btn" onclick="ver('t-solic')">Solicitudes</div>
-    <div class="nav-btn" onclick="ver('t-fer')">Calendario</div>
-    <div class="nav-btn" onclick="ver('t-francos')">Medios Francos</div>
-    <div class="nav-btn" id="btn-nav-corp" onclick="ver('t-corporativa')">Organización</div>
-    <div class="nav-btn" id="btn-nav-ajustes" onclick="ver('t-ajustes')">Ajustes del Sistema</div>
-    <div class="nav-btn" style="background:#dc3545; margin-top:20px;" onclick="logout()">Cerrar Sesión</div>
-    
-    <div style="margin-top: auto; text-align: center; font-size: 11px; color: rgba(255,255,255,0.6); padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); line-height: 1.6;">
-        v2.1 - Powered by <a href="https://jz-tech.mywire.org/" target="_blank" style="color: #fff; text-decoration: none; font-weight: bold;">Jz TechSolutions</a><br>
-        <a href="#" onclick="document.getElementById('m-privacidad').classList.remove('hidden'); return false;" style="color: #ccc; text-decoration: underline;">Privacidad</a> | 
-        <a href="#" onclick="document.getElementById('m-terminos').classList.remove('hidden'); return false;" style="color: #ccc; text-decoration: underline;">Términos</a>
+<div class="rail-nav" id="mainSidebar">
+    <div class="rail-logo">
+        <svg width="32" height="32" viewBox="0 0 203 281">
+            <path d="M 73.0,261.5 L 62.0,261.5 L 49.0,256.5 L 45.5,253.0 L 43.5,247.0 L 45.5,237.0 L 51.0,232.5 L 61.0,231.5 L 68.5,236.0 L 78.0,252.5 L 86.0,252.5 L 92.5,240.0 L 94.5,219.0 L 47.0,218.5 L 44.5,216.0 L 44.5,212.0 L 89.0,146.5 L 89.5,188.0 L 74.5,210.0 L 94.5,210.0 L 94.5,83.0 L 74.0,86.5 L 63.0,92.5 L 54.5,103.0 L 50.5,114.0 L 46.0,114.5 L 44.5,113.0 L 44.5,80.0 L 52.0,73.5 L 94.5,73.0 L 93.5,33.0 L 91.5,29.0 L 87.0,26.5 L 70.0,24.5 L 70.0,19.5 L 140.0,19.5 L 141.0,24.5 L 127.0,27.5 L 123.5,34.0 L 123.5,73.0 L 158.0,73.5 L 161.5,76.0 L 161.5,80.0 L 129.0,128.5 L 128.5,88.0 L 132.5,81.0 L 123.5,81.0 L 122.5,208.0 L 137.0,206.5 L 148.0,200.5 L 158.5,183.0 L 160.5,175.0 L 166.0,173.5 L 166.5,214.0 L 163.0,218.5 L 121.0,218.5 L 113.5,238.0 L 101.0,251.5 L 88.0,258.5 L 73.0,261.5 Z" fill="#ffffff" stroke="#000000" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+        </svg>
+    </div>
+    <div class="rail-items">
+        <button class="rail-btn active" id="nav-t-hub" title="Panel Central" onclick="verHub()">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+        </button>
+        <button class="rail-btn" id="nav-t-asist" title="Asistencias" onclick="ver('t-asist')">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        </button>
+        <button class="rail-btn" id="nav-t-solic" title="Solicitudes" onclick="ver('t-solic')">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+        </button>
+        <button class="rail-btn" id="nav-t-fer" title="Calendario" onclick="ver('t-fer')">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+        </button>
+        <button class="rail-btn" id="nav-t-francos" title="Medios Francos" onclick="ver('t-francos')">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>
+        </button>
+        <button class="rail-btn" id="nav-t-corporativa" title="Organización" onclick="ver('t-corporativa')">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+        </button>
+        <button class="rail-btn" id="nav-t-ajustes" title="Ajustes del Sistema" onclick="ver('t-ajustes')">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        </button>
+    </div>
+    <div class="rail-bottom">
+        <button class="rail-btn" onclick="toggleTheme()" title="Cambiar Tema">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        </button>
+        <button class="rail-btn" style="color:var(--danger);" onclick="logout()" title="Cerrar Sesión">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+        </button>
     </div>
 </div>
 
-<div class="content">
-    <div id="t-hub" style="width:100%; max-width:1500px; margin: 0 auto;" class="hidden">
-        <div class="hub-header">
-            <h1 id="hub-empresa-nombre">Panel de Administración</h1>
-            <p style="color:#555; font-size:16px;">Seleccione el módulo al que desea ingresar:</p>
-        </div>
-        <div class="hub-grid">
-            <div class="hub-card" onclick="ver('t-asist')"><h3>Asistencias</h3><div class="preview-box" id="p-asist">Cargando...</div></div>
-            <div class="hub-card" onclick="ver('t-solic')" style="border-top-color: #f0ad4e;"><h3>Solicitudes</h3><div class="preview-box" id="p-solic">Cargando...</div></div>
-            <div class="hub-card" onclick="ver('t-fer')" style="border-top-color: #17a2b8;"><h3>Calendario</h3><div class="preview-box" id="p-cal">Cargando...</div></div>
-            <div class="hub-card" onclick="ver('t-francos')" style="border-top-color: #fd7e14;"><h3>Medios Francos</h3><div class="preview-box" id="p-francos">Cargando...</div></div>
-            <div id="hub-corp" class="hub-card" onclick="ver('t-corporativa')" style="border-top-color: #6c757d;"><h3>Organización</h3><div class="preview-box">Empresa, Sucursales y Personal</div></div>
-            <div id="hub-ajustes" class="hub-card" onclick="ver('t-ajustes')" style="border-top-color: #6f42c1;"><h3>Ajustes del Sistema</h3><div class="preview-box">Configuraciones, Conceptos y Datos</div></div>
-        </div>
-    </div>
-
-    <div id="t-asist" class="card hidden">
-        <h2>Asistencias</h2>
-        <div class="filters" style="background:#d4edda; border-color:#c3e6cb;">
-            <strong>Liquidación Mensual:</strong> <input type="date" id="rD"> a <input type="date" id="rH"> <select id="rS"></select> <button class="btn-green" onclick="bajarExcel()">Descargar Resumen Consolidado</button>
-        </div>
-        <div class="filters">
-            <strong>Filtros:</strong>
-            <input type="date" id="fD" onchange="renderAsist()">
-            <select id="fSuc_asist" onchange="renderAsist()"><option value="">Todas las sucursales</option></select>
-            <input type="text" id="fA_n" placeholder="Buscar DNI o Nombre..." onkeyup="renderAsist()" style="flex-grow:1; min-width:200px;">
-            <label style="margin-left:10px; cursor:pointer; background:#e0f7fa; padding:8px 12px; border-radius:6px; font-weight:bold; color:#00695c; border:1px solid #b2ebf2;">
-                <input type="checkbox" id="fIncNoFichados" onchange="renderAsist()"> Incluir ausentes
-            </label>
-        </div>
-        <div class="table-responsive"><table><thead><tr><th>Fecha</th><th>Nombre</th><th>Sucursal</th><th>Ingreso</th><th>Salida</th><th>GPS</th><th>Acción</th></tr></thead><tbody id="b-asist"></tbody></table></div>
+<div class="content-wrapper">
+    <div class="content-header">
+        <h1 id="header-title">JZPass</h1>
+        <div id="header-actions"></div>
     </div>
     
-    <div id="t-solic" class="card hidden">
-        <h2>Gestión de Solicitudes</h2>
-        <div class="kanban">
-            <div class="k-col pend"><h3>Pendientes</h3><div id="k-PENDIENTE"></div></div>
-            <div class="k-col apro"><h3>Aprobadas</h3><div id="k-APROBADA"></div></div>
-            <div class="k-col curso"><h3>En Curso Hoy</h3><div id="k-EN_CURSO"></div></div>
-            <div class="k-col culm"><h3>Culminadas</h3><div id="k-CULMINADAS"></div></div>
-        </div>
-        <div class="caducadas-box"><h3 style="margin-top:0; color:#fd7e14;">Solicitudes Caducadas</h3><div id="k-CADUCADAS" style="display:flex; flex-wrap:wrap; gap:10px; overflow-x:auto;"></div></div>
-        <div class="rechazadas-box"><h3 style="margin-top:0; color:#dc3545;">Historial de Rechazadas</h3><div id="k-RECHAZADA" style="display:flex; flex-wrap:wrap; gap:10px; overflow-x:auto;"></div></div>
-    </div>
-    
-    <div id="t-fer" class="card hidden">
-        <h2>Calendario</h2>
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-            <button onclick="cambiarMes(-1)" style="color:white; background:#6c757d;">Anterior</button>
-            <h3 id="cal-month-year" style="margin:0; font-size:24px; color:var(--primary); text-transform:uppercase;"></h3>
-            <button onclick="cambiarMes(1)" style="color:white; background:#6c757d;">Siguiente</button>
-        </div>
-        <div class="filters"><button class="btn-green" onclick="document.getElementById('m-feriado').classList.remove('hidden')">Cargar Feriado</button></div>
-        <div class="table-responsive" style="border:none;"><div id="calendar-grid" class="calendar"></div></div>
-    </div>
-
-    <div id="t-francos" class="card hidden">
-        <h2>Gestión de Medios Francos</h2>
-        <div class="filters"><button class="btn-green" onclick="document.getElementById('m-franco').classList.remove('hidden')">Asignar Medio Franco</button></div>
-        <div class="table-responsive"><table><thead><tr><th>Empleado</th><th>Sucursal</th><th>Fecha Asignada</th><th>Turno</th><th>Asignado Por</th><th>Acción</th></tr></thead><tbody id="b-francos"></tbody></table></div>
-    </div>
-
-    <div id="t-corporativa" class="card hidden">
-        <h2>Organización</h2>
-        <div class="subtabs-nav">
-            <button id="btn-sub-identidad" onclick="switchCorpTab('sub-identidad')" class="active-sub">Personalización</button>
-            <button id="btn-sub-sucursales" onclick="switchCorpTab('sub-sucursales')">Sucursales y Locales</button>
-            <button id="btn-sub-personal" onclick="switchCorpTab('sub-personal')">Gestión de Empleados</button>
-        </div>
-        <div id="sub-identidad" class="subtab-content">
-            <h3>Personalización del Sistema</h3>
-            <div class="form-grid" style="max-width:550px; margin-bottom:15px;">
-                <div class="form-group"><label>Nombre de Empresa</label><input type="text" id="c_empresa"></div>
-                <div class="form-group"><label>Color Corporativo</label><input type="color" id="c_color" style="height:40px; padding:0; cursor:pointer;"></div>
-                <div class="form-group" style="grid-column: span 2;">
-                    <label>Logo de la Pestaña (Favicon PNG/JPG)</label>
-                    <div style="display:flex; gap:10px;">
-                        <input type="file" id="c_logo" accept=".png, .jpg, .jpeg" style="flex:1;">
-                        <button class="btn-info" onclick="if(document.getElementById('c_logo').files[0]) accion('guardar_logo', {logo: document.getElementById('c_logo').files[0]}); else alert('Archivo requerido.')">Aplicar Logo</button>
+    <div class="content">
+        <div id="t-hub" class="card" style="border:none; box-shadow:none; background:transparent;">
+            <div class="card-body">
+                <div style="margin-bottom:30px;">
+                    <h2 id="hub-empresa-nombre" style="margin:0; font-size:24px; color:var(--text-primary);">Panel de Administración</h2>
+                    <p style="color:var(--text-secondary); font-size:15px;">Seleccione el módulo al que desea ingresar.</p>
+                </div>
+                <div class="hub-grid">
+                    <div class="hub-card" onclick="ver('t-asist')">
+                        <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Asistencias</h3>
+                        <div class="preview-box" id="p-asist">Cargando...</div>
+                    </div>
+                    <div class="hub-card" onclick="ver('t-solic')">
+                        <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> Solicitudes</h3>
+                        <div class="preview-box" id="p-solic">Cargando...</div>
+                    </div>
+                    <div class="hub-card" onclick="ver('t-fer')">
+                        <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--info, #17a2b8)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> Calendario</h3>
+                        <div class="preview-box" id="p-cal">Cargando...</div>
+                    </div>
+                    <div class="hub-card" onclick="ver('t-francos')">
+                        <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg> Medios Francos</h3>
+                        <div class="preview-box" id="p-francos">Cargando...</div>
+                    </div>
+                    <div id="hub-corp" class="hub-card" onclick="ver('t-corporativa')">
+                        <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> Organización</h3>
+                        <div class="preview-box">Empresa, Sucursales y Personal</div>
+                    </div>
+                    <div id="hub-ajustes" class="hub-card" onclick="ver('t-ajustes')">
+                        <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg> Ajustes del Sistema</h3>
+                        <div class="preview-box">Configuraciones, Conceptos y Datos</div>
                     </div>
                 </div>
             </div>
-            <button class="btn-green" onclick="ejecutarGuardarConfig()" style="width:100%; max-width:550px;">Guardar Identidad</button>
         </div>
-        <div id="sub-sucursales" class="subtab-content hidden">
-            <h3>Gestión de Sucursales</h3>
-            <div class="filters">
-                <input type="text" id="sN" placeholder="Nombre Local"><input type="text" id="sLa" placeholder="Latitud"><input type="text" id="sLo" placeholder="Longitud">
-                <button class="btn-green" onclick="accion('guardar_suc',{d1:v('sN'),d2:v('sLa'),d3:v('sLo'),d4:'20:00',d6:'10:00',d7:'14:00'})">Crear Local</button>
-            </div>
-            <div class="table-responsive"><table><thead><tr><th>Sucursal</th><th>Cierre Auto.</th><th>Horario Feriados</th><th>GPS</th><th>Acción</th></tr></thead><tbody id="b-suc"></tbody></table></div>
-        </div>
-        <div id="sub-personal" class="subtab-content hidden">
-            <h3>Legajos de Personal</h3>
-            <div class="filters">
-                <button class="btn-green" onclick="abrirU('')">Crear Empleado</button>
-                <select id="fSuc_users" onchange="renderUsers()"><option value="">Todas las sucursales</option></select>
-                <input type="text" id="fU_n" placeholder="Buscar DNI o Nombre..." onkeyup="renderUsers()" style="flex-grow:1;"> 
-                <label><input type="checkbox" id="fI" onchange="renderUsers()"> Mostrar Inactivos</label>
-            </div>
-            <div class="table-responsive"><table><thead><tr><th>DNI</th><th>Nombre</th><th>Sucursal</th><th>Días Vac.</th><th>Turno Fijo</th><th>Contacto</th><th>Estado</th><th>Doc/Mapa</th><th>Historial</th><th>Acción</th></tr></thead><tbody id="b-users"></tbody></table></div>
-        </div>
-    </div>
 
-    <div id="t-ajustes" class="card hidden">
-        <h2>Ajustes del Sistema</h2>
-        <div class="subtabs-nav">
-            <button id="btn-sub-parametros" onclick="switchAjustesTab('sub-parametros')" class="active-sub">Configuración General</button>
-            <button id="btn-sub-conceptos" onclick="switchAjustesTab('sub-conceptos')">Tipos de Solicitudes</button>
-            <button id="btn-sub-import" onclick="switchAjustesTab('sub-import')">Importación de Datos (CSV)</button>
+        <div id="t-asist" class="card hidden">
+            <div class="card-body">
+                <div class="filters">
+                    <strong>Liquidación Mensual:</strong> <input type="date" id="rD"> a <input type="date" id="rH"> <select id="rS"></select> 
+                    <button class="btn-secondary" onclick="bajarExcel()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Descargar Reporte</button>
+                </div>
+                <div class="filters" style="margin-top:-5px;">
+                    <strong>Filtros:</strong>
+                    <input type="date" id="fD" onchange="renderAsist()">
+                    <select id="fSuc_asist" onchange="renderAsist()"><option value="">Todas las sucursales</option></select>
+                    <input type="text" id="fA_n" placeholder="Buscar Legajo o Nombre..." onkeyup="renderAsist()" style="flex-grow:1; min-width:200px;">
+                    <label style="margin-left:auto; cursor:pointer; display:flex; align-items:center; gap:6px; font-size:14px; font-weight:600;">
+                        <input type="checkbox" id="fIncNoFichados" onchange="renderAsist()" style="width:auto; margin:0;"> Incluir ausentes
+                    </label>
+                </div>
+                <div class="table-responsive"><table><thead><tr><th>Fecha</th><th>Nombre</th><th>Sucursal</th><th>Ingreso</th><th>Salida</th><th>GPS</th><th>Acción</th></tr></thead><tbody id="b-asist"></tbody></table></div>
+            </div>
         </div>
         
-        <div id="sub-parametros" class="subtab-content">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-                <h3 style="margin: 0; font-size: 20px;">Reglas Operativas</h3>
-                <button class="btn-green" style="padding: 10px 20px; font-size: 14px;" onclick="ejecutarGuardarConfig()">Guardar Configuraciones</button>
-            </div>
-
-            <div class="settings-group">
-                <h4>Geolocalización y Fichaje</h4>
-                <div class="form-grid">
-                    <div class="form-group"><label>Distancia GPS Máxima (Metros)</label><input type="number" id="c_gps"></div>
-                    <div class="form-group"><label>Bloqueo GPS Estricto</label><select id="c_gps_est"><option value="1">SÍ (Rebota Fichaje)</option><option value="0">NO (Ficha con Alerta)</option></select></div>
-                    <div class="form-group"><label>Anti-Rebote Fichaje (Minutos)</label><input type="number" id="c_anti"></div>
+        <div id="t-solic" class="card hidden">
+            <div class="card-body">
+                <div class="kanban">
+                    <div class="k-col">
+                        <h3><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Pendientes</h3>
+                        <div id="k-PENDIENTE" class="k-list"></div>
+                    </div>
+                    <div class="k-col">
+                        <h3><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Aprobadas</h3>
+                        <div id="k-APROBADA" class="k-list"></div>
+                    </div>
+                    <div class="k-col">
+                        <h3><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg> En Curso Hoy</h3>
+                        <div id="k-EN_CURSO" class="k-list"></div>
+                    </div>
+                    <div class="k-col">
+                        <h3><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Culminadas</h3>
+                        <div id="k-CULMINADAS" class="k-list"></div>
+                    </div>
                 </div>
+                <div class="list-box"><h3 style="margin-top:0; color:var(--warning); font-size:15px; display:flex; align-items:center; gap:6px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> Solicitudes Caducadas</h3><div id="k-CADUCADAS" style="display:flex; flex-wrap:wrap; gap:10px;"></div></div>
+                <div class="list-box"><h3 style="margin-top:0; color:var(--danger); font-size:15px; display:flex; align-items:center; gap:6px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="9" x2="15" y2="15"></line><line x1="15" y1="9" x2="9" y2="15"></line></svg> Historial de Rechazadas</h3><div id="k-RECHAZADA" style="display:flex; flex-wrap:wrap; gap:10px;"></div></div>
             </div>
-
-            <div class="settings-group">
-                <h4>Jornada y Horarios</h4>
-                <div class="form-grid">
-                    <div class="form-group"><label>Jornada Mínima de Trabajo (Horas)</label><input type="number" step="0.5" id="c_jornada"></div>
-                    <div class="form-group"><label>Tolerancia de Llegada Tarde (Minutos)</label><input type="number" id="c_tol"></div>
-                    <div class="form-group"><label>Ingreso Automático en Franco Mañana</label><input type="time" id="c_fmanana"></div>
-                    <div class="form-group"><label>Salida Automática en Franco Tarde</label><input type="time" id="c_ftarde"></div>
+        </div>
+        
+        <div id="t-fer" class="card hidden">
+            <div class="card-body">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <button onclick="cambiarMes(-1)" class="btn-secondary"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg> Anterior</button>
+                    <h3 id="cal-month-year" style="margin:0; font-size:18px; color:var(--text-primary); text-transform:uppercase;"></h3>
+                    <button onclick="cambiarMes(1)" class="btn-secondary">Siguiente <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
                 </div>
+                <div class="table-responsive" style="border:none;"><div id="calendar-grid" class="calendar"></div></div>
             </div>
+        </div>
 
-            <div class="settings-group">
-                <h4>Políticas de Licencias</h4>
-                <div class="form-grid">
-                    <div class="form-group"><label>Días de Vacaciones Base (Nuevos Empleados)</label><input type="number" id="c_vac_base"></div>
-                    <div class="form-group"><label>Aviso Previo Mínimo para Vacaciones (Días)</label><input type="number" id="c_vac"></div>
-                    <div class="form-group"><label>Permitir a Encargados Aprobar Permisos</label><select id="c_enc_aprueba"><option value="1">SÍ</option><option value="0">NO (Solo RRHH)</option></select></div>
+        <div id="t-francos" class="card hidden">
+            <div class="card-body">
+                <div class="table-responsive"><table><thead><tr><th>Empleado</th><th>Sucursal</th><th>Fecha Asignada</th><th>Turno</th><th>Asignado Por</th><th>Acción</th></tr></thead><tbody id="b-francos"></tbody></table></div>
+            </div>
+        </div>
+
+        <div id="t-corporativa" class="card hidden">
+            <div class="card-body">
+                <div class="subtabs-nav">
+                    <button id="btn-sub-identidad" onclick="switchCorpTab('sub-identidad')" class="active-sub">Personalización</button>
+                    <button id="btn-sub-sucursales" onclick="switchCorpTab('sub-sucursales')">Sucursales y Locales</button>
+                    <button id="btn-sub-personal" onclick="switchCorpTab('sub-personal')">Gestión de Empleados</button>
                 </div>
-            </div>
-
-            <div class="settings-group">
-                <h4>Seguridad y Accesos</h4>
-                <div class="form-grid">
-                    <div class="form-group"><label>Bloqueo tras Intentos Fallidos de Login</label><input type="number" id="c_log"></div>
-                    <div class="form-group"><label>Prefijo para Claves Generadas</label><input type="text" id="c_pwpre"></div>
-                    <div class="form-group"><label>Sufijo para Claves Generadas</label><input type="text" id="c_pwsuf"></div>
+                <div id="sub-identidad" class="subtab-content">
+                    <div class="form-grid" style="max-width:550px; margin-bottom:15px;">
+                        <div class="form-group"><label>Nombre de Empresa</label><input type="text" id="c_empresa"></div>
+                        <div class="form-group"><label>Color Corporativo</label><input type="color" id="c_color" style="height:42px; padding:2px; cursor:pointer;"></div>
+                        <div class="form-group" style="grid-column: span 2;">
+                            <label>Logo de la Pestaña (Favicon PNG/JPG)</label>
+                            <div style="display:flex; gap:10px;">
+                                <input type="file" id="c_logo" accept=".png, .jpg, .jpeg" style="flex:1;">
+                                <button class="btn-secondary" onclick="if(document.getElementById('c_logo').files[0]) accion('guardar_logo', {logo: document.getElementById('c_logo').files[0]}); else alert('Archivo requerido.')">Aplicar Logo</button>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="ejecutarGuardarConfig()" style="width:100%; max-width:550px;">Guardar Identidad</button>
+                </div>
+                <div id="sub-sucursales" class="subtab-content hidden">
+                    <div class="filters">
+                        <input type="text" id="sN" placeholder="Nombre Local">
+                        <input type="text" id="sLa" placeholder="Latitud">
+                        <input type="text" id="sLo" placeholder="Longitud">
+                        <button onclick="accion('guardar_suc',{d1:v('sN'),d2:v('sLa'),d3:v('sLo'),d4:'20:00',d6:'10:00',d7:'14:00'})"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Crear Local</button>
+                    </div>
+                    <div class="table-responsive"><table><thead><tr><th>Sucursal</th><th>Cierre Auto.</th><th>Horario Feriados</th><th>GPS</th><th>Acción</th></tr></thead><tbody id="b-suc"></tbody></table></div>
+                </div>
+                <div id="sub-personal" class="subtab-content hidden">
+                    <div class="filters">
+                        <select id="fSuc_users" onchange="renderUsers()"><option value="">Todas las sucursales</option></select>
+                        <input type="text" id="fU_n" placeholder="Buscar Legajo o Nombre..." onkeyup="renderUsers()" style="flex-grow:1;"> 
+                        <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:14px; font-weight:600;"><input type="checkbox" id="fI" onchange="renderUsers()" style="margin:0; width:auto;"> Mostrar Inactivos</label>
+                    </div>
+                    <div class="table-responsive"><table><thead><tr><th>Legajo</th><th>Nombre</th><th>Sucursal</th><th>Días Vac.</th><th>Turno Fijo</th><th>Contacto</th><th>Estado</th><th>Doc/Mapa</th><th>Historial</th><th>Acción</th></tr></thead><tbody id="b-users"></tbody></table></div>
                 </div>
             </div>
         </div>
 
-        <div id="sub-conceptos" class="subtab-content hidden">
-            <h3>Configuración de Solicitudes</h3>
-            <div class="filters">
-                <input type="text" id="tp_nombre" placeholder="Nombre (Ej: MUDANZA)">
-                <select id="tp_tipo"><option value="HORAS">HORAS</option><option value="DIAS">DÍAS</option></select>
-                <select id="tp_foto"><option value="0">Certificado Opcional</option><option value="1">Certificado Obligatorio</option></select>
-                <select id="tp_desc"><option value="0">No descuenta Vacaciones</option><option value="1">Descuenta Vacaciones</option></select>
-                <input type="number" id="tp_horas" placeholder="Horas pagas x Día" value="0">
-                <button class="btn-green" onclick="accion('guardar_concepto', {nombre:v('tp_nombre').toUpperCase(), tipo:v('tp_tipo'), foto:v('tp_foto'), desc:v('tp_desc'), horas:v('tp_horas')})">Crear Parámetro</button>
+        <div id="t-ajustes" class="card hidden">
+            <div class="card-body">
+                <div class="subtabs-nav">
+                    <button id="btn-sub-parametros" onclick="switchAjustesTab('sub-parametros')" class="active-sub">Configuración General</button>
+                    <button id="btn-sub-conceptos" onclick="switchAjustesTab('sub-conceptos')">Tipos de Solicitudes</button>
+                    <button id="btn-sub-import" onclick="switchAjustesTab('sub-import')">Importación de Datos (CSV)</button>
+                </div>
+                
+                <div id="sub-parametros" class="subtab-content">
+                    <div class="settings-group">
+                        <h4><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> Geolocalización y Fichaje</h4>
+                        <div class="form-grid">
+                            <div class="form-group"><label>Distancia GPS Máxima (Metros)</label><input type="number" id="c_gps"></div>
+                            <div class="form-group"><label>Bloqueo GPS Estricto</label><select id="c_gps_est"><option value="1">SÍ (Rebota Fichaje)</option><option value="0">NO (Ficha con Alerta)</option></select></div>
+                            <div class="form-group"><label>Anti-Rebote Fichaje (Minutos)</label><input type="number" id="c_anti"></div>
+                        </div>
+                    </div>
+
+                    <div class="settings-group">
+                        <h4><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Jornada y Horarios</h4>
+                        <div class="form-grid">
+                            <div class="form-group"><label>Jornada Mínima de Trabajo (Horas)</label><input type="number" step="0.5" id="c_jornada"></div>
+                            <div class="form-group"><label>Tolerancia de Llegada Tarde (Minutos)</label><input type="number" id="c_tol"></div>
+                            <div class="form-group"><label>Ingreso Automático en Franco Mañana</label><input type="time" id="c_fmanana"></div>
+                            <div class="form-group"><label>Salida Automática en Franco Tarde</label><input type="time" id="c_ftarde"></div>
+                        </div>
+                    </div>
+
+                    <div class="settings-group">
+                        <h4><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> Políticas de Licencias</h4>
+                        <div class="form-grid">
+                            <div class="form-group"><label>Días de Vacaciones Base (Nuevos Empleados)</label><input type="number" id="c_vac_base"></div>
+                            <div class="form-group"><label>Aviso Previo Mínimo para Vacaciones (Días)</label><input type="number" id="c_vac"></div>
+                            <div class="form-group"><label>Permitir a Encargados Aprobar Permisos</label><select id="c_enc_aprueba"><option value="1">SÍ</option><option value="0">NO (Solo RRHH)</option></select></div>
+                        </div>
+                    </div>
+
+                    <div class="settings-group">
+                        <h4><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> Seguridad y Accesos</h4>
+                        <div class="form-grid">
+                            <div class="form-group"><label>Bloqueo tras Intentos Fallidos de Login</label><input type="number" id="c_log"></div>
+                            <div class="form-group"><label>Prefijo para Claves Generadas</label><input type="text" class="mono" id="c_pwpre"></div>
+                            <div class="form-group"><label>Sufijo para Claves Generadas</label><input type="text" class="mono" id="c_pwsuf"></div>
+                        </div>
+                    </div>
+                    <button onclick="ejecutarGuardarConfig()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg> Guardar Configuraciones</button>
+                </div>
+
+                <div id="sub-conceptos" class="subtab-content hidden">
+                    <div class="filters">
+                        <input type="text" id="tp_nombre" placeholder="Nombre (Ej: MUDANZA)">
+                        <select id="tp_tipo"><option value="HORAS">HORAS</option><option value="DIAS">DÍAS</option></select>
+                        <select id="tp_foto"><option value="0">Certificado Opcional</option><option value="1">Certificado Obligatorio</option></select>
+                        <select id="tp_desc"><option value="0">No descuenta Vacaciones</option><option value="1">Descuenta Vacaciones</option></select>
+                        <input type="number" id="tp_horas" placeholder="Horas pagas x Día" value="0">
+                        <button onclick="accion('guardar_concepto', {nombre:v('tp_nombre').toUpperCase(), tipo:v('tp_tipo'), foto:v('tp_foto'), desc:v('tp_desc'), horas:v('tp_horas')})"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Añadir Parámetro</button>
+                    </div>
+                    <div class="table-responsive"><table><thead><tr><th>Concepto</th><th>Naturaleza</th><th>Exige Certificado</th><th>Resta Vacaciones</th><th>Carga Horaria</th><th>Acción</th></tr></thead><tbody id="b-conceptos"></tbody></table></div>
+                </div>
+                <div id="sub-import" class="subtab-content hidden">
+                    <div style="background:var(--filter-bg); border:1px solid var(--border); padding:20px; border-radius:8px; display:inline-block;">
+                        <input type="file" id="csv_file" accept=".csv" style="margin-bottom:15px; display:block; border:none; background:transparent;">
+                        <button onclick="if(document.getElementById('csv_file').files[0]) accion('importar_csv', {archivo_csv: document.getElementById('csv_file').files[0]}); else alert('Archivo requerido.')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Ejecutar Importación</button>
+                    </div>
+                </div>
             </div>
-            <div class="table-responsive"><table><thead><tr><th>Concepto</th><th>Naturaleza</th><th>Exige Certificado</th><th>Resta Vacaciones</th><th>Carga Horaria</th><th>Acción</th></tr></thead><tbody id="b-conceptos"></tbody></table></div>
         </div>
-        <div id="sub-import" class="subtab-content hidden">
-            <h3>Importación de Datos</h3>
-            <div style="background:var(--filter-bg); border:1px solid var(--border); padding:20px; border-radius:8px; display:inline-block;">
-                <input type="file" id="csv_file" accept=".csv" style="margin-bottom:15px; display:block; border:none; background:transparent;">
-                <button class="btn-green" onclick="if(document.getElementById('csv_file').files[0]) accion('importar_csv', {archivo_csv: document.getElementById('csv_file').files[0]}); else alert('Archivo requerido.')">Ejecutar Importación</button>
-            </div>
+
+        <div class="watermark-footer">
+            <svg width="24" height="24" viewBox="0 0 203 281" style="opacity:0.3; margin-bottom:5px;">
+                <path d="M 73.0,261.5 L 62.0,261.5 L 49.0,256.5 L 45.5,253.0 L 43.5,247.0 L 45.5,237.0 L 51.0,232.5 L 61.0,231.5 L 68.5,236.0 L 78.0,252.5 L 86.0,252.5 L 92.5,240.0 L 94.5,219.0 L 47.0,218.5 L 44.5,216.0 L 44.5,212.0 L 89.0,146.5 L 89.5,188.0 L 74.5,210.0 L 94.5,210.0 L 94.5,83.0 L 74.0,86.5 L 63.0,92.5 L 54.5,103.0 L 50.5,114.0 L 46.0,114.5 L 44.5,113.0 L 44.5,80.0 L 52.0,73.5 L 94.5,73.0 L 93.5,33.0 L 91.5,29.0 L 87.0,26.5 L 70.0,24.5 L 70.0,19.5 L 140.0,19.5 L 141.0,24.5 L 127.0,27.5 L 123.5,34.0 L 123.5,73.0 L 158.0,73.5 L 161.5,76.0 L 161.5,80.0 L 129.0,128.5 L 128.5,88.0 L 132.5,81.0 L 123.5,81.0 L 122.5,208.0 L 137.0,206.5 L 148.0,200.5 L 158.5,183.0 L 160.5,175.0 L 166.0,173.5 L 166.5,214.0 L 163.0,218.5 L 121.0,218.5 L 113.5,238.0 L 101.0,251.5 L 88.0,258.5 L 73.0,261.5 Z" fill="#ffffff" stroke="#000000" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+            </svg>
+            <span>Powered by <a href="https://jz-tech.mywire.org" target="_blank">JZ Tech Solutions</a></span>
+            <span style="display:flex; gap:10px;">
+                <a href="#" onclick="document.getElementById('m-privacidad').classList.remove('hidden'); return false;">Privacidad</a> | 
+                <a href="#" onclick="document.getElementById('m-terminos').classList.remove('hidden'); return false;">Términos de Uso</a>
+            </span>
         </div>
     </div>
 </div>
 
-<div class="theme-toggle" onclick="toggleTheme()" id="theme-icon">Modo Oscuro</div>
-
-<!-- MODAL VER MÁS (PAGINACIÓN VISUAL) -->
+<!-- MODAL VER MÁS -->
 <div id="m-ver-mas" class="modal hidden">
     <div class="modal-content" style="max-width: 650px; width: 95%;">
-        <button class="close-x" onclick="cerrarM('m-ver-mas')">X</button>
-        <h3 id="vm-titulo" style="margin-top:0; color:var(--primary); border-bottom:1px solid var(--border); padding-bottom:10px;">Detalle de Solicitudes</h3>
+        <button class="close-x" onclick="cerrarM('m-ver-mas')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+        <h3 id="vm-titulo" style="margin-top:0; border-bottom:1px solid var(--border); padding-bottom:10px;">Detalle de Solicitudes</h3>
         <div id="vm-lista" style="max-height: 60vh; overflow-y: auto; padding-right:10px;"></div>
-        <button onclick="cerrarM('m-ver-mas')" style="background:#6c757d; width:100%; margin-top:15px;">Cerrar Panel</button>
+        <button onclick="cerrarM('m-ver-mas')" class="btn-secondary" style="width:100%; margin-top:15px;">Cerrar Panel</button>
     </div>
 </div>
 
-<div id="m-convocatoria" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-convocatoria')">X</button><h3>Lista de Convocados</h3><input type="hidden" id="conv-fecha"><select id="conv-sucursal" onchange="dibujarChecklistConvocados()"></select><div id="conv-checklist" style="max-height: 250px; overflow-y: auto; padding:10px; margin-bottom:15px; border:1px solid var(--border);"></div><button class="btn-green" onclick="guardarConvocatoria()" style="width:100%;">Guardar Convocatoria</button><button onclick="cerrarM('m-convocatoria')" style="background:#6c757d; width:100%; margin-top:5px;">Cancelar</button></div></div>
+<div id="m-convocatoria" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-convocatoria')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button><h3 style="margin-top:0;">Lista de Convocados</h3><input type="hidden" id="conv-fecha"><select id="conv-sucursal" onchange="dibujarChecklistConvocados()"></select><div id="conv-checklist" style="max-height: 250px; overflow-y: auto; padding:10px; margin-bottom:15px; border:1px solid var(--border); border-radius:6px; background:var(--bg-page);"></div><button onclick="guardarConvocatoria()" style="width:100%;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg> Guardar Convocatoria</button><button onclick="cerrarM('m-convocatoria')" class="btn-secondary" style="width:100%; margin-top:8px;">Cancelar</button></div></div>
 
-<div id="m-o" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-o')">X</button><h3>Salida Manual Forzosa</h3><input type="hidden" id="eoI"><div class="form-group"><label>Hora de Salida:</label><input type="time" id="eoH"></div><div class="form-group"><label>Motivo:</label><input type="text" id="eoM"></div><button class="btn-warn" onclick="if(v('eoH')&&v('eoM')){accion('salida_manual',{d1:v('eoI'), d2:v('eoH'), d3:v('eoM')}); cerrarM('m-o')}" style="width:100%;">Forzar Operación</button><button onclick="cerrarM('m-o')" style="background:#6c757d; width:100%; margin-top:5px;">Cancelar</button></div></div>
+<div id="m-o" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-o')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button><h3 style="margin-top:0;">Salida Manual Forzosa</h3><input type="hidden" id="eoI"><div class="form-group"><label>Hora de Salida:</label><input type="time" id="eoH"></div><div class="form-group"><label>Motivo:</label><input type="text" id="eoM"></div><button class="btn-warn" onclick="if(v('eoH')&&v('eoM')){accion('salida_manual',{d1:v('eoI'), d2:v('eoH'), d3:v('eoM')}); cerrarM('m-o')}" style="width:100%;">Forzar Operación</button><button onclick="cerrarM('m-o')" class="btn-secondary" style="width:100%; margin-top:8px;">Cancelar</button></div></div>
 
-<div id="m-corregir-entrada" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-corregir-entrada')">X</button><h3>Corregir Horario de Ingreso</h3><input type="hidden" id="ceI"><div class="form-group"><label>Nueva Hora de Entrada:</label><input type="time" id="ceH"></div><div class="form-group"><label>Justificante Obligatorio:</label><input type="text" id="ceM" required></div><button class="btn-green" onclick="if(v('ceH')&&v('ceM').trim()!==''){accion('corregir_entrada',{d1:v('ceI'), d2:v('ceH'), d3:v('ceM')}); cerrarM('m-corregir-entrada')}else{alert('Información incompleta.')}" style="width:100%; margin-top:10px;">Aplicar Corrección</button><button onclick="cerrarM('m-corregir-entrada')" style="background:#6c757d; width:100%; margin-top:5px;">Cancelar</button></div></div>
+<div id="m-corregir-entrada" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-corregir-entrada')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button><h3 style="margin-top:0;">Corregir Horario de Ingreso</h3><input type="hidden" id="ceI"><div class="form-group"><label>Nueva Hora de Entrada:</label><input type="time" id="ceH"></div><div class="form-group"><label>Justificante Obligatorio:</label><input type="text" id="ceM" required></div><button onclick="if(v('ceH')&&v('ceM').trim()!==''){accion('corregir_entrada',{d1:v('ceI'), d2:v('ceH'), d3:v('ceM')}); cerrarM('m-corregir-entrada')}else{alert('Información incompleta.')}" style="width:100%; margin-top:10px;">Aplicar Corrección</button><button onclick="cerrarM('m-corregir-entrada')" class="btn-secondary" style="width:100%; margin-top:8px;">Cancelar</button></div></div>
 
-<div id="m-u" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-u')">X</button><h3 id="u-modal-title">Legajo Empleado</h3><input type="hidden" id="eOld"><form id="form-user" onsubmit="guardarUsuario(event)"><div class="form-grid"><div class="form-group"><label>DNI</label><input type="text" id="eD" required></div><div class="form-group"><label>Nombre</label><input type="text" id="eN" required></div><div class="form-group"><label>Rol</label><select id="eR"><option value="2">Empleado</option><option value="1">Encargado</option><option value="0">Admin</option></select></div><div class="form-group"><label>Sucursal</label><select id="eS"></select></div><div class="form-group"><label>Hora Entrada</label><input type="time" id="eHE" required></div><div class="form-group"><label>Hora Salida</label><input type="time" id="eHS" required></div><div class="form-group"><label>Días Vacaciones</label><input type="number" id="eVac" required></div><div class="form-group"><label>Estado</label><select id="eA"><option value="1">Activo</option><option value="0">Inactivo</option></select></div><div class="form-group"><label>Mail</label><input type="email" id="eMail"></div><div class="form-group"><label>Teléfono</label><input type="text" id="eTel"></div><div class="form-group"><label>Calle</label><input type="text" id="eCalle"></div><div class="form-group"><label>Altura</label><input type="text" id="eAltura"></div><div class="form-group"><label>Depto</label><input type="text" id="eDepto"></div><div class="form-group"><label>CP</label><input type="text" id="eCP"></div><div class="form-group" style="grid-column: span 2;"><label>Adjuntar Mapa/Documento</label><input type="file" id="eMapa"><div id="link-mapa-actual"></div></div></div><button type="button" class="btn-red" id="btn-reset-pw" onclick="accion('reset_pass',{d1:v('eOld')}); cerrarM('m-u');" style="width:100%; display:none; margin:10px 0;">Reseteo de Password</button><button type="submit" class="btn-green" style="width:100%; margin-top: 10px;">Guardar Legajo</button><button type="button" onclick="cerrarM('m-u')" style="background:#6c757d; width:100%; margin-top:5px;">Cancelar</button></form></div></div>
+<div id="m-u" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-u')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button><h3 id="u-modal-title" style="margin-top:0;">Legajo Empleado</h3><input type="hidden" id="eOld"><form id="form-user" onsubmit="guardarUsuario(event)"><div class="form-grid"><div class="form-group"><label>Legajo / DNI</label><input type="text" id="eD" class="mono" required></div><div class="form-group"><label>Nombre</label><input type="text" id="eN" required></div><div class="form-group"><label>Rol</label><select id="eR"><option value="2">Empleado</option><option value="1">Encargado</option><option value="0">Admin</option></select></div><div class="form-group"><label>Sucursal</label><select id="eS"></select></div><div class="form-group"><label>Hora Entrada</label><input type="time" id="eHE" required></div><div class="form-group"><label>Hora Salida</label><input type="time" id="eHS" required></div><div class="form-group"><label>Días Vacaciones</label><input type="number" id="eVac" required></div><div class="form-group"><label>Estado</label><select id="eA"><option value="1">Activo</option><option value="0">Inactivo</option></select></div><div class="form-group"><label>Mail</label><input type="email" id="eMail"></div><div class="form-group"><label>Teléfono</label><input type="text" id="eTel" class="mono"></div><div class="form-group"><label>Calle</label><input type="text" id="eCalle"></div><div class="form-group"><label>Altura</label><input type="text" id="eAltura"></div><div class="form-group"><label>Depto</label><input type="text" id="eDepto"></div><div class="form-group"><label>CP</label><input type="text" id="eCP"></div><div class="form-group" style="grid-column: span 2;"><label>Adjuntar Mapa/Documento</label><input type="file" id="eMapa" style="background:var(--bg-page); border:none;"><div id="link-mapa-actual"></div></div></div><button type="button" class="btn-red" id="btn-reset-pw" onclick="accion('reset_pass',{d1:v('eOld')}); cerrarM('m-u');" style="width:100%; display:none; margin:15px 0 5px 0;">Resetear Contraseña</button><button type="submit" style="width:100%; margin-top: 10px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg> Guardar Legajo</button><button type="button" onclick="cerrarM('m-u')" class="btn-secondary" style="width:100%; margin-top:8px;">Cancelar</button></form></div></div>
 
-<div id="m-h" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-h')">X</button><h3>Historial: <span id="hNombre"></span></h3><div id="h-solicitudes" style="max-height: 40vh; overflow-y: auto; padding: 15px; border-radius: 6px; font-size: 13px; margin-bottom: 15px;"></div><button onclick="cerrarM('m-h')" style="background:#6c757d; width:100%;">Cerrar</button></div></div>
+<div id="m-h" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-h')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button><h3 style="margin-top:0;">Historial: <span id="hNombre"></span></h3><div id="h-solicitudes" style="max-height: 40vh; overflow-y: auto; padding: 15px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; margin-bottom: 15px; background:var(--bg-page);"></div><button onclick="cerrarM('m-h')" class="btn-secondary" style="width:100%;">Cerrar</button></div></div>
 
-<div id="m-franco" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-franco')">X</button><h3>Asignar Medio Franco</h3><div class="form-group"><label>Empleado</label><input type="text" id="cFranDni" list="cFranDniList" autocomplete="off"><datalist id="cFranDniList"></datalist></div><div class="form-group"><label>Fecha</label><input type="date" id="cFranFecha"></div><div class="form-group"><label>Turno Libre</label><select id="cFranTurno"><option value="MAÑANA">MAÑANA</option><option value="TARDE">TARDE</option></select></div><button class="btn-green" onclick="if(v('cFranDni')&&v('cFranFecha')) { accion('asignar_franco', {d1:v('cFranDni'), d2:v('cFranFecha'), d3:v('cFranTurno')}); cerrarM('m-franco'); }" style="width:100%;">Guardar Asignación</button><button onclick="cerrarM('m-franco')" style="background:#6c757d; width:100%; margin-top:5px;">Cancelar</button></div></div>
+<div id="m-franco" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-franco')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button><h3 style="margin-top:0;">Asignar Medio Franco</h3><div class="form-group"><label>Empleado</label><input type="text" id="cFranDni" class="mono" list="cFranDniList" autocomplete="off"><datalist id="cFranDniList"></datalist></div><div class="form-group"><label>Fecha</label><input type="date" id="cFranFecha"></div><div class="form-group"><label>Turno Libre</label><select id="cFranTurno"><option value="MAÑANA">MAÑANA</option><option value="TARDE">TARDE</option></select></div><button onclick="if(v('cFranDni')&&v('cFranFecha')) { accion('asignar_franco', {d1:v('cFranDni'), d2:v('cFranFecha'), d3:v('cFranTurno')}); cerrarM('m-franco'); }" style="width:100%; margin-top:10px;">Guardar Asignación</button><button onclick="cerrarM('m-franco')" class="btn-secondary" style="width:100%; margin-top:8px;">Cancelar</button></div></div>
 
-<div id="m-e-franco" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-e-franco')">X</button><h3>Editar Franco</h3><input type="hidden" id="eFranId"><b id="eFranEmp" style="display:block; margin-bottom:10px;"></b><div class="form-group"><label>Fecha</label><input type="date" id="eFranFecha"></div><div class="form-group"><label>Turno Libre</label><select id="eFranTurno"><option value="MAÑANA">MAÑANA</option><option value="TARDE">TARDE</option></select></div><button class="btn-green" onclick="accion('editar_franco', {d1:v('eFranId'), d2:v('eFranFecha'), d3:v('eFranTurno')}); cerrarM('m-e-franco')" style="width:100%;">Actualizar Registro</button><button onclick="cerrarM('m-e-franco')" style="background:#6c757d; width:100%; margin-top:5px;">Cancelar</button></div></div>
+<div id="m-e-franco" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-e-franco')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button><h3 style="margin-top:0;">Editar Franco</h3><input type="hidden" id="eFranId"><b id="eFranEmp" style="display:block; margin-bottom:10px; color:var(--text-primary);"></b><div class="form-group"><label>Fecha</label><input type="date" id="eFranFecha"></div><div class="form-group"><label>Turno Libre</label><select id="eFranTurno"><option value="MAÑANA">MAÑANA</option><option value="TARDE">TARDE</option></select></div><button onclick="accion('editar_franco', {d1:v('eFranId'), d2:v('eFranFecha'), d3:v('eFranTurno')}); cerrarM('m-e-franco')" style="width:100%; margin-top:10px;">Actualizar Registro</button><button onclick="cerrarM('m-e-franco')" class="btn-secondary" style="width:100%; margin-top:8px;">Cancelar</button></div></div>
 
-<div id="m-feriado" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-feriado')">X</button><h3>Cargar Feriado</h3><div class="form-group"><label>Fecha del Feriado</label><input type="date" id="cFerFecha"></div><div class="form-group"><label>Motivo</label><input type="text" id="cFerMotivo"></div><div class="form-group"><label>Sucursales que Abren</label><select id="cFerSucs"><option value="TODAS">TODAS</option></select></div><button class="btn-green" onclick="if(v('cFerFecha')&&v('cFerMotivo')){accion('guardar_feriado', {d1:v('cFerFecha'), d2:v('cFerMotivo'), d3:v('cFerSucs')}); cerrarM('m-feriado')}" style="width:100%;">Guardar Feriado</button><button onclick="cerrarM('m-feriado')" style="background:#6c757d; width:100%; margin-top:5px;">Cancelar</button></div></div>
+<div id="m-feriado" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-feriado')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button><h3 style="margin-top:0;">Cargar Feriado</h3><div class="form-group"><label>Fecha del Feriado</label><input type="date" id="cFerFecha"></div><div class="form-group"><label>Motivo</label><input type="text" id="cFerMotivo"></div><div class="form-group"><label>Sucursales que Abren</label><select id="cFerSucs"><option value="TODAS">TODAS</option></select></div><button onclick="if(v('cFerFecha')&&v('cFerMotivo')){accion('guardar_feriado', {d1:v('cFerFecha'), d2:v('cFerMotivo'), d3:v('cFerSucs')}); cerrarM('m-feriado')}" style="width:100%; margin-top:10px;">Guardar Feriado</button><button onclick="cerrarM('m-feriado')" class="btn-secondary" style="width:100%; margin-top:8px;">Cancelar</button></div></div>
 
-<div id="m-s" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-s')">X</button><h3>Editar Local</h3><input type="hidden" id="esOld"><div class="form-grid"><div class="form-group"><label>Nombre</label><input type="text" id="esN"></div><div class="form-group"><label>Hora de Cierre Regular</label><input type="time" id="esC"></div><div class="form-group"><label>Apertura en Feriados</label><input type="time" id="esApF"></div><div class="form-group"><label>Cierre en Feriados</label><input type="time" id="esCieF"></div><div class="form-group"><label>Latitud GPS</label><input type="text" id="esLa"></div><div class="form-group"><label>Longitud GPS</label><input type="text" id="esLo"></div></div><button class="btn-green" onclick="accion('editar_suc',{d1:v('esOld'), d2:v('esN'), d3:v('esLa'), d4:v('esLo'), d5:v('esC'), d6:v('esApF'), d7:v('esCieF')}); cerrarM('m-s')" style="width:100%; margin-top:10px;">Guardar Local</button><button onclick="cerrarM('m-s')" style="background:#6c757d; width:100%; margin-top:5px;">Cancelar</button></div></div>
+<div id="m-s" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-s')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button><h3 style="margin-top:0;">Editar Local</h3><input type="hidden" id="esOld"><div class="form-grid"><div class="form-group"><label>Nombre</label><input type="text" id="esN"></div><div class="form-group"><label>Hora de Cierre Regular</label><input type="time" id="esC"></div><div class="form-group"><label>Apertura en Feriados</label><input type="time" id="esApF"></div><div class="form-group"><label>Cierre en Feriados</label><input type="time" id="esCieF"></div><div class="form-group"><label>Latitud GPS</label><input type="text" class="mono" id="esLa"></div><div class="form-group"><label>Longitud GPS</label><input type="text" class="mono" id="esLo"></div></div><button onclick="accion('editar_suc',{d1:v('esOld'), d2:v('esN'), d3:v('esLa'), d4:v('esLo'), d5:v('esC'), d6:v('esApF'), d7:v('esCieF')}); cerrarM('m-s')" style="width:100%; margin-top:15px;">Guardar Local</button><button onclick="cerrarM('m-s')" class="btn-secondary" style="width:100%; margin-top:8px;">Cancelar</button></div></div>
 
-<div id="m-cal-opts" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-cal-opts')">X</button><h3 id="cal-modal-title"></h3><input type="hidden" id="cal-selected-date"><div id="box-admin-cal" class="hidden"><h4>Feriado Nacional</h4><div class="form-group"><input type="text" id="cFerMotivo2" placeholder="Identificador del Feriado"></div><div class="form-group"><select id="cFerSucs2"><option value="TODAS">TODAS</option></select></div><button class="btn-green" onclick="accion('guardar_feriado', {d1:v('cal-selected-date'), d2:v('cFerMotivo2'), d3:v('cFerSucs2')}); cerrarM('m-cal-opts')" style="width:100%;">Registrar Feriado</button></div><hr style="margin:20px 0; border:0; border-top:1px solid var(--border);"><h4 style="margin-top:0;">Gestionar Convocatoria</h4><button class="btn-info" onclick="abrirConvocatoria()" style="width:100%; margin-bottom:15px;">Ver/Editar Personal Convocado</button><hr style="margin:20px 0; border:0; border-top:1px solid var(--border);"><h4 style="margin-top:0;">Asignar Franco</h4><div class="form-group"><input type="text" id="cFranDni2" list="cFranDniList2" placeholder="Búsqueda de empleado..." autocomplete="off"><datalist id="cFranDniList2"></datalist></div><div class="form-group"><select id="cFranTurno2"><option value="MAÑANA">MAÑANA</option><option value="TARDE">TARDE</option></select></div><button class="btn-green" onclick="accion('asignar_franco', {d1:v('cFranDni2'), d2:v('cal-selected-date'), d3:v('cFranTurno2')}); cerrarM('m-cal-opts')" style="width:100%;">Confirmar Asignación</button><button onclick="cerrarM('m-cal-opts')" style="background:#6c757d; width:100%; margin-top:15px;">Cerrar Panel</button></div></div>
+<div id="m-cal-opts" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-cal-opts')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button><h3 id="cal-modal-title" style="margin-top:0;"></h3><input type="hidden" id="cal-selected-date"><div id="box-admin-cal" class="hidden"><h4>Feriado Nacional</h4><div class="form-group"><input type="text" id="cFerMotivo2" placeholder="Identificador del Feriado"></div><div class="form-group"><select id="cFerSucs2"><option value="TODAS">TODAS</option></select></div><button onclick="accion('guardar_feriado', {d1:v('cal-selected-date'), d2:v('cFerMotivo2'), d3:v('cFerSucs2')}); cerrarM('m-cal-opts')" style="width:100%; margin-top:10px;">Registrar Feriado</button></div><hr style="margin:20px 0; border:0; border-top:1px solid var(--border);"><h4 style="margin-top:0;">Gestionar Convocatoria</h4><button class="btn-secondary" onclick="abrirConvocatoria()" style="width:100%; margin-bottom:15px;">Ver/Editar Personal Convocado</button><hr style="margin:20px 0; border:0; border-top:1px solid var(--border);"><h4 style="margin-top:0;">Asignar Franco</h4><div class="form-group"><input type="text" id="cFranDni2" class="mono" list="cFranDniList2" placeholder="Búsqueda de empleado..." autocomplete="off"><datalist id="cFranDniList2"></datalist></div><div class="form-group"><select id="cFranTurno2"><option value="MAÑANA">MAÑANA</option><option value="TARDE">TARDE</option></select></div><button onclick="accion('asignar_franco', {d1:v('cFranDni2'), d2:v('cal-selected-date'), d3:v('cFranTurno2')}); cerrarM('m-cal-opts')" style="width:100%; margin-top:10px;">Confirmar Asignación</button><button onclick="cerrarM('m-cal-opts')" class="btn-secondary" style="width:100%; margin-top:8px;">Cerrar Panel</button></div></div>
 
 <!-- Modal Política de Privacidad -->
 <div id="m-privacidad" class="modal hidden">
     <div class="modal-content" style="max-width: 550px; width: 90%;">
-        <button class="close-x" onclick="cerrarM('m-privacidad')">X</button>
-        <h3 style="margin-top:0; color:#333; border-bottom:1px solid #d1d9e6; padding-bottom:10px;">Política de Privacidad</h3>
-        <div style="max-height: 60vh; overflow-y: auto; padding-right:10px; font-size: 13px; color: #444; line-height: 1.5; text-align: left;">
+        <button class="close-x" onclick="cerrarM('m-privacidad')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+        <h3 style="margin-top:0; border-bottom:1px solid var(--border); padding-bottom:10px;">Política de Privacidad</h3>
+        <div style="max-height: 60vh; overflow-y: auto; padding-right:10px; font-size: 13px; color: var(--text-secondary); line-height: 1.6; text-align: left;">
             <p><strong>1. Captura de Datos Personales</strong><br>
-            El Portal de Empleados gestiona datos de identificación laboral (DNI, Nombre, Contacto) con el único fin de administrar la relación laboral y el control de asistencia.</p>
+            El Portal de Empleados gestiona datos de identificación laboral (DNI/Legajo, Nombre, Contacto) con el único fin de administrar la relación laboral y el control de asistencia.</p>
             <p><strong>2. Tratamiento de Geolocalización (GPS)</strong><br>
             El sistema solicita acceso a la ubicación del dispositivo exclusivamente en el momento en que se activa la acción de fichaje. No se realiza seguimiento satelital constante ni fuera del horario de registro.</p>
             <p><strong>3. Privacidad de Documentos Médicos y Licencias</strong><br>
@@ -341,16 +477,16 @@
             <p><strong>4. Seguridad del Almacenamiento</strong><br>
             Toda la información transaccional se almacena de forma cifrada y auditada, sin comunicación con agentes externos u organizaciones de terceros.</p>
         </div>
-        <button onclick="cerrarM('m-privacidad')" style="background:#6c757d; width:100%; margin-top:15px;">Entendido</button>
+        <button onclick="cerrarM('m-privacidad')" class="btn-secondary" style="width:100%; margin-top:15px;">Entendido</button>
     </div>
 </div>
 
 <!-- Modal Términos de Uso -->
 <div id="m-terminos" class="modal hidden">
     <div class="modal-content" style="max-width: 550px; width: 90%;">
-        <button class="close-x" onclick="cerrarM('m-terminos')">X</button>
-        <h3 style="margin-top:0; color:#333; border-bottom:1px solid #d1d9e6; padding-bottom:10px;">Términos de Uso</h3>
-        <div style="max-height: 60vh; overflow-y: auto; padding-right:10px; font-size: 13px; color: #444; line-height: 1.5; text-align: left;">
+        <button class="close-x" onclick="cerrarM('m-terminos')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+        <h3 style="margin-top:0; border-bottom:1px solid var(--border); padding-bottom:10px;">Términos de Uso</h3>
+        <div style="max-height: 60vh; overflow-y: auto; padding-right:10px; font-size: 13px; color: var(--text-secondary); line-height: 1.6; text-align: left;">
             <p><strong>1. Carácter del Acceso</strong><br>
             El uso de este portal es un recurso operativo proporcionado por la empresa para sus empleados activos. Las credenciales de acceso son estrictamente personales e intransferibles.</p>
             <p><strong>2. Integridad de las Declaraciones</strong><br>
@@ -358,7 +494,7 @@
             <p><strong>3. Responsabilidad de la Credencial</strong><br>
             Toda acción registrada en el sistema bajo el DNI y clave de un usuario se presumirá ejecutada por el titular de la cuenta.</p>
         </div>
-        <button onclick="cerrarM('m-terminos')" style="background:#6c757d; width:100%; margin-top:15px;">Entendido</button>
+        <button onclick="cerrarM('m-terminos')" class="btn-secondary" style="width:100%; margin-top:15px;">Entendido</button>
     </div>
 </div>
 
@@ -383,13 +519,11 @@
         let t = localStorage.getItem('theme');
         if(!t) t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         document.documentElement.setAttribute('data-theme', t);
-        document.getElementById('theme-icon').innerText = t === 'dark' ? 'Modo Claro' : 'Modo Oscuro';
     }
     function toggleTheme() {
         let t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
         document.documentElement.setAttribute('data-theme', t);
         localStorage.setItem('theme', t);
-        document.getElementById('theme-icon').innerText = t === 'dark' ? 'Modo Claro' : 'Modo Oscuro';
     }
     initTheme();
 
@@ -405,19 +539,18 @@
         let r_c = await fetch('/api/csrf-token'); if(!r_c.ok) return location.href='/'; csrfToken = (await r_c.json()).token;
         let r = await fetch('/api/datos_panel'); if(!r.ok) return location.href='/'; dG = await r.json(); 
         
+        let headerActions = document.getElementById('header-actions');
+        
         if(dG.config) {
-            if(dG.config.color_primario) document.documentElement.style.setProperty('--primary', dG.config.color_primario);
             if(dG.config.empresa_nombre) {
-                document.title = dG.config.empresa_nombre + " Admin";
-                let sb_empresa = document.getElementById('sb-empresa-nombre'); if(sb_empresa) sb_empresa.innerText = dG.config.empresa_nombre + " Admin";
-                let hub_empresa = document.getElementById('hub-empresa-nombre'); if(hub_empresa) hub_empresa.innerText = "Panel Central " + dG.config.empresa_nombre;
+                document.title = "JZPass - Admin";
             }
         }
         
         document.getElementById('fD').value = new Date().toLocaleDateString('en-CA');
         
         if(dG.rol === 1) {
-            document.getElementById('btn-nav-ajustes').classList.add('hidden');
+            document.getElementById('nav-t-ajustes').classList.add('hidden');
             document.getElementById('hub-ajustes').classList.add('hidden');
             document.getElementById('btn-sub-identidad').classList.add('hidden');
             document.getElementById('btn-sub-sucursales').classList.add('hidden');
@@ -443,39 +576,58 @@
     }
     
     function verHub() {
-        document.getElementById('mainSidebar').classList.add('hidden');
+        document.querySelectorAll('.rail-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('nav-t-hub').classList.add('active');
         document.getElementById('mainSidebar').classList.remove('active-mobile');
-        document.querySelectorAll('.content > .card').forEach(c => c.classList.add('hidden'));
+        document.querySelectorAll('.content-wrapper > .content > .card').forEach(c => c.classList.add('hidden'));
         document.getElementById('t-hub').classList.remove('hidden');
+        document.getElementById('header-title').innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle; margin-right:6px;"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg> Inicio';
+        document.getElementById('header-actions').innerHTML = '';
         renderHubPreviews();
     }
     
     function ver(id) {
-        document.getElementById('t-hub').classList.add('hidden');
-        document.getElementById('mainSidebar').classList.remove('hidden');
+        document.querySelectorAll('.rail-btn').forEach(b => b.classList.remove('active'));
+        let navBtn = document.getElementById('nav-' + id);
+        if(navBtn) navBtn.classList.add('active');
+        
         document.getElementById('mainSidebar').classList.remove('active-mobile'); 
-        document.querySelectorAll('.content > .card').forEach(c => { if(c.id !== 't-hub') c.classList.add('hidden'); });
+        document.querySelectorAll('.content-wrapper > .content > .card').forEach(c => c.classList.add('hidden'));
         document.getElementById(id).classList.remove('hidden');
         
-        if(id==='t-asist') renderAsist();
-        if(id==='t-users') renderUsers();
-        if(id==='t-suc') renderSucs();
-        if(id==='t-solic') renderKanban();
-        if(id==='t-fer') renderCalendario();
+        let headerTitle = document.getElementById('header-title');
+        let headerActions = document.getElementById('header-actions');
+        headerActions.innerHTML = '';
+
+        if(id==='t-asist') { headerTitle.innerHTML = 'Asistencias'; renderAsist(); }
+        if(id==='t-solic') { headerTitle.innerHTML = 'Gestión de Solicitudes'; renderKanban(); }
+        if(id==='t-fer') { 
+            headerTitle.innerHTML = 'Calendario General'; 
+            headerActions.innerHTML = `<button onclick="document.getElementById('m-feriado').classList.remove('hidden')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Cargar Feriado</button>`;
+            renderCalendario(); 
+        }
+        if(id==='t-francos') { 
+            headerTitle.innerHTML = 'Medios Francos'; 
+            headerActions.innerHTML = `<button onclick="document.getElementById('m-franco').classList.remove('hidden')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Asignar Medio Franco</button>`;
+            renderFrancos(); 
+        }
         if(id==='t-corporativa') { 
+            headerTitle.innerHTML = 'Estructura Organizacional';
             if(dG.rol === 1) switchCorpTab('sub-personal'); 
             else switchCorpTab('sub-identidad'); 
             renderUsers(); renderSucs(); renderConfig(); 
         }
-        if(id==='t-ajustes') { switchAjustesTab('sub-parametros'); renderConfig(); renderConceptos(); }
-        if(id==='t-francos') renderFrancos();
+        if(id==='t-ajustes') { 
+            headerTitle.innerHTML = 'Ajustes del Sistema';
+            switchAjustesTab('sub-parametros'); renderConfig(); renderConceptos(); 
+        }
     }
 
     function renderHubPreviews() {
-        document.getElementById('p-asist').innerHTML = dG.fichajes.slice(0, 3).map(x => `<div class="preview-item"><b>${x.fecha_hora.split(' ')[1].substring(0,5)}</b> - ${esc(x.nombre)}</div>`).join('') || '<i>Sin registros.</i>';
-        document.getElementById('p-solic').innerHTML = dG.solicitudes.filter(s => s.estado === 'PENDIENTE').slice(0, 3).map(s => `<div class="preview-item"><b>${esc(s.concepto)}</b> - ${esc(s.nombre)}</div>`).join('') || '<i>Sin registros.</i>';
-        document.getElementById('p-cal').innerHTML = `<div class="preview-item">Hoy: ${new Date().toLocaleDateString()}</div>`;
-        document.getElementById('p-francos').innerHTML = dG.francos.slice(0,3).map(f => `<div class="preview-item"><b>${esc(f.nombre || f.dni)}</b> - ${esc(f.fecha)}</div>`).join('') || '<i>Sin registros.</i>';
+        document.getElementById('p-asist').innerHTML = dG.fichajes.slice(0, 3).map(x => `<div><b>${x.fecha_hora.split(' ')[1].substring(0,5)}</b> - ${esc(x.nombre)}</div>`).join('') || '<i>Sin registros.</i>';
+        document.getElementById('p-solic').innerHTML = dG.solicitudes.filter(s => s.estado === 'PENDIENTE').slice(0, 3).map(s => `<div><b>${esc(s.concepto)}</b> - ${esc(s.nombre)}</div>`).join('') || '<i>Sin registros.</i>';
+        document.getElementById('p-cal').innerHTML = `<div>Hoy: ${new Date().toLocaleDateString()}</div>`;
+        document.getElementById('p-francos').innerHTML = dG.francos.slice(0,3).map(f => `<div><b>${esc(f.nombre || f.dni)}</b> - ${esc(f.fecha)}</div>`).join('') || '<i>Sin registros.</i>';
     }
 
     async function postData(url, data) { 
@@ -486,7 +638,7 @@
         if(!r.ok) alert(resp.msg || "Fallo operacional."); else if(resp.msg !== "ok" && !resp.msg.includes("Reseteo")) alert(resp.msg); else if(resp.msg.includes("Reseteo")) alert(resp.msg);
         return r.ok; 
     }
-    async function accion(path, data) { if(await postData('/api/admin/'+path, data)) { dG = await (await fetch('/api/datos_panel')).json(); if(document.getElementById('t-hub').classList.contains('hidden')) ver(document.querySelector('.content > .card:not(.hidden)').id); else verHub(); } }
+    async function accion(path, data) { if(await postData('/api/admin/'+path, data)) { dG = await (await fetch('/api/datos_panel')).json(); if(document.getElementById('t-hub').classList.contains('hidden')) ver(document.querySelector('.content-wrapper > .content > .card:not(.hidden)').id); else verHub(); } }
     async function logout() { await postData('/api/logout', {}); location.href='/'; }
     function cerrarM(id) { document.getElementById(id).classList.add('hidden'); }
     function abrirSalida(id) { document.getElementById('eoI').value=id; document.getElementById('m-o').classList.remove('hidden'); }
@@ -505,7 +657,7 @@
             let u=dG.usuarios.find(x=>x.dni===d); 
             document.getElementById('eOld').value=u.dni; document.getElementById('eD').value=u.dni; document.getElementById('eN').value=u.nombre; document.getElementById('eR').value=u.rol; document.getElementById('eS').value=u.sucursal; document.getElementById('eHE').value=u.hora_entrada; document.getElementById('eHS').value=u.hora_salida; document.getElementById('eA').value=u.activo; document.getElementById('eVac').value=u.dias_vacaciones;
             document.getElementById('eMail').value=u.mail||''; document.getElementById('eTel').value=u.telefono||''; document.getElementById('eCalle').value=u.calle||''; document.getElementById('eAltura').value=u.altura||''; document.getElementById('eDepto').value=u.depto||''; document.getElementById('eCP').value=u.cp||'';
-            if(u.mapa) document.getElementById('link-mapa-actual').innerHTML = `<a href="/api/archivo/${u.mapa}" target="_blank">Ver Documento Adjunto</a>`;
+            if(u.mapa) document.getElementById('link-mapa-actual').innerHTML = `<a href="/api/archivo/${u.mapa}" target="_blank" style="color:var(--accent); font-weight:600; text-decoration:none;">[Ver Documento Adjunto]</a>`;
         } else {
             document.getElementById('u-modal-title').innerText = "Registro de Nuevo Empleado"; document.getElementById('eOld').value=''; document.getElementById('btn-reset-pw').style.display = 'none';
         }
@@ -522,9 +674,9 @@
     function abrirHistorial(d) {
         let u = dG.usuarios.find(x => x.dni === d); document.getElementById('hNombre').innerText = u.nombre;
         document.getElementById('h-solicitudes').innerHTML = dG.solicitudes.filter(s => s.dni === d).map(s => {
-            let color = s.estado === 'APROBADA' ? '#28a745' : (s.estado === 'RECHAZADA' ? '#dc3545' : '#f0ad4e');
-            return `<div style="border-bottom:1px solid var(--border); padding-bottom:10px; margin-bottom:10px;"><b>[${s.estado}]</b> ${esc(s.concepto)}: ${esc(s.fecha_ausencia)}<br><small>${esc(s.motivo)}</small></div>`;
-        }).join('') || '<i>Sin registros previos.</i>';
+            let badgeCls = s.estado === 'APROBADA' ? 'badge-success' : (s.estado === 'RECHAZADA' ? 'badge-danger' : 'badge-warning');
+            return `<div style="border-bottom:1px solid var(--border); padding-bottom:10px; margin-bottom:10px;"><span class="badge ${badgeCls}">${s.estado}</span> <span style="color:var(--text-primary); font-weight:600;">${esc(s.concepto)}:</span> <span style="color:var(--text-secondary);">${esc(s.fecha_ausencia)}</span><br><div style="color:var(--text-muted); margin-top:4px;">${esc(s.motivo)}</div></div>`;
+        }).join('') || '<i style="color:var(--text-muted);">Sin registros previos.</i>';
         document.getElementById('m-h').classList.remove('hidden');
     }
 
@@ -543,7 +695,7 @@
     function dibujarChecklistConvocados() {
         let suc = v('conv-sucursal'), fecha = v('conv-fecha');
         let convs_hoy = new Set(dG.convocados.filter(c => c.fecha === fecha).map(c => c.dni));
-        document.getElementById('conv-checklist').innerHTML = dG.usuarios.filter(u => u.activo === 1 && u.sucursal === suc).map(e => `<label style="display:block; padding:8px; cursor:pointer;"><input type="checkbox" class="chk-conv" value="${esc(e.dni)}" ${convs_hoy.has(e.dni) ? 'checked' : ''}> ${esc(e.nombre)}</label>`).join('') || '<i>No hay empleados.</i>';
+        document.getElementById('conv-checklist').innerHTML = dG.usuarios.filter(u => u.activo === 1 && u.sucursal === suc).map(e => `<label style="display:block; padding:8px; cursor:pointer; color:var(--text-primary);"><input type="checkbox" class="chk-conv" value="${esc(e.dni)}" ${convs_hoy.has(e.dni) ? 'checked' : ''} style="margin:0 8px 0 0; width:auto; vertical-align:middle;"> <span class="mono" style="color:var(--text-muted); font-size:12px;">${esc(e.dni)}</span> ${esc(e.nombre)}</label>`).join('') || '<i style="color:var(--text-muted);">No hay empleados.</i>';
     }
     async function guardarConvocatoria() {
         let seleccionados = Array.from(document.querySelectorAll('.chk-conv:checked')).map(cb => cb.value);
@@ -596,7 +748,7 @@
         let today_str = new Date().toLocaleDateString('en-CA');
         
         document.getElementById('b-asist').innerHTML = filtrados.map(x => {
-            if(x.is_missing) return `<tr style="background:var(--table-hover);"><td>${esc(x.fecha_display)}</td><td><b>${esc(x.nombre)}</b></td><td>${esc(x.sucursal)}</td><td><b>--:--</b><br><small style="color:var(--text-muted)">${x.razon}</small></td><td>--</td><td>--</td><td>--</td></tr>`;
+            if(x.is_missing) return `<tr style="background:var(--table-hover);"><td><span class="mono">${esc(x.fecha_display)}</span></td><td><b>${esc(x.nombre)}</b></td><td>${esc(x.sucursal)}</td><td><b>--:--</b><br><small style="color:var(--text-muted)">${x.razon}</small></td><td>--</td><td>--</td><td>--</td></tr>`;
             
             let f_date = x.fecha_hora.split(' ')[0];
             let u = dG.usuarios.find(u => u.dni === x.dni) || {};
@@ -621,19 +773,19 @@
             let est_in = "A tiempo";
             
             if (f_franco) {
-                est_in = "<span style='color:#28a745;'>A tiempo (Franco)</span>";
+                est_in = "<span style='color:var(--success); font-weight:600;'>A tiempo (Franco)</span>";
             } else {
-                est_in = t_in > t_ent + (dG.config.tolerancia_tarde||10) ? "<span style='color:#dc3545;'>Llegada tarde</span>" : "<span style='color:#28a745;'>A tiempo</span>";
+                est_in = t_in > t_ent + (dG.config.tolerancia_tarde||10) ? "<span style='color:var(--danger); font-weight:600;'>Llegada tarde</span>" : "<span style='color:var(--success); font-weight:600;'>A tiempo</span>";
             }
             
             if (x.motivo_entrada) {
-                est_in += `<br><small style="color:var(--primary); font-weight:bold;">Registro auditado: ${esc(x.motivo_entrada)}</small>`;
+                est_in += `<br><small style="color:var(--accent); font-weight:bold;">Auditado: ${esc(x.motivo_entrada)}</small>`;
             }
             
             let out_str = "--:--", est_out = "En curso";
             if (x.salida_manual) {
                 out_str = x.salida_manual; let t_out = timeToMins(x.salida_manual);
-                est_out = t_out < t_sal - 10 ? "<span style='color:#dc3545;'>Salida anticipada</span>" : "<span style='color:#28a745;'>A tiempo</span>";
+                est_out = t_out < t_sal - 10 ? "<span style='color:var(--danger); font-weight:600;'>Salida anticipada</span>" : "<span style='color:var(--success); font-weight:600;'>A tiempo</span>";
                 if(x.motivo_salida && x.motivo_salida !== "App JZ PASS") est_out += `<br><small>(${esc(x.motivo_salida)})</small>`;
             } else if (f_date < today_str) {
                 let out_auto = "";
@@ -643,16 +795,16 @@
                     if (f_franco && f_franco.turno === 'TARDE') out_auto = dG.config.franco_tarde_salida || "12:00";
                 }
                 out_str = `<b>${out_auto}</b>`;
-                est_out = `<span style='color:#6c757d; font-weight:bold;'>Cierre Automático</span>`;
+                est_out = `<span style='color:var(--text-muted); font-weight:600;'>Cierre Automático</span>`;
             }
             
             let btnAcciones = "";
             if (!x.salida_manual) {
-                btnAcciones += `<button class="btn-warn" onclick="abrirSalida(${x.id})" style="margin-right:5px;">Forzar Salida</button>`;
+                btnAcciones += `<button class="btn-secondary" style="color:var(--warning); border-color:var(--warning); margin-right:5px; padding:6px 10px; font-size:12px;" onclick="abrirSalida(${x.id})">Forzar Salida</button>`;
             }
-            btnAcciones += `<button class="btn-info" onclick="abrirCorregirEntrada(${x.id}, '${f_in}')">Corregir Entrada</button>`;
+            btnAcciones += `<button class="btn-secondary" style="padding:6px 10px; font-size:12px;" onclick="abrirCorregirEntrada(${x.id}, '${f_in}')">Corregir Entrada</button>`;
             
-            return `<tr><td>${esc(f_date)}</td><td><b>${esc(x.nombre)}</b></td><td>${esc(x.sucursal)}</td><td><b>${f_in}</b><br><small>${est_in}</small></td><td><b>${out_str}</b><br><small>${est_out}</small></td><td>${x.distancia}m</td><td>${btnAcciones}</td></tr>`;
+            return `<tr><td><span class="mono">${esc(f_date)}</span></td><td><b>${esc(x.nombre)}</b><br><small class="mono" style="color:var(--text-muted)">${esc(x.dni)}</small></td><td>${esc(x.sucursal)}</td><td><b class="mono">${f_in}</b><br><small>${est_in}</small></td><td><b class="mono">${out_str}</b><br><small>${est_out}</small></td><td>${x.distancia}m</td><td>${btnAcciones}</td></tr>`;
         }).join('');
     }
     
@@ -665,23 +817,23 @@
         let ahoraYMDHMS = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
         
         document.getElementById('b-users').innerHTML = filtrados.map(x => {
-            let btnMapa = (x.mapa && x.mapa !== "null" && String(x.mapa).trim() !== "") ? `<a href="/api/archivo/${x.mapa}" target="_blank" style="background:#17a2b8; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:11px; font-weight:bold; display:inline-block;">Ver Documento</a>` : `<span style="color:#999; font-size:11px;">-</span>`;
+            let btnMapa = (x.mapa && x.mapa !== "null" && String(x.mapa).trim() !== "") ? `<a href="/api/archivo/${x.mapa}" target="_blank" style="color:var(--accent); font-weight:600; font-size:12px; text-decoration:none; display:inline-flex; align-items:center; gap:4px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg> Ver</a>` : `<span style="color:var(--text-muted); font-size:12px;">-</span>`;
             
             let estaBloqueado = x.bloqueado_hasta && x.bloqueado_hasta.trim() !== "" && x.bloqueado_hasta > ahoraYMDHMS;
-            let estadoText = x.activo ? 'Activo' : 'Inactivo';
-            if (estaBloqueado) estadoText = `<span style="color:#dc3545; font-weight:bold;">Bloqueo Temporal</span>`;
+            let estadoText = x.activo ? '<span class="badge badge-success">Activo</span>' : '<span class="badge badge-neutral">Inactivo</span>';
+            if (estaBloqueado) estadoText = `<span class="badge badge-danger">Bloqueado</span>`;
             
-            let btnDesbloquear = estaBloqueado ? `<button class="btn-warn" onclick="accion('desbloquear_user', {d1:'${esc(x.dni)}'})" style="margin-right:5px; padding:4px 8px; font-size:11px;">Desbloquear</button>` : '';
+            let btnDesbloquear = estaBloqueado ? `<button class="btn-secondary" onclick="accion('desbloquear_user', {d1:'${esc(x.dni)}'})" style="margin-right:5px; padding:4px 8px; font-size:11px; color:var(--warning); border-color:var(--warning);">Desbloquear</button>` : '';
 
-            return `<tr><td>${esc(x.dni)}</td><td><b>${esc(x.nombre)}</b></td><td>${esc(x.sucursal)}</td><td><b>${x.dias_vacaciones}</b></td><td>${esc(x.hora_entrada)} a ${esc(x.hora_salida)}</td><td>${esc(x.telefono)}</td><td>${estadoText}</td><td>${btnMapa}</td><td><button class="btn-info" onclick="abrirHistorial('${esc(x.dni)}')">Historial</button></td><td>${btnDesbloquear}<button onclick="abrirU('${esc(x.dni)}')">Modificar</button></td></tr>`;
+            return `<tr><td><span class="mono">${esc(x.dni)}</span></td><td><b style="color:var(--text-primary);">${esc(x.nombre)}</b></td><td>${esc(x.sucursal)}</td><td><b>${x.dias_vacaciones}</b></td><td><span class="mono">${esc(x.hora_entrada)} - ${esc(x.hora_salida)}</span></td><td><span class="mono">${esc(x.telefono)}</span></td><td>${estadoText}</td><td>${btnMapa}</td><td><button class="btn-secondary" style="padding:4px 8px; font-size:12px;" onclick="abrirHistorial('${esc(x.dni)}')">Historial</button></td><td>${btnDesbloquear}<button class="btn-secondary" style="padding:4px 8px; font-size:12px;" onclick="abrirU('${esc(x.dni)}')">Modificar</button></td></tr>`;
         }).join(''); 
     }
     
     function renderFrancos() { 
-        document.getElementById('b-francos').innerHTML = dG.francos.map(f => `<tr><td><b>${esc(f.nombre || f.dni)}</b></td><td>${esc(f.sucursal)}</td><td>${esc(f.fecha)}</td><td><b>${esc(f.turno)}</b></td><td><small>${esc(f.asignado_por)}</small></td><td><button class="btn-warn" onclick="document.getElementById('eFranId').value='${f.id}'; document.getElementById('eFranFecha').value='${f.fecha}'; document.getElementById('eFranTurno').value='${f.turno}'; document.getElementById('m-e-franco').classList.remove('hidden')">Modificar</button> <button class="btn-red" onclick="if(confirm('¿Confirmar eliminación?')) accion('borrar_franco',{d1:'${f.id}'})">Eliminar</button></td></tr>`).join(''); 
+        document.getElementById('b-francos').innerHTML = dG.francos.map(f => `<tr><td><b style="color:var(--text-primary);">${esc(f.nombre || f.dni)}</b></td><td>${esc(f.sucursal)}</td><td><span class="mono">${esc(f.fecha)}</span></td><td><span class="badge badge-info">${esc(f.turno)}</span></td><td><small style="color:var(--text-secondary);">${esc(f.asignado_por)}</small></td><td><button class="btn-secondary" style="padding:4px 8px; font-size:12px; margin-right:5px;" onclick="document.getElementById('eFranId').value='${f.id}'; document.getElementById('eFranFecha').value='${f.fecha}'; document.getElementById('eFranTurno').value='${f.turno}'; document.getElementById('m-e-franco').classList.remove('hidden')">Modificar</button> <button class="btn-secondary" style="color:var(--danger); border-color:var(--danger); padding:4px 8px; font-size:12px;" onclick="if(confirm('¿Confirmar eliminación?')) accion('borrar_franco',{d1:'${f.id}'})">Eliminar</button></td></tr>`).join(''); 
     }
     
-    function renderSucs() { document.getElementById('b-suc').innerHTML = dG.sucursales.map(x => `<tr><td><b>${esc(x.nombre)}</b></td><td>${esc(x.hora_cierre)} hs</td><td>Ap: ${esc(x.hora_apertura_feriado)}<br>Cie: ${esc(x.hora_cierre_feriado)}</td><td>${x.lat}, ${x.lon}</td><td><button onclick="abrirS('${esc(x.nombre)}')">Modificar</button> <button class="btn-red" onclick="if(confirm('¿Confirmar eliminación?')) accion('borrar_suc',{d1:'${esc(x.nombre)}'})">Eliminar</button></td></tr>`).join(''); }
+    function renderSucs() { document.getElementById('b-suc').innerHTML = dG.sucursales.map(x => `<tr><td><b style="color:var(--text-primary);">${esc(x.nombre)}</b></td><td><span class="mono">${esc(x.hora_cierre)} hs</span></td><td><span class="mono">Ap: ${esc(x.hora_apertura_feriado)}<br>Cie: ${esc(x.hora_cierre_feriado)}</span></td><td><span class="mono">${x.lat}, ${x.lon}</span></td><td><button class="btn-secondary" style="padding:4px 8px; font-size:12px; margin-right:5px;" onclick="abrirS('${esc(x.nombre)}')">Modificar</button> <button class="btn-secondary" style="color:var(--danger); border-color:var(--danger); padding:4px 8px; font-size:12px;" onclick="if(confirm('¿Confirmar eliminación?')) accion('borrar_suc',{d1:'${esc(x.nombre)}'})">Eliminar</button></td></tr>`).join(''); }
     
     function renderKanban() {
         let hoyStr = new Date().toLocaleDateString('en-CA'), now = new Date(), currentTime = now.toTimeString().substring(0,5);
@@ -712,16 +864,24 @@
 
         lastKanbanBuckets = buckets;
 
+        let getBadge = (estado) => {
+            if(estado==='APROBADA' || estado==='CULMINADAS') return `<span class="badge badge-success"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> ${estado}</span>`;
+            if(estado==='PENDIENTE') return `<span class="badge badge-neutral"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> PENDIENTE</span>`;
+            if(estado==='RECHAZADA' || estado==='CADUCADAS') return `<span class="badge badge-danger"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> ${estado}</span>`;
+            if(estado==='EN_CURSO') return `<span class="badge badge-warning"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg> EN CURSO</span>`;
+            return `<span class="badge badge-neutral">${estado}</span>`;
+        };
+
         let buildHorizontal = (list, col, color, btnHtml) => {
             let limit = 5;
             let topList = list.slice(0, limit);
-            let html = topList.map(s => `<div style="background:var(--bg-card); padding:12px; border-radius:6px; border-left:4px solid ${color}; box-shadow:0 2px 4px rgba(0,0,0,0.05); width:280px; flex:0 0 auto; font-size:13px;"><b>[#${s.id}] ${esc(s.nombre)}</b> <span>(${esc(s.fecha_ausencia)})</span><br><small>${esc(s.concepto)} - ${esc(s.motivo)}</small><br>${btnHtml(s)}</div>`).join('');
-            if(list.length > limit) html += `<div style="display:flex; align-items:center; padding:10px;"><button class="btn-info" onclick="abrirVerMas('${col}')">Ver más registros (${list.length - limit})</button></div>`;
+            let html = topList.map(s => `<div class="k-card" style="width:280px; flex:0 0 auto;"><div style="display:flex; justify-content:space-between; align-items:flex-start; flex-shrink:0;"><div><span class="mono" style="color:var(--text-muted); font-size:11px;">#${s.id}</span><br><b>${esc(s.nombre)}</b></div> ${getBadge(col)}</div><span class="mono" style="color:var(--text-secondary); font-size:12px; flex-shrink:0;">${esc(s.fecha_ausencia)}</span><small style="color:var(--text-primary); font-weight:600; flex-shrink:0;">${esc(s.concepto)}</small><div class="text-clamp" style="color:var(--text-secondary); flex-grow:1;">${esc(s.motivo)}</div><div style="flex-shrink:0;">${btnHtml(s)}</div></div>`).join('');
+            if(list.length > limit) html += `<div style="display:flex; align-items:center; padding:10px;"><button class="btn-secondary" style="height:100%;" onclick="abrirVerMas('${col}')">Ver más registros (${list.length - limit})</button></div>`;
             return html;
         };
 
-        document.getElementById('k-CADUCADAS').innerHTML = buildHorizontal(buckets['CADUCADAS'], 'CADUCADAS', '#fd7e14', s => `<button class="btn-red" style="margin-top:8px; width:100%;" onclick="accion('estado_solicitud',{d1:${s.id}, d2:'RECHAZADA'})">Archivar Solicitud</button>`) || '<i style="color:#666; font-size:13px;">Sin registros operacionales.</i>';
-        document.getElementById('k-RECHAZADA').innerHTML = buildHorizontal(buckets['RECHAZADA'], 'RECHAZADA', '#dc3545', s => ``) || '<i style="color:#666; font-size:13px;">Sin registros operacionales.</i>';
+        document.getElementById('k-CADUCADAS').innerHTML = buildHorizontal(buckets['CADUCADAS'], 'CADUCADAS', '#fd7e14', s => `<button class="btn-secondary" style="margin-top:8px; width:100%; color:var(--danger); border-color:var(--danger);" onclick="accion('estado_solicitud',{d1:${s.id}, d2:'RECHAZADA'})">Archivar Solicitud</button>`) || '<i style="color:var(--text-muted); font-size:13px;">Sin registros operacionales.</i>';
+        document.getElementById('k-RECHAZADA').innerHTML = buildHorizontal(buckets['RECHAZADA'], 'RECHAZADA', '#dc3545', s => ``) || '<i style="color:var(--text-muted); font-size:13px;">Sin registros operacionales.</i>';
 
         ['PENDIENTE', 'APROBADA', 'EN_CURSO', 'CULMINADAS'].forEach(col => {
             let list = buckets[col];
@@ -729,17 +889,19 @@
             let html = topList.map(s => {
                 let ts = dG.tipos_solicitud.find(t=>t.nombre===s.concepto);
                 let isMultidia = ts?.tipo === 'DIAS';
-                let infoStr = isMultidia ? `<p style="color:var(--primary); font-weight:bold; margin:5px 0;">Del ${esc(s.fecha_ausencia)} al ${esc(s.fecha_fin)}</p>` : `<p style="color:#dc3545; font-weight:bold; margin:5px 0;">El ${esc(s.fecha_ausencia)} de ${esc(s.hora_inicio)} a ${esc(s.hora_fin)}</p>`;
+                let infoStr = isMultidia ? `<div style="color:var(--text-primary); font-weight:600; margin:5px 0; font-size:12px; background:var(--bg-page); padding:6px; border-radius:4px; border:1px solid var(--border);">Del <span class="mono">${esc(s.fecha_ausencia)}</span> al <span class="mono">${esc(s.fecha_fin)}</span></div>` : `<div style="color:var(--text-primary); font-weight:600; margin:5px 0; font-size:12px; background:var(--bg-page); padding:6px; border-radius:4px; border:1px solid var(--border);">El <span class="mono">${esc(s.fecha_ausencia)}</span> de <span class="mono">${esc(s.hora_inicio)}</span> a <span class="mono">${esc(s.hora_fin)}</span></div>`;
                 
-                let adjunto = (s.archivo && s.archivo !== "null" && String(s.archivo).trim() !== "") ? `<a href="/api/archivo/${s.archivo}" target="_blank" style="display:inline-block; background:#007bff; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:11px; font-weight:bold; margin-top:5px; margin-bottom:5px;">Ver Documento Adjunto</a><br>` : '';
+                let adjunto = (s.archivo && s.archivo !== "null" && String(s.archivo).trim() !== "") ? `<a href="/api/archivo/${s.archivo}" target="_blank" style="display:inline-flex; align-items:center; gap:4px; color:var(--accent); text-decoration:none; font-size:12px; font-weight:600; margin:5px 0;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg> Ver Documento</a>` : '';
                 
-                let boxEditMulti = col === 'PENDIENTE' && isMultidia ? `<div><input type="date" id="v-inicio-${s.id}" value="${s.fecha_ausencia}" style="margin-bottom:5px; font-size:11px;"><input type="date" id="v-fin-${s.id}" value="${s.fecha_fin}" style="font-size:11px;"></div>` : '';
-                let btns = col === 'PENDIENTE' ? `${boxEditMulti}<div style="display:flex; gap:5px; margin-top:5px;"><button class="btn-green" onclick="${isMultidia ? `accion('estado_solicitud',{d1:${s.id}, d2:'APROBADA', d3:v('v-inicio-${s.id}'), d4:v('v-fin-${s.id}')})` : `accion('estado_solicitud',{d1:${s.id}, d2:'APROBADA'})`}">Aprobar</button><button class="btn-red" onclick="accion('estado_solicitud',{d1:${s.id}, d2:'RECHAZADA'})">Denegar</button></div>` : `<button class="btn-red" onclick="if(confirm('¿Confirmar anulación de estado?')) accion('estado_solicitud',{d1:${s.id}, d2:'RECHAZADA'})">Revocar Aprobación</button>`;
-                return `<div class="k-card"><h4>[#${s.id}] ${esc(s.nombre)}</h4><span style="font-weight:bold; font-size:12px;">${esc(s.concepto)}</span>${infoStr}<div style="font-size:12px; margin-bottom:5px; color:#555;">${esc(s.motivo)}</div>${adjunto}${btns}</div>`;
+                let boxEditMulti = col === 'PENDIENTE' && isMultidia ? `<div style="display:flex; gap:5px; margin-bottom:8px;"><input type="date" id="v-inicio-${s.id}" value="${s.fecha_ausencia}" style="font-size:11px; padding:6px; margin:0;"><input type="date" id="v-fin-${s.id}" value="${s.fecha_fin}" style="font-size:11px; padding:6px; margin:0;"></div>` : '';
+                
+                let btns = col === 'PENDIENTE' ? `${boxEditMulti}<div style="display:flex; gap:8px; margin-top:5px;"><button style="flex:1; padding:8px; font-size:12px;" onclick="${isMultidia ? `accion('estado_solicitud',{d1:${s.id}, d2:'APROBADA', d3:v('v-inicio-${s.id}'), d4:v('v-fin-${s.id}')})` : `accion('estado_solicitud',{d1:${s.id}, d2:'APROBADA'})`}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Aprobar</button><button class="btn-secondary" style="flex:1; padding:8px; font-size:12px; color:var(--danger); border-color:var(--danger);" onclick="accion('estado_solicitud',{d1:${s.id}, d2:'RECHAZADA'})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> Denegar</button></div>` : `<button class="btn-secondary" style="width:100%; padding:8px; font-size:12px; color:var(--danger); border-color:var(--danger); margin-top:5px;" onclick="if(confirm('¿Confirmar anulación de estado?')) accion('estado_solicitud',{d1:${s.id}, d2:'RECHAZADA'})">Revocar Aprobación</button>`;
+                
+                return `<div class="k-card"><div style="display:flex; justify-content:space-between; align-items:flex-start; flex-shrink:0;"><h4><span class="mono" style="color:var(--text-muted); font-size:11px; font-weight:normal;">#${s.id}</span><br>${esc(s.nombre)}</h4>${getBadge(col)}</div><span style="font-weight:600; font-size:12px; color:var(--text-secondary); flex-shrink:0;">${esc(s.concepto)}</span><div style="flex-shrink:0;">${infoStr}</div><div class="text-clamp" style="font-size:12px; color:var(--text-secondary); line-height:1.4; flex-grow:1;">${esc(s.motivo)}</div><div style="flex-shrink:0;">${adjunto}${btns}</div></div>`;
             }).join('');
             
             if(list.length > 5) {
-                html += `<button class="btn-info" style="width:100%; margin-top:10px;" onclick="abrirVerMas('${col}')">Mostrar lista completa (${list.length - 5})</button>`;
+                html += `<button class="btn-secondary" style="width:100%; margin-top:10px;" onclick="abrirVerMas('${col}')">Mostrar lista completa (${list.length - 5})</button>`;
             }
             document.getElementById(`k-${col}`).innerHTML = html;
         });
@@ -757,31 +919,43 @@
         };
         document.getElementById('vm-titulo').innerText = titles[col] || 'Detalle de Solicitudes';
         
+        let getBadge = (estado) => {
+            if(estado==='APROBADA' || estado==='CULMINADAS') return `<span class="badge badge-success">${estado}</span>`;
+            if(estado==='PENDIENTE') return `<span class="badge badge-neutral">PENDIENTE</span>`;
+            if(estado==='RECHAZADA' || estado==='CADUCADAS') return `<span class="badge badge-danger">${estado}</span>`;
+            if(estado==='EN_CURSO') return `<span class="badge badge-warning">EN CURSO</span>`;
+            return `<span class="badge badge-neutral">${estado}</span>`;
+        };
+
         document.getElementById('vm-lista').innerHTML = list.map(s => {
             let ts = dG.tipos_solicitud.find(t=>t.nombre===s.concepto);
             let isMultidia = ts?.tipo === 'DIAS';
-            let infoStr = isMultidia ? `Del ${esc(s.fecha_ausencia)} al ${esc(s.fecha_fin)}` : `El ${esc(s.fecha_ausencia)} de ${esc(s.hora_inicio)} a ${esc(s.hora_fin)}`;
-            let adjunto = (s.archivo && s.archivo !== "null" && String(s.archivo).trim() !== "") ? `<a href="/api/archivo/${s.archivo}" target="_blank" style="color:var(--primary); text-decoration:none; font-weight:bold; font-size:12px; margin-left:10px;">[Ver Documento Adjunto]</a>` : '';
+            let infoStr = isMultidia ? `Del <span class="mono">${esc(s.fecha_ausencia)}</span> al <span class="mono">${esc(s.fecha_fin)}</span>` : `El <span class="mono">${esc(s.fecha_ausencia)}</span> de <span class="mono">${esc(s.hora_inicio)}</span> a <span class="mono">${esc(s.hora_fin)}</span>`;
+            let adjunto = (s.archivo && s.archivo !== "null" && String(s.archivo).trim() !== "") ? `<a href="/api/archivo/${s.archivo}" target="_blank" style="color:var(--accent); text-decoration:none; font-weight:600; font-size:12px; display:inline-flex; align-items:center; gap:4px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg> Documento Adjunto</a>` : '';
             
             let btns = '';
             if(col === 'PENDIENTE') {
-                let boxEditMulti = isMultidia ? `<div style="display:inline-block; margin-right:10px;"><input type="date" id="vm-inicio-${s.id}" value="${s.fecha_ausencia}" style="padding:4px; font-size:11px;"><input type="date" id="vm-fin-${s.id}" value="${s.fecha_fin}" style="padding:4px; font-size:11px;"></div>` : '';
+                let boxEditMulti = isMultidia ? `<div style="display:inline-block; margin-right:10px;"><input type="date" id="vm-inicio-${s.id}" value="${s.fecha_ausencia}" style="padding:6px; font-size:12px;"><input type="date" id="vm-fin-${s.id}" value="${s.fecha_fin}" style="padding:6px; font-size:12px; margin-left:5px;"></div>` : '';
                 let actionAprobar = isMultidia ? `accion('estado_solicitud',{d1:${s.id}, d2:'APROBADA', d3:v('vm-inicio-${s.id}'), d4:v('vm-fin-${s.id}')}); cerrarM('m-ver-mas');` : `accion('estado_solicitud',{d1:${s.id}, d2:'APROBADA'}); cerrarM('m-ver-mas');`;
-                btns = `<div style="margin-top:8px;">${boxEditMulti}<button class="btn-green" style="padding:4px 8px; font-size:12px; margin-right:5px;" onclick="${actionAprobar}">Aprobar Solicitud</button><button class="btn-red" style="padding:4px 8px; font-size:12px;" onclick="accion('estado_solicitud',{d1:${s.id}, d2:'RECHAZADA'}); cerrarM('m-ver-mas');">Denegar Solicitud</button></div>`;
+                btns = `<div style="margin-top:12px; display:flex; gap:8px;">${boxEditMulti}<button style="padding:6px 12px; font-size:13px;" onclick="${actionAprobar}">Aprobar Solicitud</button><button class="btn-secondary" style="padding:6px 12px; font-size:13px; color:var(--danger); border-color:var(--danger);" onclick="accion('estado_solicitud',{d1:${s.id}, d2:'RECHAZADA'}); cerrarM('m-ver-mas');">Denegar</button></div>`;
             } else if(col === 'APROBADA' || col === 'EN_CURSO' || col === 'CULMINADAS') {
-                btns = `<div style="margin-top:8px;"><button class="btn-red" style="padding:4px 8px; font-size:12px;" onclick="if(confirm('¿Confirmar anulación de estado?')) { accion('estado_solicitud',{d1:${s.id}, d2:'RECHAZADA'}); cerrarM('m-ver-mas'); }">Revocar Aprobación</button></div>`;
+                btns = `<div style="margin-top:12px;"><button class="btn-secondary" style="padding:6px 12px; font-size:13px; color:var(--danger); border-color:var(--danger);" onclick="if(confirm('¿Confirmar anulación de estado?')) { accion('estado_solicitud',{d1:${s.id}, d2:'RECHAZADA'}); cerrarM('m-ver-mas'); }">Revocar Aprobación</button></div>`;
             } else if(col === 'CADUCADAS') {
-                btns = `<div style="margin-top:8px;"><button class="btn-red" style="padding:4px 8px; font-size:12px;" onclick="accion('estado_solicitud',{d1:${s.id}, d2:'RECHAZADA'}); cerrarM('m-ver-mas');">Archivar Registro</button></div>`;
+                btns = `<div style="margin-top:12px;"><button class="btn-secondary" style="padding:6px 12px; font-size:13px; color:var(--danger); border-color:var(--danger);" onclick="accion('estado_solicitud',{d1:${s.id}, d2:'RECHAZADA'}); cerrarM('m-ver-mas');">Archivar Registro</button></div>`;
             }
 
             return `<div class="lista-modal-item">
                 <div class="lista-modal-header">
                     <div>
-                        <strong style="font-size:14px;">[#${s.id}] ${esc(s.nombre)}</strong> - <span style="color:var(--text-muted); font-weight:bold;">${esc(s.concepto)}</span>
-                        <div style="color:#555; margin-top:4px; font-weight:bold;">${infoStr}</div>
-                        <div style="margin-top:4px; font-style:italic;">"${esc(s.motivo)}"</div>
+                        <strong style="font-size:15px; color:var(--text-primary);"><span class="mono" style="color:var(--text-muted); font-size:12px; font-weight:normal;">#${s.id}</span> ${esc(s.nombre)}</strong><br>
+                        <span style="color:var(--text-secondary); font-weight:600; font-size:13px;">${esc(s.concepto)}</span>
+                        <div style="color:var(--text-primary); margin-top:6px; font-size:13px;">${infoStr}</div>
+                        <div style="margin-top:6px; color:var(--text-secondary); line-height:1.5;">${esc(s.motivo)}</div>
                     </div>
-                    ${adjunto}
+                    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+                        ${getBadge(col)}
+                        ${adjunto}
+                    </div>
                 </div>
                 ${btns}
             </div>`;
@@ -803,19 +977,19 @@
             let solicitudesDia = dG.solicitudes.filter(s => s.estado === 'APROBADA' && f_str >= s.fecha_ausencia && (s.fecha_fin === '' ? f_str === s.fecha_ausencia : f_str <= s.fecha_fin));
             
             let badges = '';
-            feriadosDia.forEach(f => badges += `<div class="cal-badge" style="background:#dc3545;">Feriado: ${esc(f.nombre)}</div>`);
-            francosDia.forEach(fr => badges += `<div class="cal-badge" style="background:#17a2b8;">Franco: ${esc(fr.nombre.split(' ')[0])} (${esc(fr.turno[0])})</div>`);
+            feriadosDia.forEach(f => badges += `<div class="cal-badge badge-danger">${esc(f.nombre)}</div>`);
+            francosDia.forEach(fr => badges += `<div class="cal-badge badge-info">${esc(fr.nombre.split(' ')[0])} (${esc(fr.turno[0])})</div>`);
             solicitudesDia.forEach(s => {
                 let em = s.concepto === 'VACACIONES' ? 'Vac:' : 'Lic:';
-                badges += `<div class="cal-badge" style="background:#28a745;">${em} ${esc(s.nombre.split(' ')[0])}</div>`;
+                badges += `<div class="cal-badge badge-success">${em} ${esc(s.nombre.split(' ')[0])}</div>`;
             });
-            html += `<div class="cal-day interact" onclick="abrirOpcionesDia('${f_str}')"><div class="cal-num">${d}</div>${badges}</div>`;
+            html += `<div class="cal-day interact" onclick="abrirOpcionesDia('${f_str}')" style="cursor:pointer;"><div class="cal-num">${d}</div>${badges}</div>`;
         }
         document.getElementById('calendar-grid').innerHTML = html;
     }
     function cambiarMes(dir) { fechaCalendario.setMonth(fechaCalendario.getMonth() + dir); renderCalendario(); }
-    function abrirOpcionesDia(fecha) { document.getElementById('cal-selected-date').value = fecha; document.getElementById('cal-modal-title').innerText = "Gestión: " + fecha; document.getElementById('box-admin-cal').classList.remove('hidden'); document.getElementById('m-cal-opts').classList.remove('hidden'); }
-    function bajarExcel() { let d=v('rD'), h=v('rH'); if(d&&h) window.open(`/api/reporte_excel?d_desde=${d}&d_hasta=${h}&suc=${v('rS')}`, '_blank'); else alert("Fechas requeridas."); }
+    function abrirOpcionesDia(fecha) { document.getElementById('cal-selected-date').value = fecha; document.getElementById('cal-modal-title').innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> Gestión: <span class="mono">${fecha}</span>`; document.getElementById('box-admin-cal').classList.remove('hidden'); document.getElementById('m-cal-opts').classList.remove('hidden'); }
+    function bajarExcel() { let d=v('rD'), h=v('rH'); if(d&&h) window.open(`/api/reporte_excel?d_desde=${d}&d_hasta=${h}&suc=${v('rS')}`, '_blank'); else alert("Fechas requeridas para el reporte consolidado."); }
 
     function ejecutarGuardarConfig() {
         let p = {
@@ -850,7 +1024,7 @@
         }
     }
     function renderConceptos() {
-        document.getElementById('b-conceptos').innerHTML = dG.tipos_solicitud.map(t => `<tr><td><b>${esc(t.nombre)}</b></td><td>${esc(t.tipo)}</td><td>${t.requiere_foto===1?'Sí':'No'}</td><td>${t.descuenta_dias===1?'Sí':'No'}</td><td>${t.horas_por_dia} hs</td><td><button class="btn-red" onclick="if(confirm('¿Confirmar eliminación de parámetro?')) accion('borrar_concepto',{nombre:'${esc(t.nombre)}'})">Eliminar</button></td></tr>`).join('');
+        document.getElementById('b-conceptos').innerHTML = dG.tipos_solicitud.map(t => `<tr><td><b style="color:var(--text-primary);">${esc(t.nombre)}</b></td><td><span class="badge badge-neutral">${esc(t.tipo)}</span></td><td>${t.requiere_foto===1?'Sí':'No'}</td><td>${t.descuenta_dias===1?'Sí':'No'}</td><td><span class="mono">${t.horas_por_dia} hs</span></td><td><button class="btn-secondary" style="color:var(--danger); border-color:var(--danger); padding:6px 12px; font-size:12px;" onclick="if(confirm('¿Confirmar eliminación de parámetro?')) accion('borrar_concepto',{nombre:'${esc(t.nombre)}'})">Eliminar</button></td></tr>`).join('');
     }
     
     init();

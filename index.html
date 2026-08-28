@@ -1,145 +1,242 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="icon" type="image/png" href="/api/archivo/favicon.png">
-    <title>Acceso Personal</title>
+    <title>JZPass - Acceso Personal</title>
     <style>
-        body { font-family: 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        .header { width: 100%; background: #007bff; color: white; padding: 25px 0; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1);}
-        .header h1 { margin: 0; font-size: 32px; font-weight: 800; letter-spacing: 1px;}
-        .header span { font-size: 14px; opacity: 0.9; }
+        :root {
+            --bg-page: #f4f6f9;
+            --bg-surface: #ffffff;
+            --accent: #2962ff;
+            --accent-hover: #1f4fd1;
+            --success: #00c853;
+            --danger: #d50000;
+            --warning: #ffc107;
+            --text-primary: #212529;
+            --text-secondary: #666666;
+            --text-muted: #999999;
+            --border: #e0e0e0;
+            
+            --badge-success-bg: #e8f5e9; --badge-success-text: #1b5e20;
+            --badge-danger-bg: #ffebee; --badge-danger-text: #b71c1c;
+            --badge-warning-bg: #fff8e1; --badge-warning-text: #f57f17;
+            --badge-info-bg: #e3f2fd; --badge-info-text: #0d47a1;
+            --badge-neutral-bg: #f5f5f5; --badge-neutral-text: #616161;
+        }
+        [data-theme="dark"] {
+            --bg-page: #121212;
+            --bg-surface: #1e1e1e;
+            --accent: #4475ff;
+            --accent-hover: #5c8aff;
+            --success: #00e676;
+            --danger: #ff5252;
+            --warning: #ffd740;
+            --text-primary: #e0e0e0;
+            --text-secondary: #aaaaaa;
+            --text-muted: #777777;
+            --border: #333333;
+            
+            --badge-success-bg: rgba(0, 200, 83, 0.15); --badge-success-text: #69f0ae;
+            --badge-danger-bg: rgba(213, 0, 0, 0.15); --badge-danger-text: #ff8a80;
+            --badge-warning-bg: rgba(255, 193, 7, 0.15); --badge-warning-text: #ffe57f;
+            --badge-info-bg: rgba(41, 98, 255, 0.15); --badge-info-text: #82b1ff;
+            --badge-neutral-bg: rgba(255,255,255,0.1); --badge-neutral-text: #cccccc;
+        }
+
+        body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg-page); color: var(--text-primary); margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; transition: background 0.3s, color 0.3s;}
+        .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
         
-        .card { background: white; padding: 35px 25px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); width: 85%; max-width: 400px; margin-top: -20px; box-sizing: border-box; }
-        h2 { text-align: center; color: #333; margin-top: 0; font-size: 22px; margin-bottom: 25px;}
+        .top-bar { position: fixed; top: 0; left: 0; right: 0; height: 4px; background: var(--accent); z-index: 9999; }
         
-        input, select { width: 100%; padding: 14px; margin: 10px 0; border: 1px solid #b6d4fe; border-radius: 8px; box-sizing: border-box; font-size: 16px; background: #eef4fc; color: #333; outline: none; transition: 0.2s;}
-        input:focus, select:focus { border-color: #007bff; box-shadow: 0 0 0 3px rgba(0,123,255,0.2); }
+        .header { width: 100%; padding: 40px 0 20px 0; text-align: center; }
+        .header h1 { margin: 0; font-size: 28px; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; justify-content: center; gap: 10px;}
+        .header span { font-size: 14px; color: var(--text-secondary); }
         
-        button { width: 100%; padding: 16px; background: #007bff; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 15px; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,123,255,0.3);}
+        .card { background: var(--bg-surface); padding: 35px 25px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); width: 85%; max-width: 400px; margin-top: 10px; box-sizing: border-box; border: 1px solid var(--border); }
+        h2, h3 { color: var(--text-primary); margin-top: 0; font-weight: 600; }
+        h2 { text-align: center; font-size: 20px; margin-bottom: 25px;}
+        
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid var(--border); border-radius: 8px; box-sizing: border-box; font-size: 15px; background: var(--bg-page); color: var(--text-primary); outline: none; transition: 0.2s;}
+        input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(41,98,255,0.15); }
+        
+        button { width: 100%; padding: 14px; background: var(--accent); color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 15px; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px;}
+        button:hover { background: var(--accent-hover); }
         button:active { transform: scale(0.98); }
-        button:disabled { background: #6c757d; cursor: not-allowed; box-shadow: none; opacity: 0.8; }
-        .btn-red { background: #dc3545; box-shadow: 0 4px 10px rgba(220,53,69,0.3); }
-        .btn-green { background: #28a745; box-shadow: 0 4px 10px rgba(40,167,69,0.3); }
+        button:disabled { background: var(--text-muted); cursor: not-allowed; opacity: 0.8; }
+        
+        .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); }
+        .btn-secondary:hover { background: var(--bg-page); color: var(--text-primary); }
+        .btn-red { background: var(--danger); } .btn-red:hover { filter: brightness(1.1); background: var(--danger); }
+        .btn-green { background: var(--success); } .btn-green:hover { filter: brightness(1.1); background: var(--success); }
         
         .hidden { display: none !important; }
-        .error { color: #dc3545; font-size: 14px; text-align: center; margin-top: 15px; font-weight: bold; }
-        .success { color: #28a745; font-size: 14px; text-align: center; margin-top: 15px; font-weight: bold; }
-        .badge { background: #17a2b8; color: white; padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight:bold;}
+        .error { color: var(--danger); font-size: 13px; text-align: center; margin-top: 15px; font-weight: 600; }
+        .success { color: var(--success); font-size: 13px; text-align: center; margin-top: 15px; font-weight: 600; }
         
-        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #007bff; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; margin: 0 auto; }
+        .badge { padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight:600; display: inline-flex; align-items: center; gap: 4px;}
+        .badge-info { background: var(--badge-info-bg); color: var(--badge-info-text); }
+        .badge-warning { background: var(--badge-warning-bg); color: var(--badge-warning-text); }
+        .badge-success { background: var(--badge-success-bg); color: var(--badge-success-text); }
+        .badge-danger { background: var(--badge-danger-bg); color: var(--badge-danger-text); }
+        .badge-neutral { background: var(--badge-neutral-bg); color: var(--badge-neutral-text); }
+        
+        .loader { border: 2px solid var(--bg-page); border-top: 2px solid white; border-radius: 50%; width: 16px; height: 16px; animation: spin 1s linear infinite; margin: 0 auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        .modal { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:flex; justify-content:center; align-items:center; z-index:999;}
-        .modal-content { background:white; padding:25px; border-radius:12px; width:90%; max-width: 450px; max-height: 90vh; overflow-y: auto; position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.3);}
-        .close-x { position: absolute; top: 15px; right: 20px; cursor: pointer; font-size: 18px; color: #666; font-weight: bold; background: none; border: none; padding: 0; line-height: 1; transition: 0.2s; box-shadow:none; width:auto; margin:0;}
-        .close-x:hover { color: #dc3545; transform: scale(1.1); }
+        .modal { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:flex; justify-content:center; align-items:center; z-index:999; backdrop-filter: blur(2px);}
+        .modal-content { background:var(--bg-surface); padding:25px; border-radius:10px; width:90%; max-width: 450px; max-height: 90vh; overflow-y: auto; position: relative; border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.1);}
+        .close-x { position: absolute; top: 15px; right: 15px; cursor: pointer; color: var(--text-muted); background: none; border: none; padding: 5px; transition: 0.2s; width: auto; margin:0;}
+        .close-x:hover { color: var(--danger); background: var(--bg-page); border-radius: 4px;}
         
-        .cal-header { text-align: center; font-weight: bold; padding: 8px; background: #007bff; color: white; border-radius: 4px; font-size:12px;}
-        .cal-day { min-height: 70px; border: 1px solid #d1d9e6; padding: 4px; background: #fff; border-radius: 4px; display:flex; flex-direction:column; font-size:11px;}
-        .cal-num { font-weight: bold; font-size:14px; margin-bottom: 2px;}
-        .cal-badge { font-size: 9px; padding: 3px; border-radius: 3px; margin-bottom: 2px; color: white; font-weight:bold; word-wrap:break-word; line-height:1.1;}
+        .cal-header { text-align: center; font-weight: 600; padding: 8px; background: var(--bg-page); color: var(--text-secondary); border-radius: 4px; font-size:12px; border: 1px solid var(--border);}
+        .cal-day { min-height: 70px; border: 1px solid var(--border); padding: 4px; background: var(--bg-surface); border-radius: 4px; display:flex; flex-direction:column; font-size:11px;}
+        .cal-num { font-weight: 600; font-size:13px; margin-bottom: 4px; color: var(--text-primary);}
+        .cal-badge { font-size: 9px; padding: 3px 4px; border-radius: 4px; margin-bottom: 2px; font-weight:600; word-wrap:break-word; line-height:1.2;}
 
-        .footer { margin-top: auto; padding: 20px 10px; text-align: center; font-size: 12px; color: #6c757d; width: 100%; }
-        .footer a { color: #007bff; text-decoration: none; font-weight: bold; }
+        .footer { margin-top: auto; padding: 30px 10px; text-align: center; font-size: 12px; color: var(--text-muted); width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px;}
+        .footer a { color: var(--text-secondary); text-decoration: none; font-weight: 600; transition: 0.2s; }
+        .footer a:hover { color: var(--accent); }
+        .theme-toggle { position: absolute; top: 15px; right: 15px; background: transparent; border: 1px solid var(--border); color: var(--text-primary); width: 36px; height: 36px; padding: 0; border-radius: 8px;}
+
+        .req-list { background: var(--bg-surface); border: 1px solid var(--border); padding: 12px; border-radius: 8px; margin-bottom: 10px; font-size: 13px; text-align: left; }
     </style>
 </head>
 <body>
+    <div class="top-bar"></div>
+    <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn" title="Alternar tema">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+    </button>
+
     <div class="header" id="h-container">
-        <h1 id="h-title">Portal de Empleados</h1>
-        <span>Acceso Personal</span>
+        <h1>
+            <svg width="28" height="28" viewBox="0 0 203 281">
+                <path d="M 73.0,261.5 L 62.0,261.5 L 49.0,256.5 L 45.5,253.0 L 43.5,247.0 L 45.5,237.0 L 51.0,232.5 L 61.0,231.5 L 68.5,236.0 L 78.0,252.5 L 86.0,252.5 L 92.5,240.0 L 94.5,219.0 L 47.0,218.5 L 44.5,216.0 L 44.5,212.0 L 89.0,146.5 L 89.5,188.0 L 74.5,210.0 L 94.5,210.0 L 94.5,83.0 L 74.0,86.5 L 63.0,92.5 L 54.5,103.0 L 50.5,114.0 L 46.0,114.5 L 44.5,113.0 L 44.5,80.0 L 52.0,73.5 L 94.5,73.0 L 93.5,33.0 L 91.5,29.0 L 87.0,26.5 L 70.0,24.5 L 70.0,19.5 L 140.0,19.5 L 141.0,24.5 L 127.0,27.5 L 123.5,34.0 L 123.5,73.0 L 158.0,73.5 L 161.5,76.0 L 161.5,80.0 L 129.0,128.5 L 128.5,88.0 L 132.5,81.0 L 123.5,81.0 L 122.5,208.0 L 137.0,206.5 L 148.0,200.5 L 158.5,183.0 L 160.5,175.0 L 166.0,173.5 L 166.5,214.0 L 163.0,218.5 L 121.0,218.5 L 113.5,238.0 L 101.0,251.5 L 88.0,258.5 L 73.0,261.5 Z" fill="#ffffff" stroke="#000000" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+            </svg>
+            JZPass
+        </h1>
+        <span id="h-title">Acceso Personal</span>
     </div>
 
     <div id="v-login" class="card">
         <h2>Inicio de Sesión</h2>
-        <input type="text" id="l-dni" placeholder="DNI" inputmode="numeric">
+        <input type="text" id="l-dni" class="mono" placeholder="DNI / Legajo" inputmode="numeric">
         <input type="password" id="l-pass" placeholder="Contraseña">
-        <button id="btn-login" onclick="hacerLogin()">Ingresar</button>
+        <button id="btn-login" onclick="hacerLogin()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+            Ingresar
+        </button>
         <div id="l-msg" class="error"></div>
     </div>
 
     <div id="v-clave" class="card hidden">
         <h2>Cambio de Clave Requerido</h2>
-        <p style="text-align:center; color:#666; font-size:14px; margin-top:-10px;">Establezca una nueva contraseña personal.</p>
+        <p style="text-align:center; color:var(--text-secondary); font-size:13px; margin-top:-10px;">Establezca una nueva contraseña personal.</p>
         <input type="password" id="c-nueva" placeholder="Nueva contraseña">
-        <ul style="font-size:12px; color:#555; text-align:left; background:#f8f9fa; padding:15px 15px 15px 30px; border-radius:8px;">
+        <ul style="font-size:12px; color:var(--text-secondary); text-align:left; background:var(--bg-page); padding:15px 15px 15px 30px; border-radius:8px; border:1px solid var(--border);">
             <li>Mínimo 8 caracteres</li>
             <li>Al menos 1 mayúscula</li>
             <li>Al menos 2 números</li>
             <li>Al menos 1 carácter especial (@, *, !, etc)</li>
         </ul>
-        <button class="btn-green" onclick="cambiarClave()">Confirmar y Continuar</button>
+        <button class="btn-green" onclick="cambiarClave()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Confirmar y Continuar
+        </button>
         <div id="c-msg" class="error"></div>
     </div>
 
-    <div id="v-dash" class="card hidden" style="width: 95%; max-width: 500px; margin-top: 20px;">
-        <h2 id="d-nombre" style="margin-top:0; text-align:center; color:#007bff; font-size:26px;">Cargando datos...</h2>
+    <div id="v-dash" class="card hidden" style="width: 95%; max-width: 500px; margin-top: 10px;">
+        <h2 id="d-nombre" style="margin-top:0; text-align:center; color:var(--accent); font-size:22px;">Cargando datos...</h2>
         <div style="text-align:center; margin-bottom: 25px; display:flex; justify-content:center; gap:10px;">
-            <span id="d-sucursal" class="badge"></span>
-            <span id="d-vacaciones" class="badge" style="background:#f0ad4e; color:black;"></span>
+            <span id="d-sucursal" class="badge badge-info"></span>
+            <span id="d-vacaciones" class="badge badge-warning"></span>
         </div>
 
-        <button id="btn-fichar" onclick="ficharGPS()" style="height:70px; font-size:20px; border-radius:12px;">Registrar Fichaje</button>
-        <div id="f-msg" style="text-align:center; margin-top:15px; font-weight:bold;"></div>
+        <button id="btn-fichar" onclick="ficharGPS()" style="height:60px; font-size:18px;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+            Registrar Fichaje
+        </button>
+        <div id="f-msg" style="text-align:center; margin-top:15px; font-size:14px; font-weight:600;"></div>
 
-        <hr style="border: 0; border-top: 1px solid #d1d9e6; margin: 30px 0;">
+        <hr style="border: 0; border-top: 1px solid var(--border); margin: 30px 0;">
 
-        <h3 style="margin-top:0; color:#333; text-align:center;">Solicitar Permiso</h3>
+        <h3 style="text-align:center; display:flex; align-items:center; justify-content:center; gap:8px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            Solicitar Permiso
+        </h3>
         <select id="s-concepto"></select>
-        <label id="lbl-s-fecha" style="font-size:12px; color:#666; font-weight:bold; margin-left:5px;">Fecha:</label>
+        <label id="lbl-s-fecha" style="font-size:12px; color:var(--text-secondary); font-weight:600; margin-left:5px;">Fecha:</label>
         <input type="date" id="s-fecha">
         
         <div id="s-fechafin-box" class="hidden">
-            <label style="font-size:12px; color:#666; font-weight:bold; margin-left:5px;">Fecha Hasta:</label>
+            <label style="font-size:12px; color:var(--text-secondary); font-weight:600; margin-left:5px;">Fecha Hasta:</label>
             <input type="date" id="s-fechafin">
         </div>
         
         <div id="s-horas-box" style="display:flex; gap:10px;">
             <div style="flex:1;">
-                <label style="font-size:12px; color:#666; font-weight:bold; margin-left:5px;">Hora Salida:</label>
+                <label style="font-size:12px; color:var(--text-secondary); font-weight:600; margin-left:5px;">Hora Salida:</label>
                 <input type="time" id="s-hin">
             </div>
             <div style="flex:1;">
-                <label style="font-size:12px; color:#666; font-weight:bold; margin-left:5px;">Hora Regreso:</label>
+                <label style="font-size:12px; color:var(--text-secondary); font-weight:600; margin-left:5px;">Hora Regreso:</label>
                 <input type="time" id="s-hout">
             </div>
         </div>
         
         <input type="text" id="s-motivo" placeholder="Motivo detallado">
         
-        <div id="s-foto-box" class="hidden" style="background:#fff3cd; padding:10px; border-radius:8px; border:1px solid #ffeeba; margin-top:10px;">
-            <label style="font-size:12px; color:#856404; font-weight:bold;">Adjuntar Documento/Certificado:</label>
-            <input type="file" id="s-foto" accept=".pdf, .jpg, .jpeg, .png" style="background:white; border:none; padding:5px;">
+        <div id="s-foto-box" class="hidden" style="background:var(--bg-page); padding:12px; border-radius:8px; border:1px solid var(--border); margin-top:10px;">
+            <label style="font-size:12px; color:var(--text-secondary); font-weight:600; display:flex; align-items:center; gap:5px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                Adjuntar Documento/Certificado:
+            </label>
+            <input type="file" id="s-foto" accept=".pdf, .jpg, .jpeg, .png" style="background:var(--bg-surface); border:none; padding:5px; margin-top:5px;">
         </div>
         
-        <button id="btn-enviar-solicitud" onclick="enviarSolicitud()" style="background:#6c757d; box-shadow: 0 4px 10px rgba(108,117,125,0.3);">Enviar Solicitud</button>
+        <button id="btn-enviar-solicitud" onclick="enviarSolicitud()" class="btn-secondary" style="background:var(--bg-page);">
+            Enviar Solicitud
+        </button>
         <div id="s-msg" class="error"></div>
 
-        <hr style="border: 0; border-top: 1px solid #d1d9e6; margin: 30px 0;">
+        <hr style="border: 0; border-top: 1px solid var(--border); margin: 30px 0;">
 
-        <h3 style="margin-top:0; color:#333; text-align:center;">Historial de Solicitudes</h3>
-        <div id="lista-solicitudes" style="padding: 5px;"></div>
+        <h3 style="text-align:center;">Historial de Solicitudes</h3>
+        <div id="lista-solicitudes"></div>
 
-        <div id="panel-encargado" class="hidden" style="margin-top:35px; background:#eef4fc; padding:15px; border-radius:12px; border:1px solid #b6d4fe;">
-            <h3 style="margin-top:0; margin-bottom:5px; color:#0056b3; text-align:center; font-size:18px;">Gestión de Sucursal</h3>
+        <div id="panel-encargado" class="hidden" style="margin-top:30px; background:var(--bg-page); padding:20px; border-radius:10px; border:1px solid var(--border);">
+            <h3 style="margin-top:0; margin-bottom:5px; color:var(--text-primary); text-align:center; font-size:16px;">Gestión de Sucursal</h3>
             <div style="display:flex; gap:10px; margin-top:15px;">
-                <button onclick="document.getElementById('m-e-franco').classList.remove('hidden')" style="background:#fd7e14; margin-top:0; font-size:14px; box-shadow:0 4px 10px rgba(253,126,20,0.3);">Asignar Franco</button>
-                <button onclick="abrirCalendarioLocal()" style="background:#17a2b8; margin-top:0; font-size:14px; box-shadow:0 4px 10px rgba(23,162,184,0.3);">Calendario</button>
+                <button onclick="document.getElementById('m-e-franco').classList.remove('hidden')" style="margin-top:0; font-size:13px; background:var(--warning); color:#000;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    Asignar Franco
+                </button>
+                <button onclick="abrirCalendarioLocal()" style="margin-top:0; font-size:13px; background:var(--bg-surface); color:var(--text-primary); border:1px solid var(--border);">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    Calendario
+                </button>
             </div>
         </div>
 
-        <button id="btn-ir-panel" class="hidden" onclick="window.location.href='/panel'" style="background:#17a2b8; box-shadow: 0 4px 10px rgba(23,162,184,0.3); margin-top:20px;">Panel de Administración</button>
+        <button id="btn-ir-panel" class="hidden btn-secondary" onclick="window.location.href='/panel'">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            Panel de Administración
+        </button>
 
-        <button onclick="cerrarSesion()" class="btn-red" style="margin-top:20px;">Cerrar Sesión</button>
+        <button onclick="cerrarSesion()" class="btn-secondary" style="color:var(--danger); border-color:var(--danger); background:transparent;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            Cerrar Sesión
+        </button>
     </div>
 
-    <!-- Modal para Asignar Franco (Encargados) -->
+    <!-- Modal para Asignar Franco -->
     <div id="m-e-franco" class="modal hidden">
         <div class="modal-content">
-            <button class="close-x" onclick="cerrarModal('m-e-franco')">X</button>
-            <h3 style="margin-top:0; color:#333;">Asignar Medio Franco</h3>
-            <input type="text" id="ef-dni" list="ef-dniList" placeholder="Búsqueda de empleado..." autocomplete="off">
+            <button class="close-x" onclick="cerrarModal('m-e-franco')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+            <h3 style="margin-top:0;">Asignar Medio Franco</h3>
+            <input type="text" id="ef-dni" class="mono" list="ef-dniList" placeholder="Búsqueda de empleado..." autocomplete="off">
             <datalist id="ef-dniList"></datalist>
             <input type="date" id="ef-fecha">
             <select id="ef-turno">
@@ -151,37 +248,37 @@
         </div>
     </div>
 
-    <!-- Modal para Calendario (Encargados) -->
+    <!-- Modal para Calendario -->
     <div id="m-e-cal" class="modal hidden">
         <div class="modal-content" style="max-width: 800px; width: 95%;">
-            <button class="close-x" onclick="cerrarModal('m-e-cal')">X</button>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; margin-top:10px;">
-                <button onclick="cambiarMesLocal(-1)" style="width:auto; padding:8px 12px; background:#6c757d; margin:0;">Anterior</button>
-                <h3 id="ecal-month-year" style="margin:0; font-size:16px; color:#007bff; text-transform:uppercase;"></h3>
-                <button onclick="cambiarMesLocal(1)" style="width:auto; padding:8px 12px; background:#6c757d; margin:0;">Siguiente</button>
+            <button class="close-x" onclick="cerrarModal('m-e-cal')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; margin-top:5px;">
+                <button onclick="cambiarMesLocal(-1)" class="btn-secondary" style="width:auto; padding:8px 12px; margin:0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                <h3 id="ecal-month-year" style="margin:0; font-size:16px; color:var(--text-primary);"></h3>
+                <button onclick="cambiarMesLocal(1)" class="btn-secondary" style="width:auto; padding:8px 12px; margin:0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
             </div>
             <div style="width: 100%; overflow-x: auto;">
-                <div id="ecal-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; min-width: 500px;"></div>
+                <div id="ecal-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; min-width: 500px;"></div>
             </div>
         </div>
     </div>
 
-    <!-- Modal Historial Completo Empleado -->
+    <!-- Modal Historial Completo -->
     <div id="m-emp-historial" class="modal hidden">
         <div class="modal-content" style="max-width: 500px; width: 95%;">
-            <button class="close-x" onclick="cerrarModal('m-emp-historial')">X</button>
-            <h3 style="margin-top:0; color:#333; border-bottom:1px solid #d1d9e6; padding-bottom:10px;">Historial Completo</h3>
+            <button class="close-x" onclick="cerrarModal('m-emp-historial')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+            <h3 style="margin-top:0; border-bottom:1px solid var(--border); padding-bottom:10px;">Historial Completo</h3>
             <div id="m-emp-historial-lista" style="max-height: 60vh; overflow-y: auto; padding-right:5px;"></div>
-            <button onclick="cerrarModal('m-emp-historial')" style="background:#6c757d; width:100%; margin-top:15px;">Cerrar</button>
+            <button onclick="cerrarModal('m-emp-historial')" class="btn-secondary" style="width:100%; margin-top:15px;">Cerrar</button>
         </div>
     </div>
 
     <!-- Modal Política de Privacidad -->
     <div id="m-privacidad" class="modal hidden">
         <div class="modal-content" style="max-width: 550px; width: 90%;">
-            <button class="close-x" onclick="cerrarModal('m-privacidad')">X</button>
-            <h3 style="margin-top:0; color:#333; border-bottom:1px solid #d1d9e6; padding-bottom:10px;">Política de Privacidad</h3>
-            <div style="max-height: 60vh; overflow-y: auto; padding-right:10px; font-size: 13px; color: #444; line-height: 1.5; text-align: left;">
+            <button class="close-x" onclick="cerrarModal('m-privacidad')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+            <h3 style="margin-top:0; border-bottom:1px solid var(--border); padding-bottom:10px;">Política de Privacidad</h3>
+            <div style="max-height: 60vh; overflow-y: auto; padding-right:10px; font-size: 13px; color: var(--text-secondary); line-height: 1.6; text-align: left;">
                 <p><strong>1. Captura de Datos Personales</strong><br>
                 El Portal de Empleados gestiona datos de identificación laboral (DNI, Nombre, Contacto) con el único fin de administrar la relación laboral y el control de asistencia.</p>
                 <p><strong>2. Tratamiento de Geolocalización (GPS)</strong><br>
@@ -191,16 +288,16 @@
                 <p><strong>4. Seguridad del Almacenamiento</strong><br>
                 Toda la información transaccional se almacena de forma cifrada y auditada, sin comunicación con agentes externos u organizaciones de terceros.</p>
             </div>
-            <button onclick="cerrarModal('m-privacidad')" style="background:#6c757d; width:100%; margin-top:15px;">Entendido</button>
+            <button onclick="cerrarModal('m-privacidad')" class="btn-secondary" style="width:100%; margin-top:15px;">Entendido</button>
         </div>
     </div>
 
     <!-- Modal Términos de Uso -->
     <div id="m-terminos" class="modal hidden">
         <div class="modal-content" style="max-width: 550px; width: 90%;">
-            <button class="close-x" onclick="cerrarModal('m-terminos')">X</button>
-            <h3 style="margin-top:0; color:#333; border-bottom:1px solid #d1d9e6; padding-bottom:10px;">Términos de Uso</h3>
-            <div style="max-height: 60vh; overflow-y: auto; padding-right:10px; font-size: 13px; color: #444; line-height: 1.5; text-align: left;">
+            <button class="close-x" onclick="cerrarModal('m-terminos')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+            <h3 style="margin-top:0; border-bottom:1px solid var(--border); padding-bottom:10px;">Términos de Uso</h3>
+            <div style="max-height: 60vh; overflow-y: auto; padding-right:10px; font-size: 13px; color: var(--text-secondary); line-height: 1.6; text-align: left;">
                 <p><strong>1. Carácter del Acceso</strong><br>
                 El uso de este portal es un recurso operativo proporcionado por la empresa para sus empleados activos. Las credenciales de acceso son estrictamente personales e intransferibles.</p>
                 <p><strong>2. Integridad de las Declaraciones</strong><br>
@@ -208,16 +305,19 @@
                 <p><strong>3. Responsabilidad de la Credencial</strong><br>
                 Toda acción registrada en el sistema bajo el DNI y clave de un usuario se presumirá ejecutada por el titular de la cuenta.</p>
             </div>
-            <button onclick="cerrarModal('m-terminos')" style="background:#6c757d; width:100%; margin-top:15px;">Entendido</button>
+            <button onclick="cerrarModal('m-terminos')" class="btn-secondary" style="width:100%; margin-top:15px;">Entendido</button>
         </div>
     </div>
 
     <div class="footer">
-        v2.1 - Powered by <a href="https://jz-tech.mywire.org/" target="_blank">Jz TechSolutions</a><br>
-        <span style="display:inline-block; margin-top:5px;">
-            <a href="#" onclick="document.getElementById('m-privacidad').classList.remove('hidden'); return false;">Privacidad</a> | 
+        <svg width="24" height="24" viewBox="0 0 203 281" style="opacity:0.3; margin-bottom:5px;">
+            <path d="M 73.0,261.5 L 62.0,261.5 L 49.0,256.5 L 45.5,253.0 L 43.5,247.0 L 45.5,237.0 L 51.0,232.5 L 61.0,231.5 L 68.5,236.0 L 78.0,252.5 L 86.0,252.5 L 92.5,240.0 L 94.5,219.0 L 47.0,218.5 L 44.5,216.0 L 44.5,212.0 L 89.0,146.5 L 89.5,188.0 L 74.5,210.0 L 94.5,210.0 L 94.5,83.0 L 74.0,86.5 L 63.0,92.5 L 54.5,103.0 L 50.5,114.0 L 46.0,114.5 L 44.5,113.0 L 44.5,80.0 L 52.0,73.5 L 94.5,73.0 L 93.5,33.0 L 91.5,29.0 L 87.0,26.5 L 70.0,24.5 L 70.0,19.5 L 140.0,19.5 L 141.0,24.5 L 127.0,27.5 L 123.5,34.0 L 123.5,73.0 L 158.0,73.5 L 161.5,76.0 L 161.5,80.0 L 129.0,128.5 L 128.5,88.0 L 132.5,81.0 L 123.5,81.0 L 122.5,208.0 L 137.0,206.5 L 148.0,200.5 L 158.5,183.0 L 160.5,175.0 L 166.0,173.5 L 166.5,214.0 L 163.0,218.5 L 121.0,218.5 L 113.5,238.0 L 101.0,251.5 L 88.0,258.5 L 73.0,261.5 Z" fill="#ffffff" stroke="#000000" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+        </svg>
+        <div>Powered by <a href="https://jz-tech.mywire.org" target="_blank">JZ Tech Solutions</a></div>
+        <div>
+            <a href="#" onclick="document.getElementById('m-privacidad').classList.remove('hidden'); return false;">Privacidad</a> &nbsp;|&nbsp; 
             <a href="#" onclick="document.getElementById('m-terminos').classList.remove('hidden'); return false;">Términos de Uso</a>
-        </span>
+        </div>
     </div>
 
     <script>
@@ -225,6 +325,18 @@
         let locFeriados = [], locFrancos = [], locSolic = [];
         let ecalDate = new Date();
         let solicitudesGlobales = []; 
+
+        function initTheme() {
+            let t = localStorage.getItem('theme');
+            if(!t) t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', t);
+        }
+        function toggleTheme() {
+            let t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', t);
+            localStorage.setItem('theme', t);
+        }
+        initTheme();
 
         window.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
@@ -288,7 +400,7 @@
             } else {
                 msg.innerText = r.data.msg || "Error de credenciales.";
             }
-            btn.innerHTML = 'Ingresar';
+            btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg> Ingresar';
         }
 
         async function cambiarClave() {
@@ -313,11 +425,7 @@
             
             if(d.config) {
                 if(d.config.empresa_nombre) {
-                    document.title = d.config.empresa_nombre + " - Acceso";
-                    document.getElementById('h-title').innerText = d.config.empresa_nombre;
-                }
-                if(d.config.color_primario) {
-                    document.getElementById('h-container').style.background = d.config.color_primario;
+                    document.title = "JZPass - " + d.config.empresa_nombre;
                 }
             }
             
@@ -337,8 +445,8 @@
 
             tipos_sol = d.tipos_solicitud || [];
             document.getElementById('d-nombre').innerText = d.nombre;
-            document.getElementById('d-sucursal').innerText = "Sede: " + d.sucursal;
-            document.getElementById('d-vacaciones').innerText = "Vacaciones: " + d.dias_vacaciones + " días";
+            document.getElementById('d-sucursal').innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-bottom:-2px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> Sede: ${d.sucursal}`;
+            document.getElementById('d-vacaciones').innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-bottom:-2px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> Vacaciones: ${d.dias_vacaciones} días`;
             
             document.getElementById('s-concepto').innerHTML = `<option value="">Seleccionar Clasificación...</option>` + 
                 tipos_sol.map(t => `<option value="${t.nombre}">${t.nombre}</option>`).join('');
@@ -352,7 +460,6 @@
                 document.getElementById('s-horas-box').classList.toggle('hidden', esMultidia);
                 document.getElementById('s-foto-box').classList.toggle('hidden', t.requiere_foto !== 1);
                 
-                // Texto dinámico para las etiquetas de fecha
                 document.getElementById('lbl-s-fecha').innerText = esMultidia ? "Fecha Desde:" : "Fecha:";
             };
 
@@ -363,18 +470,24 @@
 
         function generarHTMLSolicitudes(lista) {
             return lista.map(s => {
-                let colorBase = '#6c757d'; 
-                if (s.estado === 'APROBADA') colorBase = '#28a745';
-                if (s.estado === 'RECHAZADA') colorBase = '#dc3545';
+                let badgeClass = 'badge-neutral';
+                let svgIcon = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>';
+                if (s.estado === 'APROBADA') { badgeClass = 'badge-success'; svgIcon = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>'; }
+                if (s.estado === 'RECHAZADA') { badgeClass = 'badge-danger'; svgIcon = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'; }
                 
                 let btnCancelar = s.estado === 'PENDIENTE' 
-                    ? `<button onclick="cancelarSolicitud(${s.id})" style="background:#dc3545; padding:6px 12px; font-size:12px; width:auto; margin-top:8px; box-shadow:none;">Cancelar Solicitud</button>` 
+                    ? `<button onclick="cancelarSolicitud(${s.id})" class="btn-secondary" style="padding:6px 12px; font-size:12px; width:auto; margin-top:8px; border-color:var(--danger); color:var(--danger);"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> Cancelar Solicitud</button>` 
                     : '';
                 
-                return `<div style="background:#f8f9fa; border:1px solid #d1d9e6; border-left:4px solid ${colorBase}; padding:12px; border-radius:6px; margin-bottom:10px; font-size:13px; text-align:left;">
-                    <strong style="color:#333;">${esc(s.concepto)}</strong> <span style="color:#666;">- ${esc(s.fecha_ausencia)}</span><br>
-                    <span style="color:${colorBase}; font-weight:bold; display:inline-block; margin:4px 0;">[${s.estado}]</span><br>
-                    <span style="color:#555;">${esc(s.motivo)}</span><br>
+                return `<div class="req-list">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                        <div>
+                            <strong style="color:var(--text-primary); font-size:14px;">${esc(s.concepto)}</strong><br>
+                            <span style="color:var(--text-secondary); font-size:12px;">${esc(s.fecha_ausencia)}</span>
+                        </div>
+                        <span class="badge ${badgeClass}">${svgIcon} ${s.estado}</span>
+                    </div>
+                    <div style="color:var(--text-secondary); margin-top:8px;">${esc(s.motivo)}</div>
                     ${btnCancelar}
                 </div>`;
             }).join('');
@@ -382,19 +495,15 @@
 
         function renderSolicitudes() {
             let contenedor = document.getElementById('lista-solicitudes');
-            
             if (solicitudesGlobales.length === 0) {
-                contenedor.innerHTML = '<p style="text-align:center; color:#666; font-size:13px;">No existen registros previos.</p>';
+                contenedor.innerHTML = '<p style="text-align:center; color:var(--text-muted); font-size:13px;">No existen registros previos.</p>';
                 return;
             }
-
             let limite = 5;
             let htmlResumido = generarHTMLSolicitudes(solicitudesGlobales.slice(0, limite));
-
             if (solicitudesGlobales.length > limite) {
-                htmlResumido += `<button onclick="abrirHistorialCompleto()" style="background:#6c757d; padding:10px; font-size:13px; width:100%; margin-top:5px; box-shadow:none;">Ver historial completo (${solicitudesGlobales.length})</button>`;
+                htmlResumido += `<button onclick="abrirHistorialCompleto()" class="btn-secondary" style="width:100%; margin-top:5px; font-size:13px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg> Ver historial completo (${solicitudesGlobales.length})</button>`;
             }
-
             contenedor.innerHTML = htmlResumido;
         }
 
@@ -418,19 +527,19 @@
         function ficharGPS() {
             let msg = document.getElementById('f-msg');
             let btn = document.getElementById('btn-fichar');
-            msg.style.color = '#007bff'; msg.innerText = "Obteniendo ubicación...";
+            msg.style.color = 'var(--accent)'; msg.innerText = "Obteniendo ubicación...";
             btn.disabled = true;
             
             if(!navigator.geolocation) {
-                msg.style.color = '#dc3545'; msg.innerText = "Error: Geolocalización no disponible."; btn.disabled = false; return;
+                msg.style.color = 'var(--danger)'; msg.innerText = "Error: Geolocalización no disponible."; btn.disabled = false; return;
             }
             navigator.geolocation.getCurrentPosition(async (pos) => {
                 let r = await req('/api/fichar', {lat: pos.coords.latitude, lon: pos.coords.longitude});
-                msg.style.color = r.ok ? '#28a745' : '#dc3545';
+                msg.style.color = r.ok ? 'var(--success)' : 'var(--danger)';
                 msg.innerText = r.data.msg || "Operación fallida.";
                 setTimeout(() => { btn.disabled = false; }, 5000);
             }, (err) => {
-                msg.style.color = '#dc3545'; msg.innerText = "Acceso a la ubicación denegado.";
+                msg.style.color = 'var(--danger)'; msg.innerText = "Acceso a la ubicación denegado.";
                 btn.disabled = false;
             }, {enableHighAccuracy: true, timeout: 15000});
         }
@@ -462,8 +571,8 @@
             }
             
             btn.disabled = true;
-            btn.innerText = "Procesando...";
-            msg.className = 'error'; msg.style.color = '#007bff'; msg.innerText = "";
+            btn.innerHTML = '<div class="loader"></div>';
+            msg.className = 'error'; msg.style.color = 'var(--accent)'; msg.innerText = "";
             
             let r = await req('/api/solicitud/crear', p);
             
@@ -492,10 +601,9 @@
             let btn = document.getElementById('btn-ef-guardar');
             
             if(!d1 || !d2) { msg.innerText = "Datos incompletos."; return; }
-            
             let dniLimpio = d1.includes(' - ') ? d1.split(' - ').pop().trim() : d1.trim();
             
-            btn.disabled = true; msg.style.color = '#007bff'; msg.innerText = "Procesando...";
+            btn.disabled = true; msg.style.color = 'var(--accent)'; msg.innerText = "Procesando...";
             let r = await req('/api/admin/asignar_franco', {d1: dniLimpio, d2: d2, d3: d3});
             
             if(r.ok) {
@@ -534,11 +642,11 @@
                 let f_str = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
                 let badges = '';
                 
-                locFeriados.filter(x => x.fecha === f_str).forEach(f => badges += `<div class="cal-badge" style="background:#dc3545;">${esc(f.nombre)}</div>`);
-                locFrancos.filter(x => x.fecha === f_str).forEach(fr => badges += `<div class="cal-badge" style="background:#17a2b8;">${esc(fr.nombre.split(' ')[0])} (${esc(fr.turno[0])})</div>`);
+                locFeriados.filter(x => x.fecha === f_str).forEach(f => badges += `<div class="cal-badge badge-danger">${esc(f.nombre)}</div>`);
+                locFrancos.filter(x => x.fecha === f_str).forEach(fr => badges += `<div class="cal-badge badge-info">${esc(fr.nombre.split(' ')[0])} (${esc(fr.turno[0])})</div>`);
                 locSolic.filter(s => f_str >= s.fecha_ausencia && (s.fecha_fin === '' ? f_str === s.fecha_ausencia : f_str <= s.fecha_fin)).forEach(s => {
                     let lbl = s.concepto === 'VACACIONES' ? 'Vac' : 'Lic';
-                    badges += `<div class="cal-badge" style="background:#28a745;">${lbl}: ${esc(s.nombre.split(' ')[0])}</div>`;
+                    badges += `<div class="cal-badge badge-success">${lbl}: ${esc(s.nombre.split(' ')[0])}</div>`;
                 });
                 
                 html += `<div class="cal-day"><div class="cal-num">${d}</div>${badges}</div>`;
