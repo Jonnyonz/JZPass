@@ -1,6 +1,6 @@
 fastapi
 uvicorn
-aiosqlite
+asyncpg
 bcrypt
 pyjwt
 slowapi

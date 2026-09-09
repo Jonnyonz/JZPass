@@ -8,13 +8,22 @@ from slowapi.errors import RateLimitExceeded
 import asyncpg, bcrypt, jwt, math, csv, io, os, uuid, hmac, hashlib, re, asyncio
 from datetime import datetime, timedelta, timezone
 
-SECRET_KEY = os.environ.get("JWT_SECRET", "REDACTED_JWT_SECRET")
-if len(SECRET_KEY) < 32:
-    SECRET_KEY = SECRET_KEY + "_PRODUCCION_BLINDADA_JZPASS_ENTERPRISE"
+def _requerir_env(nombre: str) -> str:
+    valor = os.environ.get(nombre)
+    if not valor:
+        raise RuntimeError(
+            f"Falta la variable de entorno obligatoria '{nombre}'. "
+            f"Configurala en tu archivo .env antes de levantar el servicio (ver .env.example)."
+        )
+    return valor
 
-ORIGINES_PERMITIDOS = os.environ.get("ALLOWED_ORIGINS", "https://midominio.com,http://localhost:8000").split(",")
-DUMMY_HASH = "$2b$12$7kBL9RIn.u8V5Nenx6OqfOQCm8vU098S/w29w/vXW7u8i19m1W9m." 
-DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://jzadmin:REDACTED_PASSWORD@jzpass-db:5432/jzpass_db")
+SECRET_KEY = _requerir_env("JWT_SECRET")
+if len(SECRET_KEY) < 32:
+    raise RuntimeError("JWT_SECRET debe tener al menos 32 caracteres. Generá uno con: openssl rand -hex 32")
+
+ORIGINES_PERMITIDOS = os.environ.get("ALLOWED_ORIGINS", "http://localhost:8000").split(",")
+DUMMY_HASH = "$2b$12$7kBL9RIn.u8V5Nenx6OqfOQCm8vU098S/w29w/vXW7u8i19m1W9m."
+DATABASE_URL = _requerir_env("DATABASE_URL")
 
 def get_real_ip(request: Request):
     return request.headers.get("X-Forwarded-For", request.client.host if request.client else "127.0.0.1").split(",")[0]

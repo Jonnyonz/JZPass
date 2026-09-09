@@ -18,8 +18,7 @@ services:
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
       - TZ=${TZ}
       - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@jzpass-db:5432/${DB_NAME}
-    # 🛡️ INYECCIÓN EN CALIENTE: Asegura la dependencia asíncrona antes de levantar Uvicorn
-    command: sh -c "pip install --no-cache-dir asyncpg && uvicorn main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips='*'"
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips='*'
     depends_on:
       - jzpass-db
     networks:
