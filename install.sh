@@ -82,6 +82,17 @@ sed -i "s/se_genera_automaticamente_al_instalar/$SETUP_TOKEN/g" .env
 
 echo "✅ Secretos inyectados correctamente en .env."
 
+# 6.1 Postgres solo aplica la contraseña la primera vez que inicializa su volumen de datos.
+# Si quedó un volumen de una instalación anterior con otra contraseña, la app nunca podría
+# autenticarse. Como acá se acaba de generar un .env nuevo (instalación desde cero), nos
+# aseguramos de que no sobreviva un volumen viejo con credenciales que ya no coinciden.
+echo "🧹 Verificando que no quede un volumen de base de datos de una instalación anterior..."
+if command -v docker-compose &> /dev/null; then
+    docker-compose down -v > /dev/null 2>&1 || true
+else
+    docker compose down -v > /dev/null 2>&1 || true
+fi
+
 # 7. Despliegue de la Infraestructura
 echo "🏗️ Construyendo y levantando contenedores (Esto puede tomar unos minutos)..."
 
