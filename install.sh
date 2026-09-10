@@ -73,10 +73,12 @@ cp .env.example .env
 # Generación de variables aleatorias
 RANDOM_JWT=$(openssl rand -hex 32)
 RANDOM_DB_PASS=$(openssl rand -base64 16 | tr -d '=+/' | cut -c1-16)
+SETUP_TOKEN=$(openssl rand -hex 12)
 
 # Inyección segura en el archivo .env
 sed -i "s/ingresa_una_cadena_muy_larga_y_segura_aqui/$RANDOM_JWT/g" .env
 sed -i "s/ingresa_tu_password_segura/$RANDOM_DB_PASS/g" .env
+sed -i "s/se_genera_automaticamente_al_instalar/$SETUP_TOKEN/g" .env
 
 echo "✅ Secretos inyectados correctamente en .env."
 
@@ -97,6 +99,9 @@ echo "================================================================="
 echo "🎉 INSTALACIÓN COMPLETADA CON ÉXITO"
 echo "================================================================="
 echo "🌐 Acceso al sistema: http://$IP_LOCAL:8000"
+echo "🔑 Token de configuración inicial: $SETUP_TOKEN"
+echo "   Entrá a la URL de arriba: te va a pedir este token para crear el usuario administrador."
+echo "   Se usa una sola vez (después de crear el admin, deja de servir)."
 echo "🛢️ Contraseña generada para la Base de Datos: $RANDOM_DB_PASS"
 echo "⚠️ IMPORTANTE: Guarda esta contraseña en un lugar seguro."
 echo "================================================================="

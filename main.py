@@ -22,6 +22,7 @@ if len(SECRET_KEY) < 32:
     raise RuntimeError("JWT_SECRET debe tener al menos 32 caracteres. Generá uno con: openssl rand -hex 32")
 
 ORIGINES_PERMITIDOS = os.environ.get("ALLOWED_ORIGINS", "http://localhost:8000").split(",")
+SETUP_TOKEN = os.environ.get("SETUP_TOKEN", "")
 DUMMY_HASH = "$2b$12$7kBL9RIn.u8V5Nenx6OqfOQCm8vU098S/w29w/vXW7u8i19m1W9m."
 DATABASE_URL = _requerir_env("DATABASE_URL")
 
@@ -111,7 +112,7 @@ app.add_middleware(
 
 @app.middleware("http")
 async def security_middleware(request: Request, call_next):
-    if request.method == "POST" and request.url.path not in ["/api/login"]:
+    if request.method == "POST" and request.url.path not in ["/api/login", "/api/setup/admin"]:
         token = request.headers.get("X-CSRF-Token")
         try: csrf_signer.loads(token, max_age=604800)
         except Exception: return JSONResponse(status_code=403, content={"msg": "CSRF Token inválido o expirado."})
@@ -256,6 +257,42 @@ async def cambiar_clave(request: Request, response: Response, nueva: str = Form(
     if isinstance(new_token, bytes): new_token = new_token.decode('utf-8')
     response.set_cookie(key="session_token", value=new_token, httponly=True, secure=True, samesite="strict")
     return {"msg": "ok"}
+
+@app.get("/api/setup/status")
+async def setup_status():
+    async with get_db() as db:
+        count = await db.fetchval("SELECT COUNT(*) FROM usuarios")
+    return {"needs_setup": (count or 0) == 0}
+
+@app.post("/api/setup/admin")
+@limiter.limit("5/minute")
+async def setup_admin(request: Request, response: Response, token: str = Form(...), dni: str = Form(...), nombre: str = Form(...), password: str = Form(...)):
+    if not SETUP_TOKEN or not hmac.compare_digest(token.strip(), SETUP_TOKEN):
+        return JSONResponse(status_code=403, content={"msg": "Token de instalación inválido."})
+
+    async with get_db() as db:
+        count = await db.fetchval("SELECT COUNT(*) FROM usuarios")
+        if (count or 0) > 0:
+            return JSONResponse(status_code=403, content={"msg": "La configuración inicial ya fue completada."})
+
+        dni, nombre, password = dni.strip(), nombre.strip(), password.strip()
+        if not dni or not nombre:
+            return JSONResponse(status_code=400, content={"msg": "Complete todos los campos."})
+        if len(password) < 8: return JSONResponse(status_code=400, content={"msg": "Mínimo 8 caracteres."})
+        if not re.search(r'[A-Z]', password): return JSONResponse(status_code=400, content={"msg": "Mínimo 1 mayúscula."})
+        if len(re.findall(r'\d', password)) < 2: return JSONResponse(status_code=400, content={"msg": "Mínimo 2 números."})
+        if not re.search(r'[^a-zA-Z0-9]', password): return JSONResponse(status_code=400, content={"msg": "Mínimo 1 carácter especial."})
+
+        hashed_pw = await asyncio.to_thread(hash_pw, password)
+        await db.execute(
+            "INSERT INTO usuarios (dni, nombre, rol, sucursal, password, activo, req_cambio) VALUES ($1,$2,0,'',$3,1,0)",
+            dni, nombre, hashed_pw
+        )
+
+        token_jwt = jwt.encode({"dni": dni, "exp": datetime.now(timezone.utc) + timedelta(days=7), "jti": str(uuid.uuid4())}, SECRET_KEY, algorithm="HS256")
+        if isinstance(token_jwt, bytes): token_jwt = token_jwt.decode('utf-8')
+        response.set_cookie(key="session_token", value=token_jwt, httponly=True, secure=True, samesite="strict")
+        return {"msg": "ok"}
 
 @app.get("/api/empleado/datos")
 async def emp_datos(request: Request):

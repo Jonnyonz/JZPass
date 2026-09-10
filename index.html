@@ -119,6 +119,27 @@
         <span id="h-title">Acceso Personal</span>
     </div>
 
+    <div id="v-setup" class="card hidden">
+        <h2>Configuración Inicial</h2>
+        <p style="text-align:center; color:var(--text-secondary); font-size:13px; margin-top:-15px;">Es la primera vez que se usa el sistema. Creá el usuario administrador.</p>
+        <input type="text" id="su-token" placeholder="Token de instalación" autocomplete="off">
+        <input type="text" id="su-dni" class="mono" placeholder="DNI / Legajo" inputmode="numeric">
+        <input type="text" id="su-nombre" placeholder="Nombre completo">
+        <input type="password" id="su-pass" placeholder="Contraseña">
+        <input type="password" id="su-pass2" placeholder="Confirmar contraseña">
+        <ul style="font-size:12px; color:var(--text-secondary); text-align:left; background:var(--bg-page); padding:15px 15px 15px 30px; border-radius:8px; border:1px solid var(--border);">
+            <li>Mínimo 8 caracteres</li>
+            <li>Al menos 1 mayúscula</li>
+            <li>Al menos 2 números</li>
+            <li>Al menos 1 carácter especial (@, *, !, etc)</li>
+        </ul>
+        <button class="btn-green" id="btn-setup" onclick="hacerSetup()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Crear Administrador
+        </button>
+        <div id="su-msg" class="error"></div>
+    </div>
+
     <div id="v-login" class="card">
         <h2>Inicio de Sesión</h2>
         <input type="text" id="l-dni" class="mono" placeholder="DNI / Legajo" inputmode="numeric">
@@ -360,6 +381,13 @@
 
         async function init() {
             try {
+                let rs = await fetch('/api/setup/status');
+                if(rs.ok) {
+                    let ds = await rs.json();
+                    if(ds.needs_setup) { vista('v-setup'); return; }
+                }
+            } catch(e) {}
+            try {
                 let r = await fetch('/api/csrf-token');
                 if(r.ok) { let d = await r.json(); csrf = d.token; }
                 let r2 = await fetch('/api/empleado/datos');
@@ -368,10 +396,41 @@
         }
 
         function vista(id) {
+            document.getElementById('v-setup').classList.add('hidden');
             document.getElementById('v-login').classList.add('hidden');
             document.getElementById('v-clave').classList.add('hidden');
             document.getElementById('v-dash').classList.add('hidden');
             document.getElementById(id).classList.remove('hidden');
+        }
+
+        async function hacerSetup() {
+            let token = document.getElementById('su-token').value.trim();
+            let dni = document.getElementById('su-dni').value.trim();
+            let nombre = document.getElementById('su-nombre').value.trim();
+            let p1 = document.getElementById('su-pass').value;
+            let p2 = document.getElementById('su-pass2').value;
+            let msg = document.getElementById('su-msg');
+            let btn = document.getElementById('btn-setup');
+
+            if(!token || !dni || !nombre || !p1) { msg.innerText = "Complete todos los campos."; return; }
+            if(p1 !== p2) { msg.innerText = "Las contraseñas no coinciden."; return; }
+
+            let original = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<div class="loader"></div>';
+            msg.innerText = "";
+
+            let r = await req('/api/setup/admin', {token: token, dni: dni, nombre: nombre, password: p1});
+            if(r.ok) {
+                let r_token = await fetch('/api/csrf-token');
+                if(r_token.ok) { let d_token = await r_token.json(); csrf = d_token.token; }
+                let r2 = await fetch('/api/empleado/datos');
+                if(r2.ok) { let d2 = await r2.json(); cargarDatos(d2); }
+            } else {
+                msg.innerText = r.data.msg || "Error al crear el administrador.";
+                btn.disabled = false;
+                btn.innerHTML = original;
+            }
         }
 
         async function hacerLogin() {
