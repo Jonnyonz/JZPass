@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from jztech_core.security_headers import SecurityHeadersMiddleware
 
 from database import (
     ORIGINES_PERMITIDOS, SECRET_KEY, csrf_signer, limiter,
@@ -49,10 +50,26 @@ async def security_middleware(request: Request, call_next):
             if ses_dni is not None and str(csrf_dni) != str(ses_dni):
                 return JSONResponse(status_code=403, content={"msg": "CSRF no corresponde a la sesión."})
     response = await call_next(request)
-    response.headers["X-Frame-Options"] = "DENY"
-    response.headers["X-Content-Type-Options"] = "nosniff"
+    # HSTS se sigue mandando siempre desde aca (no desde jztech_core, que solo la manda si la app
+    # ve https): detras de Caddy uvicorn corre sin --proxy-headers y ve http. Por http plano los
+    # navegadores la ignoran, asi que mandarla siempre no tiene efecto negativo.
     response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     return response
+
+
+# Cabeceras de seguridad (jztech_core). Se agrega despues del middleware de CSRF para quedar
+# por fuera y cubrir tambien sus 403. 'unsafe-inline' es temporal: index.html y dashboard.html
+# tienen <script>, <style> y handlers on*= inline; se quita al separar JS/CSS (seccion 3.7).
+# geolocation=(self): el fichaje en index.html usa navigator.geolocation.
+app.add_middleware(
+    SecurityHeadersMiddleware,
+    csp=(
+        "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; "
+        "object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+    ),
+    hsts=False,
+    permissions_policy="geolocation=(self), microphone=(), camera=()",
+)
 
 
 # === REGISTRO DE ROUTERS MODULARES ===
