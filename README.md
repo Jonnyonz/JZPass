@@ -111,6 +111,10 @@ La app crea el esquema sola al arrancar (y agrega columnas nuevas si faltan):
 - **Claves con Argon2id** (parámetros mínimos de OWASP). Las claves bcrypt de versiones
   anteriores se migran solas en el primer login correcto. Política: 8+ caracteres, una
   mayúscula, dos números y un carácter especial.
+- **Denegar por defecto:** toda ruta exige sesión salvo una lista explícita de públicas (login,
+  configuración inicial, CSRF y las dos páginas). Un test (`test_deny_by_default.py`) falla si
+  se agrega una ruta sin proteger. Los permisos de panel (admin o encargado) se validan en el
+  servidor.
 - **CSRF:** cada acción (`POST`/`PUT`/`DELETE`) lleva un token firmado que se pide a
   `/api/csrf-token` y está atado al DNI de la sesión.
 - **Fuerza bruta:** rate limit por IP (login 20/min; configuración inicial y cambio de clave
@@ -304,8 +308,8 @@ python -m pytest
 ```
 
 No necesitan base de datos (`conftest.py` define variables de prueba): cubren la arquitectura
-(rutas registradas, páginas servidas), el hash de claves y su migración, y las cabeceras de
-seguridad. Tardan unos 2 minutos porque la app reintenta conectarse a Postgres al arrancar.
+(rutas registradas, páginas servidas), que ninguna ruta quede sin proteger, el hash de claves
+y su migración, y las cabeceras de seguridad. Tardan unos 2 minutos porque la app reintenta conectarse a Postgres al arrancar.
 
 **Regenerar el lockfile** (al cambiar `requirements.in`): siempre en Linux, dentro de la misma
 imagen base del Dockerfile. En Windows `pip-compile` resuelve dependencias propias de Windows y
