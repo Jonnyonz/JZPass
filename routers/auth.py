@@ -3,13 +3,13 @@ import hmac
 import re
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Form, Request, Response
+from fastapi import APIRouter, Depends, Form, Request, Response
 from fastapi.responses import JSONResponse
 from jztech_core import sessions
 
 from database import (
     DB, SETUP_TOKEN, DUMMY_HASH,
-    csrf_signer, limiter, get_db, get_current_user, abrir_sesion,
+    csrf_signer, limiter, get_db, get_current_user, abrir_sesion, requiere_sesion_cambio,
     verify_pw, hash_pw, pw_necesita_rehash,
 )
 
@@ -83,10 +83,8 @@ async def logout(request: Request, response: Response):
 
 @router.post("/api/cambiar_clave")
 @limiter.limit("5/minute")
-async def cambiar_clave(request: Request, response: Response, nueva: str = Form(...)):
-    # allow_req_cambio: es justamente la pantalla a la que llega quien tiene la clave provisoria.
-    user = await get_current_user(request, allow_req_cambio=True)
-    if not user: return JSONResponse(status_code=401, content={"msg": "No autorizado"})
+async def cambiar_clave(request: Request, response: Response, nueva: str = Form(...), user: dict = Depends(requiere_sesion_cambio)):
+    # requiere_sesion_cambio: admite la clave provisoria (es la pantalla a la que llega quien la tiene).
 
     nueva = nueva.strip()
     if len(nueva) < 8: return JSONResponse(status_code=400, content={"msg": "Mínimo 8 caracteres."})

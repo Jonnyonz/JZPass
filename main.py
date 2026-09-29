@@ -10,7 +10,7 @@ from jztech_core.security_headers import SecurityHeadersMiddleware
 
 from database import (
     DB, ORIGINES_PERMITIDOS, csrf_signer, limiter,
-    init_db_schema, close_db_pool,
+    init_db_schema, close_db_pool, ErrorAuth,
 )
 from routers import auth, empleado, admin, archivos
 
@@ -25,6 +25,12 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+
+@app.exception_handler(ErrorAuth)
+async def error_auth_handler(request: Request, exc: ErrorAuth):
+    # Rechazos de las dependencias de auth (database.py) con el formato {"msg": ...} del frontend.
+    return JSONResponse(status_code=exc.status_code, content={"msg": exc.msg})
 
 app.add_middleware(
     CORSMiddleware,

@@ -3,10 +3,10 @@ import os
 import uuid
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Form, Request, UploadFile, File
+from fastapi import APIRouter, Depends, Form, Request, UploadFile, File
 from fastapi.responses import JSONResponse
 
-from database import get_db, get_current_user, check_magic_bytes, limiter
+from database import get_db, requiere_sesion, check_magic_bytes, limiter
 
 router = APIRouter()
 
@@ -19,9 +19,7 @@ def calc_dist(lat1, lon1, lat2, lon2):
 
 
 @router.get("/api/empleado/datos")
-async def emp_datos(request: Request):
-    user = await get_current_user(request)
-    if not user: return JSONResponse(status_code=401, content={})
+async def emp_datos(request: Request, user: dict = Depends(requiere_sesion)):
     async with get_db() as db:
         u = await db.fetchrow("SELECT nombre, rol, sucursal, dias_vacaciones FROM usuarios WHERE dni=$1", user['dni'])
         sol = [dict(r) for r in await db.fetch("SELECT * FROM solicitudes WHERE dni=$1 ORDER BY id DESC", user['dni'])]
@@ -47,9 +45,7 @@ async def emp_datos(request: Request):
 
 @router.post("/api/fichar")
 @limiter.limit("10/minute")
-async def fichar(request: Request, lat: float = Form(...), lon: float = Form(...)):
-    user = await get_current_user(request)
-    if not user: return JSONResponse(status_code=401, content={})
+async def fichar(request: Request, lat: float = Form(...), lon: float = Form(...), user: dict = Depends(requiere_sesion)):
     async with get_db() as db:
         cfg_row = await db.fetchrow("SELECT * FROM configuracion WHERE id=1")
         cfg = dict(cfg_row) if cfg_row else {'distancia_gps': 50, 'anti_rebote_min': 5, 'tolerancia_tarde': 10, 'jornada_minima_hs': 3.0, 'franco_manana_ingreso': '15:00', 'franco_tarde_salida': '12:00', 'gps_estricto': 1}
@@ -116,9 +112,7 @@ async def fichar(request: Request, lat: float = Form(...), lon: float = Form(...
 
 @router.post("/api/solicitud/crear")
 @limiter.limit("10/minute")
-async def crear_solicitud(request: Request, concepto: str = Form(...), fecha_ausencia: str = Form(...), fecha_fin: str = Form(""), hora_inicio: str = Form(""), hora_fin: str = Form(""), motivo: str = Form(...), comprobante: UploadFile = File(None)):
-    user = await get_current_user(request)
-    if not user: return JSONResponse(status_code=401, content={})
+async def crear_solicitud(request: Request, concepto: str = Form(...), fecha_ausencia: str = Form(...), fecha_fin: str = Form(""), hora_inicio: str = Form(""), hora_fin: str = Form(""), motivo: str = Form(...), comprobante: UploadFile = File(None), user: dict = Depends(requiere_sesion)):
     filename = ""
 
     async with get_db() as db:
@@ -180,9 +174,7 @@ async def crear_solicitud(request: Request, concepto: str = Form(...), fecha_aus
 
 @router.post("/api/solicitud/adjuntar")
 @limiter.limit("10/minute")
-async def adjuntar_comprobante(request: Request, solicitud_id: int = Form(...), comprobante: UploadFile = File(...)):
-    user = await get_current_user(request)
-    if not user: return JSONResponse(status_code=410, content={})
+async def adjuntar_comprobante(request: Request, solicitud_id: int = Form(...), comprobante: UploadFile = File(...), user: dict = Depends(requiere_sesion)):
     raw = await comprobante.read(5 * 1024 * 1024 + 1)
     if len(raw) > 5 * 1024 * 1024: return JSONResponse(status_code=413, content={"msg": "El archivo excede los 5MB."})
     ext = check_magic_bytes(raw)
@@ -198,9 +190,7 @@ async def adjuntar_comprobante(request: Request, solicitud_id: int = Form(...), 
 
 @router.post("/api/solicitud/cancelar")
 @limiter.limit("10/minute")
-async def cancelar_solicitud(request: Request, solicitud_id: int = Form(...)):
-    user = await get_current_user(request)
-    if not user: return JSONResponse(status_code=401, content={})
+async def cancelar_solicitud(request: Request, solicitud_id: int = Form(...), user: dict = Depends(requiere_sesion)):
     async with get_db() as db:
         sol = await db.fetchrow("SELECT id, archivo FROM solicitudes WHERE id=$1 AND dni=$2 AND estado='PENDIENTE'", solicitud_id, user['dni'])
         if not sol:

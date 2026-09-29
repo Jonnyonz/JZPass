@@ -4,7 +4,7 @@ import secrets
 import ipaddress
 import asyncpg
 from contextlib import asynccontextmanager
-from fastapi import HTTPException, Request
+from fastapi import Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 from itsdangerous import URLSafeTimedSerializer
 from jztech_core import sessions
@@ -210,10 +210,44 @@ async def abrir_sesion(response, dni: str) -> None:
     sessions.set_session_cookie(response, token)
 
 
-async def check_admin(request: Request, check_encargado=False):
-    user = await get_current_user(request)
-    if not user: return None, JSONResponse(status_code=401, content={"msg": "No autorizado"})
+# === AUTENTICACION COMO DEPENDENCIAS DE FASTAPI (denegar por defecto) ===
+# Toda ruta protegida depende, directa o indirectamente, de sesion_valida; el test
+# test_deny_by_default.py falla si aparece una ruta que no lo haga y no este listada como publica.
+# Los rechazos salen como {"msg": ...} (el formato que lee el frontend) via el handler de
+# ErrorAuth registrado en main.py.
+
+class ErrorAuth(Exception):
+    def __init__(self, status_code: int, msg: str):
+        self.status_code, self.msg = status_code, msg
+
+
+async def sesion_valida(request: Request) -> str:
+    dni = await sesion_dni(request)
+    if not dni: raise ErrorAuth(401, "No autorizado")
+    return dni
+
+
+async def _usuario_activo(dni: str, allow_req_cambio: bool) -> dict:
+    async with get_db() as db:
+        u = await db.fetchrow("SELECT activo, req_cambio FROM usuarios WHERE dni=$1", dni)
+    if not u or u['activo'] == 0 or (u['req_cambio'] == 1 and not allow_req_cambio):
+        raise ErrorAuth(401, "No autorizado")
+    return {"dni": dni}
+
+
+async def requiere_sesion(dni: str = Depends(sesion_valida)) -> dict:
+    # Usuario activo y sin clave provisoria pendiente de cambio.
+    return await _usuario_activo(dni, allow_req_cambio=False)
+
+
+async def requiere_sesion_cambio(dni: str = Depends(sesion_valida)) -> dict:
+    # Como requiere_sesion, pero admite la clave provisoria (para poder cambiarla).
+    return await _usuario_activo(dni, allow_req_cambio=True)
+
+
+async def requiere_panel(user: dict = Depends(requiere_sesion)) -> dict:
+    # Administrador (rol 0) o encargado (rol 1). Devuelve la fila completa del usuario.
     async with get_db() as db:
         adm = await db.fetchrow("SELECT * FROM usuarios WHERE dni=$1", user['dni'])
-        if not adm or (adm['rol'] != 0 and not (check_encargado and adm['rol'] == 1)): return None, JSONResponse(status_code=403, content={"msg": "Privilegios insuficientes"})
-        return dict(adm), None
+    if not adm or adm['rol'] not in (0, 1): raise ErrorAuth(403, "Privilegios insuficientes")
+    return dict(adm)

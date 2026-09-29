@@ -1,15 +1,15 @@
 import os
 
-from fastapi import APIRouter, Request, Response
+from fastapi import APIRouter, Depends, Request, Response
 from fastapi.responses import FileResponse
 
-from database import get_db, get_current_user
+from database import get_db, requiere_sesion
 
 router = APIRouter()
 
 
 @router.get("/api/archivo/{filename}")
-async def descargar_archivo(request: Request, filename: str):
+async def descargar_archivo(request: Request, filename: str, user: dict = Depends(requiere_sesion)):
     safe_name = os.path.basename(filename)
     path = os.path.join("uploads", safe_name)
 
@@ -17,8 +17,6 @@ async def descargar_archivo(request: Request, filename: str):
         if os.path.isfile(path): return FileResponse(path)
         return Response(status_code=404)
 
-    user = await get_current_user(request)
-    if not user: return Response(status_code=401)
     if not os.path.isfile(path): return Response(status_code=404)
     async with get_db() as db:
         u = await db.fetchrow("SELECT rol, sucursal FROM usuarios WHERE dni=$1", user['dni'])

@@ -6,20 +6,18 @@ import re
 import uuid
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse, Response
 
 from jztech_core import sessions
 
-from database import DB, get_db, check_admin, hash_pw, gen_temp_pw, check_magic_bytes
+from database import DB, get_db, requiere_panel, hash_pw, gen_temp_pw, check_magic_bytes
 
 router = APIRouter()
 
 
 @router.get("/api/datos_panel")
-async def get_datos(request: Request):
-    adm, err = await check_admin(request, check_encargado=True)
-    if err: return err
+async def get_datos(request: Request, adm: dict = Depends(requiere_panel)):
 
     async with get_db() as db:
         cfg_row = await db.fetchrow("SELECT * FROM configuracion WHERE id=1")
@@ -47,9 +45,7 @@ async def get_datos(request: Request):
 
 
 @router.post("/api/admin/{action}")
-async def admin_actions(request: Request, action: str):
-    adm, err = await check_admin(request, check_encargado=True)
-    if err: return err
+async def admin_actions(request: Request, action: str, adm: dict = Depends(requiere_panel)):
     form = await request.form()
 
     async with get_db() as db:
@@ -301,9 +297,7 @@ async def admin_actions(request: Request, action: str):
 
 
 @router.get("/api/reporte_excel")
-async def reporte_excel(request: Request, d_desde: str, d_hasta: str, suc: str="", dni: str=""):
-    adm, err = await check_admin(request, check_encargado=True)
-    if err: return err
+async def reporte_excel(request: Request, d_desde: str, d_hasta: str, suc: str="", dni: str="", adm: dict = Depends(requiere_panel)):
     if adm['rol'] == 1:
         suc = adm['sucursal']
 
