@@ -1,16 +1,15 @@
 import asyncio
 import hmac
 import re
-import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
-import jwt
 from fastapi import APIRouter, Form, Request, Response
 from fastapi.responses import JSONResponse
+from jztech_core import sessions
 
 from database import (
-    SECRET_KEY, SETUP_TOKEN, DUMMY_HASH,
-    csrf_signer, limiter, get_db, get_current_user,
+    DB, SETUP_TOKEN, DUMMY_HASH,
+    csrf_signer, limiter, get_db, get_current_user, abrir_sesion,
     verify_pw, hash_pw, pw_necesita_rehash,
 )
 
@@ -67,9 +66,7 @@ async def login(request: Request, response: Response, dni: str = Form(...), pass
                 nuevo_hash = await asyncio.to_thread(hash_pw, password)
                 await db.execute("UPDATE usuarios SET password=$1 WHERE dni=$2", nuevo_hash, dni)
 
-            token = jwt.encode({"dni": dni, "exp": datetime.now(timezone.utc) + timedelta(days=7), "jti": str(uuid.uuid4()), "se": u['sess_epoch'] or 0}, SECRET_KEY, algorithm="HS256")
-            if isinstance(token, bytes): token = token.decode('utf-8')
-            response.set_cookie(key="session_token", value=token, httponly=True, secure=True, samesite="strict")
+            await abrir_sesion(response, dni)
             return {"msg": "ok", "req_cambio": u['req_cambio'] or 0, "rol": u['rol'] or 2}
     except Exception as e:
         return JSONResponse(status_code=500, content={"msg": f"Error de consistencia interna: {str(e)}"})
@@ -77,24 +74,19 @@ async def login(request: Request, response: Response, dni: str = Form(...), pass
 
 @router.post("/api/logout")
 async def logout(request: Request, response: Response):
-    token = request.cookies.get("session_token")
-    if token:
-        try:
-            payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-            async with get_db() as db:
-                await db.execute("INSERT INTO token_blacklist (jti, expires) VALUES ($1,$2) ON CONFLICT DO NOTHING", payload['jti'], str(payload['exp']))
-        except jwt.PyJWTError: pass
-    response.delete_cookie("session_token")
+    token = request.cookies.get(sessions.SESSION_COOKIE_NAME)
+    if token and DB.pool is not None:
+        await sessions.revoke_session(DB.pool, token)
+    sessions.clear_session_cookie(response)
     return {"msg": "ok"}
 
 
 @router.post("/api/cambiar_clave")
 @limiter.limit("5/minute")
 async def cambiar_clave(request: Request, response: Response, nueva: str = Form(...)):
-    token = request.cookies.get("session_token")
-    if not token: return JSONResponse(status_code=401, content={"msg": "No autorizado"})
-    try: payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-    except jwt.PyJWTError: return JSONResponse(status_code=401, content={"msg": "Token inválido."})
+    # allow_req_cambio: es justamente la pantalla a la que llega quien tiene la clave provisoria.
+    user = await get_current_user(request, allow_req_cambio=True)
+    if not user: return JSONResponse(status_code=401, content={"msg": "No autorizado"})
 
     nueva = nueva.strip()
     if len(nueva) < 8: return JSONResponse(status_code=400, content={"msg": "Mínimo 8 caracteres."})
@@ -104,13 +96,11 @@ async def cambiar_clave(request: Request, response: Response, nueva: str = Form(
 
     async with get_db() as db:
         hashed_pw = await asyncio.to_thread(hash_pw, nueva)
-        async with db.transaction():
-            # Bump del epoch: invalida todas las demas sesiones; el token nuevo lleva el epoch nuevo.
-            nuevo_epoch = await db.fetchval("UPDATE usuarios SET password=$1, req_cambio=0, sess_epoch=sess_epoch+1 WHERE dni=$2 RETURNING sess_epoch", hashed_pw, payload['dni'])
+        await db.execute("UPDATE usuarios SET password=$1, req_cambio=0 WHERE dni=$2", hashed_pw, user['dni'])
 
-    new_token = jwt.encode({"dni": payload['dni'], "exp": datetime.now(timezone.utc) + timedelta(days=7), "jti": str(uuid.uuid4()), "se": nuevo_epoch or 0}, SECRET_KEY, algorithm="HS256")
-    if isinstance(new_token, bytes): new_token = new_token.decode('utf-8')
-    response.set_cookie(key="session_token", value=new_token, httponly=True, secure=True, samesite="strict")
+    # Cierra todas las sesiones del usuario (incluida esta) y abre una nueva para este dispositivo.
+    await sessions.revoke_all_sessions_for_user(DB.pool, user['dni'])
+    await abrir_sesion(response, user['dni'])
     return {"msg": "ok"}
 
 
@@ -146,7 +136,5 @@ async def setup_admin(request: Request, response: Response, token: str = Form(..
             dni, nombre, hashed_pw
         )
 
-        token_jwt = jwt.encode({"dni": dni, "exp": datetime.now(timezone.utc) + timedelta(days=7), "jti": str(uuid.uuid4()), "se": 0}, SECRET_KEY, algorithm="HS256")
-        if isinstance(token_jwt, bytes): token_jwt = token_jwt.decode('utf-8')
-        response.set_cookie(key="session_token", value=token_jwt, httponly=True, secure=True, samesite="strict")
-        return {"msg": "ok"}
+    await abrir_sesion(response, dni)
+    return {"msg": "ok"}

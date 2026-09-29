@@ -2,12 +2,12 @@ import os
 import asyncio
 import secrets
 import ipaddress
-import jwt
 import asyncpg
 from contextlib import asynccontextmanager
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
 from itsdangerous import URLSafeTimedSerializer
+from jztech_core import sessions
 from jztech_core.passwords import hash_password, needs_rehash, verify_legacy_password, verify_password
 from slowapi import Limiter
 
@@ -130,17 +130,15 @@ async def init_db_schema():
         await conn.execute('''CREATE TABLE IF NOT EXISTS mediofrancos (id SERIAL PRIMARY KEY, dni TEXT, fecha TEXT, asignado_por TEXT, turno TEXT DEFAULT 'MAÑANA')''')
         await conn.execute('''CREATE TABLE IF NOT EXISTS feriados (fecha TEXT PRIMARY KEY, nombre TEXT, sucs_abren TEXT DEFAULT 'TODAS')''')
         await conn.execute('''CREATE TABLE IF NOT EXISTS feriados_convocados (dni TEXT, fecha TEXT, PRIMARY KEY(dni, fecha))''')
-        await conn.execute('''CREATE TABLE IF NOT EXISTS token_blacklist (jti TEXT PRIMARY KEY, expires TEXT)''')
+        # Sesiones opacas (reemplazan al JWT + token_blacklist + sess_epoch de versiones anteriores).
+        await conn.execute(sessions.CREATE_TABLE_SQL)
+        await conn.execute("DELETE FROM jztech_sessions WHERE expires_at < now()")
         await conn.execute('''CREATE TABLE IF NOT EXISTS solicitudes (id SERIAL PRIMARY KEY, dni TEXT, fecha_ausencia TEXT, horas REAL, motivo TEXT, estado TEXT DEFAULT 'PENDIENTE', archivo TEXT, fecha_carga TEXT, hora_inicio TEXT DEFAULT '', hora_fin TEXT DEFAULT '', concepto TEXT DEFAULT 'TRAMITE', fecha_fin TEXT DEFAULT '')''')
 
         # Migraciones Múltiples de Integridad
         try: await conn.execute("ALTER TABLE fichajes ADD COLUMN IF NOT EXISTS motivo_entrada TEXT DEFAULT ''")
         except Exception: pass
         try: await conn.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS fecha_baja TEXT DEFAULT NULL")
-        except Exception: pass
-        # Epoca de sesion: va en el JWT y se compara en cada request; al cambiar/resetear la
-        # clave se incrementa, invalidando TODAS las sesiones activas del usuario (no solo una).
-        try: await conn.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS sess_epoch INTEGER DEFAULT 0")
         except Exception: pass
 
     await conn.close()
@@ -188,18 +186,28 @@ def pw_necesita_rehash(hashed: str) -> bool:
 def gen_temp_pw() -> str: return secrets.token_urlsafe(9)
 
 
-async def get_current_user(request: Request, allow_req_cambio: bool = False):
-    token = request.cookies.get("session_token")
+async def sesion_dni(request: Request):
+    # DNI de la sesion opaca de la cookie (jztech_core.sessions), o None si no hay sesion valida.
+    token = request.cookies.get(sessions.SESSION_COOKIE_NAME)
     if not token: return None
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-        async with get_db() as db:
-            if await db.fetchval("SELECT 1 FROM token_blacklist WHERE jti=$1", payload.get("jti")): return None
-            u = await db.fetchrow("SELECT activo, req_cambio, sess_epoch FROM usuarios WHERE dni=$1", payload.get("dni"))
-            if not u or u['activo'] == 0 or (u['req_cambio'] == 1 and not allow_req_cambio): return None
-            if payload.get("se", 0) != (u['sess_epoch'] or 0): return None
-        return payload
-    except jwt.PyJWTError: return None
+    if DB.pool is None:
+        raise HTTPException(status_code=503, detail="Servicio de base de datos no disponible.")
+    return await sessions.verify_session(DB.pool, token)
+
+
+async def get_current_user(request: Request, allow_req_cambio: bool = False):
+    dni = await sesion_dni(request)
+    if not dni: return None
+    async with get_db() as db:
+        u = await db.fetchrow("SELECT activo, req_cambio FROM usuarios WHERE dni=$1", dni)
+    if not u or u['activo'] == 0 or (u['req_cambio'] == 1 and not allow_req_cambio): return None
+    return {"dni": dni}
+
+
+async def abrir_sesion(response, dni: str) -> None:
+    # Sesion opaca en base (7 dias): en la cookie viaja un token aleatorio y en la base solo su hash.
+    token = await sessions.create_session(DB.pool, dni)
+    sessions.set_session_cookie(response, token)
 
 
 async def check_admin(request: Request, check_encargado=False):

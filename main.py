@@ -1,15 +1,15 @@
 from contextlib import asynccontextmanager
 
-import jwt
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from jztech_core import sessions
 from jztech_core.security_headers import SecurityHeadersMiddleware
 
 from database import (
-    ORIGINES_PERMITIDOS, SECRET_KEY, csrf_signer, limiter,
+    DB, ORIGINES_PERMITIDOS, csrf_signer, limiter,
     init_db_schema, close_db_pool,
 )
 from routers import auth, empleado, admin, archivos
@@ -43,10 +43,8 @@ async def security_middleware(request: Request, call_next):
         except Exception: return JSONResponse(status_code=403, content={"msg": "CSRF Token inválido o expirado."})
         # El token CSRF esta firmado con el DNI del usuario: se valida que corresponda a la
         # sesion actual, para que un token de otro usuario no pueda reutilizarse.
-        session_cookie = request.cookies.get("session_token")
-        if session_cookie:
-            try: ses_dni = jwt.decode(session_cookie, SECRET_KEY, algorithms=["HS256"]).get("dni")
-            except jwt.PyJWTError: ses_dni = None
+        if request.cookies.get(sessions.SESSION_COOKIE_NAME) and DB.pool is not None:
+            ses_dni = await sessions.verify_session(DB.pool, request.cookies[sessions.SESSION_COOKIE_NAME])
             if ses_dni is not None and str(csrf_dni) != str(ses_dni):
                 return JSONResponse(status_code=403, content={"msg": "CSRF no corresponde a la sesión."})
     response = await call_next(request)

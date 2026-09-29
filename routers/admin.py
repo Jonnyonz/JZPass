@@ -9,7 +9,9 @@ from datetime import datetime, timedelta
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse, Response
 
-from database import get_db, check_admin, hash_pw, gen_temp_pw, check_magic_bytes
+from jztech_core import sessions
+
+from database import DB, get_db, check_admin, hash_pw, gen_temp_pw, check_magic_bytes
 
 router = APIRouter()
 
@@ -197,8 +199,9 @@ async def admin_actions(request: Request, action: str):
 
             temp_pw = gen_temp_pw()
             hashed = await asyncio.to_thread(hash_pw, temp_pw)
-            # Bump del epoch: invalida todas las sesiones activas del usuario reseteado.
-            await db.execute("UPDATE usuarios SET password=$1, req_cambio=1, intentos=0, bloqueado_hasta=NULL, sess_epoch=sess_epoch+1 WHERE dni=$2", hashed, dni_target)
+            await db.execute("UPDATE usuarios SET password=$1, req_cambio=1, intentos=0, bloqueado_hasta=NULL WHERE dni=$2", hashed, dni_target)
+            # Cierra todas las sesiones abiertas del usuario reseteado.
+            await sessions.revoke_all_sessions_for_user(DB.pool, dni_target)
             return {"msg": f"Clave reseteada. Nueva credencial (mostrar una sola vez): {temp_pw}"}
 
         elif action == "desbloquear_user":
