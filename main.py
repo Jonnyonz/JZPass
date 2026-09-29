@@ -117,6 +117,10 @@ async def lifespan(app: FastAPI):
         except Exception: pass
         try: await conn.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS fecha_baja TEXT DEFAULT NULL")
         except Exception: pass
+        # Epoca de sesion: va en el JWT y se compara en cada request; al cambiar/resetear la
+        # clave se incrementa, invalidando TODAS las sesiones activas del usuario (no solo una).
+        try: await conn.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS sess_epoch INTEGER DEFAULT 0")
+        except Exception: pass
         
     await conn.close()
     
@@ -138,10 +142,18 @@ app.add_middleware(
 
 @app.middleware("http")
 async def security_middleware(request: Request, call_next):
-    if request.method == "POST" and request.url.path not in ["/api/login", "/api/setup/admin"]:
+    if request.method in ("POST", "PUT", "DELETE", "PATCH") and request.url.path not in ["/api/login", "/api/setup/admin"]:
         token = request.headers.get("X-CSRF-Token")
-        try: csrf_signer.loads(token, max_age=604800)
+        try: csrf_dni = csrf_signer.loads(token, max_age=604800)
         except Exception: return JSONResponse(status_code=403, content={"msg": "CSRF Token inválido o expirado."})
+        # El token CSRF esta firmado con el DNI del usuario: se valida que corresponda a la
+        # sesion actual, para que un token de otro usuario no pueda reutilizarse.
+        session_cookie = request.cookies.get("session_token")
+        if session_cookie:
+            try: ses_dni = jwt.decode(session_cookie, SECRET_KEY, algorithms=["HS256"]).get("dni")
+            except jwt.PyJWTError: ses_dni = None
+            if ses_dni is not None and str(csrf_dni) != str(ses_dni):
+                return JSONResponse(status_code=403, content={"msg": "CSRF no corresponde a la sesión."})
     response = await call_next(request)
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-Content-Type-Options"] = "nosniff"
@@ -175,8 +187,9 @@ async def get_current_user(request: Request, allow_req_cambio: bool = False):
         payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
         async with get_db() as db:
             if await db.fetchval("SELECT 1 FROM token_blacklist WHERE jti=$1", payload.get("jti")): return None
-            u = await db.fetchrow("SELECT activo, req_cambio FROM usuarios WHERE dni=$1", payload.get("dni"))
+            u = await db.fetchrow("SELECT activo, req_cambio, sess_epoch FROM usuarios WHERE dni=$1", payload.get("dni"))
             if not u or u['activo'] == 0 or (u['req_cambio'] == 1 and not allow_req_cambio): return None
+            if payload.get("se", 0) != (u['sess_epoch'] or 0): return None
         return payload
     except jwt.PyJWTError: return None
 
@@ -238,7 +251,7 @@ async def login(request: Request, response: Response, dni: str = Form(...), pass
                 
             await db.execute("UPDATE usuarios SET intentos=0, bloqueado_hasta=NULL WHERE dni=$1", dni)
             
-            token = jwt.encode({"dni": dni, "exp": datetime.now(timezone.utc) + timedelta(days=7), "jti": str(uuid.uuid4())}, SECRET_KEY, algorithm="HS256")
+            token = jwt.encode({"dni": dni, "exp": datetime.now(timezone.utc) + timedelta(days=7), "jti": str(uuid.uuid4()), "se": u['sess_epoch'] or 0}, SECRET_KEY, algorithm="HS256")
             if isinstance(token, bytes): token = token.decode('utf-8')
             response.set_cookie(key="session_token", value=token, httponly=True, secure=True, samesite="strict")
             return {"msg": "ok", "req_cambio": u['req_cambio'] or 0, "rol": u['rol'] or 2}
@@ -274,10 +287,10 @@ async def cambiar_clave(request: Request, response: Response, nueva: str = Form(
     async with get_db() as db:
         hashed_pw = await asyncio.to_thread(hash_pw, nueva)
         async with db.transaction():
-            await db.execute("UPDATE usuarios SET password=$1, req_cambio=0 WHERE dni=$2", hashed_pw, payload['dni'])
-            await db.execute("INSERT INTO token_blacklist (jti, expires) VALUES ($1,$2) ON CONFLICT DO NOTHING", payload['jti'], str(payload['exp']))
-        
-    new_token = jwt.encode({"dni": payload['dni'], "exp": datetime.now(timezone.utc) + timedelta(days=7), "jti": str(uuid.uuid4())}, SECRET_KEY, algorithm="HS256")
+            # Bump del epoch: invalida todas las demas sesiones; el token nuevo lleva el epoch nuevo.
+            nuevo_epoch = await db.fetchval("UPDATE usuarios SET password=$1, req_cambio=0, sess_epoch=sess_epoch+1 WHERE dni=$2 RETURNING sess_epoch", hashed_pw, payload['dni'])
+
+    new_token = jwt.encode({"dni": payload['dni'], "exp": datetime.now(timezone.utc) + timedelta(days=7), "jti": str(uuid.uuid4()), "se": nuevo_epoch or 0}, SECRET_KEY, algorithm="HS256")
     if isinstance(new_token, bytes): new_token = new_token.decode('utf-8')
     response.set_cookie(key="session_token", value=new_token, httponly=True, secure=True, samesite="strict")
     return {"msg": "ok"}
@@ -313,7 +326,7 @@ async def setup_admin(request: Request, response: Response, token: str = Form(..
             dni, nombre, hashed_pw
         )
 
-        token_jwt = jwt.encode({"dni": dni, "exp": datetime.now(timezone.utc) + timedelta(days=7), "jti": str(uuid.uuid4())}, SECRET_KEY, algorithm="HS256")
+        token_jwt = jwt.encode({"dni": dni, "exp": datetime.now(timezone.utc) + timedelta(days=7), "jti": str(uuid.uuid4()), "se": 0}, SECRET_KEY, algorithm="HS256")
         if isinstance(token_jwt, bytes): token_jwt = token_jwt.decode('utf-8')
         response.set_cookie(key="session_token", value=token_jwt, httponly=True, secure=True, samesite="strict")
         return {"msg": "ok"}
@@ -700,7 +713,8 @@ async def admin_actions(request: Request, action: str):
             
             temp_pw = gen_temp_pw()
             hashed = await asyncio.to_thread(hash_pw, temp_pw)
-            await db.execute("UPDATE usuarios SET password=$1, req_cambio=1, intentos=0, bloqueado_hasta=NULL WHERE dni=$2", hashed, dni_target)
+            # Bump del epoch: invalida todas las sesiones activas del usuario reseteado.
+            await db.execute("UPDATE usuarios SET password=$1, req_cambio=1, intentos=0, bloqueado_hasta=NULL, sess_epoch=sess_epoch+1 WHERE dni=$2", hashed, dni_target)
             return {"msg": f"Clave reseteada. Nueva credencial (mostrar una sola vez): {temp_pw}"}
 
         elif action == "desbloquear_user":
