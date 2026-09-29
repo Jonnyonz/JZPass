@@ -190,9 +190,28 @@ systemctl daemon-reload
 systemctl enable "$SERVICE_NAME" > /dev/null
 systemctl restart "$SERVICE_NAME"
 
-# 9. Proxy inverso HTTPS (Caddy, CA local: sirve para laboratorio/pruebas)
+# 9. Liberar puertos 80/443 si hay otro servidor web instalado. Comun en imagenes
+# de escritorio de Debian que traen Apache preinstalado; Caddy no arranca si no
+# puede tomar los dos puertos.
+if systemctl is-active --quiet apache2 2>/dev/null; then
+  echo "Deteniendo y deshabilitando apache2 (ocupa el puerto 80 que necesita Caddy)..."
+  systemctl disable --now apache2 > /dev/null
+fi
+
+# 10. Proxy inverso HTTPS (Caddy, CA local: sirve para laboratorio/pruebas)
 CADDYFILE="/etc/caddy/Caddyfile"
-touch "$CADDYFILE"
+# El paquete caddy trae un Caddyfile de ejemplo con un bloque ":80 { file_server ... }"
+# que compite por el puerto 80 con el redirect automatico HTTP->HTTPS de nuestro
+# dominio (Caddy no arranca: "bind: address already in use"). La primera vez que
+# corre un instalador nativo de JZTech en este host, se reemplaza por uno vacio que
+# después cada instalador va completando con su propio bloque de dominio.
+if [ ! -f "$CADDYFILE" ] || ! grep -q "# Gestionado por los instaladores nativos de JZTech" "$CADDYFILE"; then
+  echo "Reemplazando el Caddyfile de ejemplo (compite por el puerto 80) por uno vacio..."
+  cat > "$CADDYFILE" <<'EOF'
+# Gestionado por los instaladores nativos de JZTech (install-native.sh).
+# Cada app agrega su propio bloque de dominio abajo.
+EOF
+fi
 if ! grep -q "^$DOMAIN {" "$CADDYFILE"; then
   echo "Agregando bloque de $DOMAIN a $CADDYFILE..."
   cat >> "$CADDYFILE" <<EOF
@@ -208,13 +227,13 @@ fi
 systemctl enable --now caddy > /dev/null
 systemctl reload caddy 2> /dev/null || systemctl restart caddy
 
-# 10. /etc/hosts, solo para pruebas en esta misma maquina (en produccion usar DNS real)
+# 11. /etc/hosts, solo para pruebas en esta misma maquina (en produccion usar DNS real)
 if ! getent hosts "$DOMAIN" > /dev/null 2>&1; then
   echo "127.0.0.1 $DOMAIN" >> /etc/hosts
   echo "Agregado '$DOMAIN' a /etc/hosts, apuntando a esta misma maquina."
 fi
 
-# 11. Mensaje final
+# 12. Mensaje final
 echo ""
 echo "================================================================="
 echo "INSTALACION COMPLETADA"
