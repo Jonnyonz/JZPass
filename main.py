@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from itsdangerous import URLSafeTimedSerializer
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-import asyncpg, bcrypt, jwt, math, csv, io, os, uuid, hmac, hashlib, re, asyncio
+import asyncpg, bcrypt, jwt, math, csv, io, os, uuid, hmac, hashlib, re, asyncio, secrets
 from datetime import datetime, timedelta, timezone
 
 def _requerir_env(nombre: str) -> str:
@@ -128,17 +128,19 @@ async def get_db():
         yield conn
 
 def verify_pw(plain: str, hashed: str) -> bool:
+    # Solo bcrypt. Las cuentas heredadas (texto plano o SHA-256 sin sal) ya no validan:
+    # un admin debe resetear su clave, que se guarda hasheada con bcrypt.
     if not hashed: return False
     try:
         if hashed.startswith('$2b$') or hashed.startswith('$2a$'):
             return bcrypt.checkpw(plain.encode('utf-8'), hashed.encode('utf-8'))
     except Exception: pass
-    if hashed.startswith('Jz') or len(hashed) < 25:
-        return hmac.compare_digest(plain, hashed)
-    legacy_sha = hashlib.sha256(plain.encode('utf-8')).hexdigest()
-    return hmac.compare_digest(legacy_sha, hashed)
+    return False
 
 def hash_pw(pw: str) -> str: return bcrypt.hashpw(pw.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+# Clave provisoria aleatoria (se muestra una sola vez y siempre con req_cambio=1).
+def gen_temp_pw() -> str: return secrets.token_urlsafe(9)
 
 async def get_current_user(request: Request, allow_req_cambio: bool = False):
     token = request.cookies.get("session_token")
@@ -208,10 +210,6 @@ async def login(request: Request, response: Response, dni: str = Form(...), pass
                 await db.execute("UPDATE usuarios SET intentos=$1 WHERE dni=$2", i, dni)
                 return JSONResponse(status_code=400, content={"msg": f"Clave incorrecta. Intentos restantes: {max_intentos-i}"})
                 
-            if not str(u['password']).startswith('$2b$'):
-                nuevo_hash = await asyncio.to_thread(hash_pw, password)
-                await db.execute("UPDATE usuarios SET password=$1 WHERE dni=$2", nuevo_hash, dni)
-
             await db.execute("UPDATE usuarios SET intentos=0, bloqueado_hasta=NULL WHERE dni=$1", dni)
             
             token = jwt.encode({"dni": dni, "exp": datetime.now(timezone.utc) + timedelta(days=7), "jti": str(uuid.uuid4())}, SECRET_KEY, algorithm="HS256")
@@ -567,22 +565,29 @@ async def admin_actions(request: Request, action: str):
                 if not archivo or not hasattr(archivo, 'filename'): return JSONResponse(status_code=400, content={"msg": "Archivo requerido."})
                 raw = await archivo.read(2 * 1024 * 1024)
                 try:
-                    cfg = await db.fetchrow("SELECT pw_prefijo, pw_sufijo, vacaciones_base FROM configuracion WHERE id=1")
-                    pre = cfg['pw_prefijo'] if cfg and cfg['pw_prefijo'] else "Jz"
-                    suf = cfg['pw_sufijo'] if cfg and cfg['pw_sufijo'] else "*"
+                    cfg = await db.fetchrow("SELECT vacaciones_base FROM configuracion WHERE id=1")
                     v_base = cfg['vacaciones_base'] if cfg and cfg['vacaciones_base'] else 14
-                    
+
                     text = raw.decode('utf-8-sig')
                     reader = csv.DictReader(io.StringIO(text), delimiter=';')
+                    nuevos, actualizados, credenciales = 0, 0, []
                     async with db.transaction():
                         for i, row in enumerate(reader, start=2):
                             if 'dni' not in row or 'nombre' not in row: raise Exception(f"Fila {i}: Falta DNI o Nombre.")
                             dni = str(row['dni']).strip()
                             if not dni: continue
-                            temp_pw = f"{pre}{dni}{suf}"
-                            hashed = await asyncio.to_thread(hash_pw, temp_pw)
-                            await db.execute("INSERT INTO usuarios (dni,nombre,rol,sucursal,hora_entrada,hora_salida,password,activo,dias_vacaciones,fecha_baja) VALUES ($1,$2,$3,$4,$5,$6,$7,1,$8,NULL) ON CONFLICT (dni) DO UPDATE SET nombre=EXCLUDED.nombre, rol=EXCLUDED.rol, sucursal=EXCLUDED.sucursal, hora_entrada=EXCLUDED.hora_entrada, hora_salida=EXCLUDED.hora_salida, password=EXCLUDED.password, dias_vacaciones=EXCLUDED.dias_vacaciones, activo=1, fecha_baja=NULL", dni, row['nombre'].strip(), int(row.get('rol', 2)), row.get('sucursal','').strip(), row.get('hora_entrada','09:00'), row.get('hora_salida','18:00'), hashed, int(row.get('dias_vacaciones', v_base)))
-                    return {"msg": "Importación completada."}
+                            existe = await db.fetchval("SELECT 1 FROM usuarios WHERE dni=$1", dni)
+                            if existe:
+                                # No se toca la clave ni req_cambio de usuarios existentes: solo datos.
+                                await db.execute("UPDATE usuarios SET nombre=$2, rol=$3, sucursal=$4, hora_entrada=$5, hora_salida=$6, dias_vacaciones=$7, activo=1, fecha_baja=NULL WHERE dni=$1", dni, row['nombre'].strip(), int(row.get('rol', 2)), row.get('sucursal','').strip(), row.get('hora_entrada','09:00'), row.get('hora_salida','18:00'), int(row.get('dias_vacaciones', v_base)))
+                                actualizados += 1
+                            else:
+                                temp_pw = gen_temp_pw()
+                                hashed = await asyncio.to_thread(hash_pw, temp_pw)
+                                await db.execute("INSERT INTO usuarios (dni,nombre,rol,sucursal,hora_entrada,hora_salida,password,activo,dias_vacaciones,req_cambio,fecha_baja) VALUES ($1,$2,$3,$4,$5,$6,$7,1,$8,1,NULL)", dni, row['nombre'].strip(), int(row.get('rol', 2)), row.get('sucursal','').strip(), row.get('hora_entrada','09:00'), row.get('hora_salida','18:00'), hashed, int(row.get('dias_vacaciones', v_base)))
+                                credenciales.append({"dni": dni, "clave": temp_pw})
+                                nuevos += 1
+                    return {"msg": f"Importación completada: {nuevos} nuevos, {actualizados} actualizados. Las claves provisorias se muestran una sola vez.", "credenciales": credenciales}
                 except Exception as e:
                     return JSONResponse(status_code=400, content={"msg": f"Error en la lectura del CSV: {str(e)}"})
 
@@ -608,18 +613,18 @@ async def admin_actions(request: Request, action: str):
 
         elif action == "crear_user":
             if adm['rol'] != 0: return JSONResponse(status_code=403, content={"msg": "Acceso denegado."})
-            cfg = await db.fetchrow("SELECT pw_prefijo, pw_sufijo, vacaciones_base FROM configuracion WHERE id=1")
-            pre = cfg['pw_prefijo'] if cfg and cfg['pw_prefijo'] else "Jz"
-            suf = cfg['pw_sufijo'] if cfg and cfg['pw_sufijo'] else "*"
+            cfg = await db.fetchrow("SELECT vacaciones_base FROM configuracion WHERE id=1")
             v_base = cfg['vacaciones_base'] if cfg and cfg['vacaciones_base'] else 14
-            
+
             d1, d2, d3, d4, d5, d6 = form.get('d1').strip(), form.get('d2'), int(form.get('d3','2')), form.get('d4'), form.get('d5'), form.get('d6')
             d9 = int(form.get('d9', v_base))
-            
-            temp_pw = f"{pre}{d1}{suf}"
+
+            temp_pw = gen_temp_pw()
             hashed = await asyncio.to_thread(hash_pw, temp_pw)
-            await db.execute("INSERT INTO usuarios (dni,nombre,rol,sucursal,hora_entrada,hora_salida,password,activo,dias_vacaciones) VALUES ($1,$2,$3,$4,$5,$6,$7,1,$8) ON CONFLICT (dni) DO NOTHING", str(d1), str(d2), int(d3), str(d4), str(d5), str(d6), hashed, int(d9))
-            return {"msg": f"Registro creado. Credencial provisoria: {temp_pw}"}
+            res = await db.execute("INSERT INTO usuarios (dni,nombre,rol,sucursal,hora_entrada,hora_salida,password,activo,dias_vacaciones,req_cambio) VALUES ($1,$2,$3,$4,$5,$6,$7,1,$8,1) ON CONFLICT (dni) DO NOTHING", str(d1), str(d2), int(d3), str(d4), str(d5), str(d6), hashed, int(d9))
+            if res == "INSERT 0 0":
+                return JSONResponse(status_code=400, content={"msg": "Ya existe un usuario con ese DNI."})
+            return {"msg": f"Registro creado. Credencial provisoria (mostrar una sola vez): {temp_pw}"}
 
         elif action == "editar_user":
             d1, d2, d3, d4, d5, d6, d8, d9 = form.get('d1').strip(), form.get('d2'), int(form.get('d3','2')), form.get('d4'), form.get('d5'), form.get('d6'), int(form.get('d8','1')), int(form.get('d9','14'))
@@ -667,14 +672,10 @@ async def admin_actions(request: Request, action: str):
                 tgt = await db.fetchrow("SELECT sucursal FROM usuarios WHERE dni=$1", dni_target)
                 if not tgt or tgt['sucursal'] != adm['sucursal']: return JSONResponse(status_code=403, content={"msg": "Jurisdicción denegada."})
             
-            cfg = await db.fetchrow("SELECT pw_prefijo, pw_sufijo FROM configuracion WHERE id=1")
-            pre = cfg['pw_prefijo'] if cfg and cfg['pw_prefijo'] else "Jz"
-            suf = cfg['pw_sufijo'] if cfg and cfg['pw_sufijo'] else "*"
-            
-            temp_pw = f"{pre}{dni_target}{suf}"
+            temp_pw = gen_temp_pw()
             hashed = await asyncio.to_thread(hash_pw, temp_pw)
             await db.execute("UPDATE usuarios SET password=$1, req_cambio=1, intentos=0, bloqueado_hasta=NULL WHERE dni=$2", hashed, dni_target)
-            return {"msg": f"Clave reseteada. Nueva credencial: {temp_pw}"}
+            return {"msg": f"Clave reseteada. Nueva credencial (mostrar una sola vez): {temp_pw}"}
 
         elif action == "desbloquear_user":
             if adm['rol'] != 0: return JSONResponse(status_code=403, content={"msg": "Acceso denegado."})
