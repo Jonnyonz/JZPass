@@ -11,9 +11,8 @@
 # se pisan en corridas siguientes, para no romper el acceso a la base ni las
 # sesiones existentes.
 #
-# No probado todavia en una VM limpia (ver seccion 6 de
-# JZTech_Estado_y_Hoja_de_Ruta.md). Antes de usarlo en produccion, probarlo
-# en una VM descartable de punta a punta, login desde navegador incluido.
+# Probado de punta a punta el 2026-09-29 en una VM Debian 13 limpia (instalacion
+# y reinstalacion idempotente, HTTPS con Caddy, login desde el navegador).
 # ==============================================================================
 
 set -euo pipefail
