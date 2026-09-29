@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # ⚙️ BACKEND - JZ PASS COMPATIBILIDAD POSTGRES
+  # BACKEND - JZ PASS COMPATIBILIDAD POSTGRES
   jzpass-app:
     build: .
     container_name: jzpass_server
@@ -28,7 +28,7 @@ services:
     networks:
       - jzpass-net
 
-  # 🛢️ MOTOR DE BASE DE DATOS ENTERPRISE
+  # MOTOR DE BASE DE DATOS ENTERPRISE
   jzpass-db:
     image: postgres:15-alpine
     container_name: jzpass_postgres

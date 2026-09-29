@@ -69,7 +69,7 @@ async def lifespan(app: FastAPI):
     global SECRET_KEY, csrf_signer
     csrf_signer = URLSafeTimedSerializer(SECRET_KEY)
     os.makedirs("uploads", exist_ok=True)
-    
+
     for _ in range(15):
         try:
             conn = await asyncpg.connect(DATABASE_URL)
@@ -78,11 +78,11 @@ async def lifespan(app: FastAPI):
             await asyncio.sleep(2)
     else:
         conn = await asyncpg.connect(DATABASE_URL)
-        
+
     async with conn.transaction():
         await conn.execute('''CREATE TABLE IF NOT EXISTS configuracion (id INTEGER PRIMARY KEY, empresa_nombre TEXT, color_primario TEXT, distancia_gps REAL, tolerancia_tarde INTEGER, anti_rebote_min INTEGER, vac_anticipo_dias INTEGER, intentos_login INTEGER)''')
         await conn.execute("INSERT INTO configuracion (id, empresa_nombre, color_primario, distancia_gps, tolerancia_tarde, anti_rebote_min, vac_anticipo_dias, intentos_login) VALUES (1, 'JZ PASS', '#007bff', 50.0, 10, 5, 14, 5) ON CONFLICT (id) DO NOTHING")
-        
+
         nuevas_columnas = {
             "jornada_minima_hs": "REAL DEFAULT 3.0",
             "franco_manana_ingreso": "TEXT DEFAULT '15:00'",
@@ -102,7 +102,7 @@ async def lifespan(app: FastAPI):
         await conn.execute("INSERT INTO tipos_solicitud VALUES ('MEDICO', 'HORAS', 1, 0, 0) ON CONFLICT (nombre) DO NOTHING")
         await conn.execute("INSERT INTO tipos_solicitud VALUES ('VACACIONES', 'DIAS', 0, 1, 0) ON CONFLICT (nombre) DO NOTHING")
         await conn.execute("INSERT INTO tipos_solicitud VALUES ('LICENCIA MEDICA', 'DIAS', 1, 0, 10) ON CONFLICT (nombre) DO NOTHING")
-        
+
         await conn.execute('''CREATE TABLE IF NOT EXISTS sucursales (nombre TEXT PRIMARY KEY, lat REAL, lon REAL, hora_cierre TEXT DEFAULT '20:00', hora_apertura_feriado TEXT DEFAULT '10:00', hora_cierre_feriado TEXT DEFAULT '14:00')''')
         await conn.execute('''CREATE TABLE IF NOT EXISTS usuarios (dni TEXT PRIMARY KEY, nombre TEXT, rol INTEGER, sucursal TEXT, password TEXT, req_cambio INTEGER DEFAULT 1, intentos INTEGER DEFAULT 0, bloqueado_hasta TEXT, activo INTEGER DEFAULT 1, hora_entrada TEXT DEFAULT '09:00', hora_salida TEXT DEFAULT '18:00', dias_vacaciones INTEGER DEFAULT 14, calle TEXT DEFAULT '', altura TEXT DEFAULT '', depto TEXT DEFAULT '', cp TEXT DEFAULT '', mail TEXT DEFAULT '', telefono TEXT DEFAULT '', mapa TEXT DEFAULT '')''')
         await conn.execute('''CREATE TABLE IF NOT EXISTS fichajes (id SERIAL PRIMARY KEY, dni TEXT, sucursal TEXT, fecha_hora TEXT, lat REAL, lon REAL, distancia REAL, tarde INTEGER DEFAULT 0, salida_manual TEXT, motivo_salida TEXT)''')
@@ -111,8 +111,8 @@ async def lifespan(app: FastAPI):
         await conn.execute('''CREATE TABLE IF NOT EXISTS feriados_convocados (dni TEXT, fecha TEXT, PRIMARY KEY(dni, fecha))''')
         await conn.execute('''CREATE TABLE IF NOT EXISTS token_blacklist (jti TEXT PRIMARY KEY, expires TEXT)''')
         await conn.execute('''CREATE TABLE IF NOT EXISTS solicitudes (id SERIAL PRIMARY KEY, dni TEXT, fecha_ausencia TEXT, horas REAL, motivo TEXT, estado TEXT DEFAULT 'PENDIENTE', archivo TEXT, fecha_carga TEXT, hora_inicio TEXT DEFAULT '', hora_fin TEXT DEFAULT '', concepto TEXT DEFAULT 'TRAMITE', fecha_fin TEXT DEFAULT '')''')
-        
-        # 🛡️ Migraciones Múltiples de Integridad
+
+        # Migraciones Múltiples de Integridad
         try: await conn.execute("ALTER TABLE fichajes ADD COLUMN IF NOT EXISTS motivo_entrada TEXT DEFAULT ''")
         except Exception: pass
         try: await conn.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS fecha_baja TEXT DEFAULT NULL")
@@ -121,9 +121,9 @@ async def lifespan(app: FastAPI):
         # clave se incrementa, invalidando TODAS las sesiones activas del usuario (no solo una).
         try: await conn.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS sess_epoch INTEGER DEFAULT 0")
         except Exception: pass
-        
+
     await conn.close()
-    
+
     app.state.db_pool = await asyncpg.create_pool(DATABASE_URL, min_size=5, max_size=25)
     yield
     await app.state.db_pool.close()
@@ -133,10 +133,10 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
-    CORSMiddleware, 
-    allow_origins=ORIGINES_PERMITIDOS, 
-    allow_credentials=True, 
-    allow_methods=["*"], 
+    CORSMiddleware,
+    allow_origins=ORIGINES_PERMITIDOS,
+    allow_credentials=True,
+    allow_methods=["*"],
     allow_headers=["*"]
 )
 
@@ -227,17 +227,17 @@ async def login(request: Request, response: Response, dni: str = Form(...), pass
                 await asyncio.to_thread(bcrypt.checkpw, password.encode('utf-8'), DUMMY_HASH.encode('utf-8'))
                 return JSONResponse(status_code=400, content={"msg": "Credenciales inválidas."})
             if u['activo'] == 0: return JSONResponse(status_code=403, content={"msg": "Usuario inactivo."})
-            
+
             bloqueado = u['bloqueado_hasta']
             if bloqueado and str(bloqueado).strip() != "":
                 try:
                     if datetime.now() < datetime.strptime(str(bloqueado), "%Y-%m-%d %H:%M:%S"):
                         return JSONResponse(status_code=403, content={"msg": "Cuenta bloqueada temporalmente."})
                 except ValueError: pass
-                
+
             if not u['password'] or str(u['password']).strip() == "":
                 return JSONResponse(status_code=400, content={"msg": "Cuenta sin clave configurada."})
-                
+
             pw_correcto = await asyncio.to_thread(verify_pw, password, str(u['password']))
             if not pw_correcto:
                 intentos_actuales = u['intentos'] if u['intentos'] is not None else 0
@@ -248,9 +248,9 @@ async def login(request: Request, response: Response, dni: str = Form(...), pass
                     return JSONResponse(status_code=403, content={"msg": "Bloqueo temporal por intentos fallidos."})
                 await db.execute("UPDATE usuarios SET intentos=$1 WHERE dni=$2", i, dni)
                 return JSONResponse(status_code=400, content={"msg": f"Clave incorrecta. Intentos restantes: {max_intentos-i}"})
-                
+
             await db.execute("UPDATE usuarios SET intentos=0, bloqueado_hasta=NULL WHERE dni=$1", dni)
-            
+
             token = jwt.encode({"dni": dni, "exp": datetime.now(timezone.utc) + timedelta(days=7), "jti": str(uuid.uuid4()), "se": u['sess_epoch'] or 0}, SECRET_KEY, algorithm="HS256")
             if isinstance(token, bytes): token = token.decode('utf-8')
             response.set_cookie(key="session_token", value=token, httponly=True, secure=True, samesite="strict")
@@ -264,7 +264,7 @@ async def logout(request: Request, response: Response):
     if token:
         try:
             payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-            async with get_db() as db: 
+            async with get_db() as db:
                 await db.execute("INSERT INTO token_blacklist (jti, expires) VALUES ($1,$2) ON CONFLICT DO NOTHING", payload['jti'], str(payload['exp']))
         except jwt.PyJWTError: pass
     response.delete_cookie("session_token")
@@ -277,13 +277,13 @@ async def cambiar_clave(request: Request, response: Response, nueva: str = Form(
     if not token: return JSONResponse(status_code=401, content={"msg": "No autorizado"})
     try: payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
     except jwt.PyJWTError: return JSONResponse(status_code=401, content={"msg": "Token inválido."})
-    
+
     nueva = nueva.strip()
     if len(nueva) < 8: return JSONResponse(status_code=400, content={"msg": "Mínimo 8 caracteres."})
     if not re.search(r'[A-Z]', nueva): return JSONResponse(status_code=400, content={"msg": "Mínimo 1 mayúscula."})
     if len(re.findall(r'\d', nueva)) < 2: return JSONResponse(status_code=400, content={"msg": "Mínimo 2 números."})
     if not re.search(r'[^a-zA-Z0-9]', nueva): return JSONResponse(status_code=400, content={"msg": "Mínimo 1 carácter especial."})
-        
+
     async with get_db() as db:
         hashed_pw = await asyncio.to_thread(hash_pw, nueva)
         async with db.transaction():
@@ -343,18 +343,18 @@ async def emp_datos(request: Request):
         cfg_row = await db.fetchrow("SELECT * FROM configuracion WHERE id=1")
         cfg = dict(cfg_row) if cfg_row else {}
         tipos = [dict(r) for r in await db.fetch("SELECT * FROM tipos_solicitud")]
-        
+
         mis_emp = []
         mis_conv = []
         mis_francos = []
         mis_solic = []
-        
+
         if u['rol'] == 1:
             mis_emp = [dict(r) for r in await db.fetch("SELECT dni, nombre FROM usuarios WHERE sucursal=$1 AND activo=1", u['sucursal'])]
             mis_conv = [dict(r) for r in await db.fetch("SELECT fc.* FROM feriados_convocados fc JOIN usuarios u ON fc.dni=u.dni WHERE u.sucursal=$1", u['sucursal'])]
             mis_francos = [dict(r) for r in await db.fetch("SELECT m.fecha, m.turno, u.nombre FROM mediofrancos m JOIN usuarios u ON m.dni=u.dni WHERE u.sucursal=$1", u['sucursal'])]
             mis_solic = [dict(r) for r in await db.fetch("SELECT s.fecha_ausencia, s.fecha_fin, s.concepto, u.nombre FROM solicitudes s JOIN usuarios u ON s.dni=u.dni WHERE u.sucursal=$1 AND s.estado='APROBADA'", u['sucursal'])]
-            
+
         return {"nombre": u['nombre'], "rol": u['rol'], "sucursal": u['sucursal'], "dias_vacaciones": u['dias_vacaciones'], "solicitudes": sol, "feriados": fer, "francos": fran, "config": cfg, "tipos_solicitud": tipos, "mis_empleados": mis_emp, "mis_convocatorias": mis_conv, "loc_francos": mis_francos, "loc_solic": mis_solic}
 
 @app.post("/api/fichar")
@@ -366,45 +366,45 @@ async def fichar(request: Request, lat: float = Form(...), lon: float = Form(...
         cfg_row = await db.fetchrow("SELECT * FROM configuracion WHERE id=1")
         cfg = dict(cfg_row) if cfg_row else {'distancia_gps': 50, 'anti_rebote_min': 5, 'tolerancia_tarde': 10, 'jornada_minima_hs': 3.0, 'franco_manana_ingreso': '15:00', 'franco_tarde_salida': '12:00', 'gps_estricto': 1}
         hoy = datetime.now().strftime("%Y-%m-%d")
-        
+
         ult_registro = await db.fetchrow("SELECT fecha_hora FROM fichajes WHERE dni=$1 ORDER BY id DESC LIMIT 1", user['dni'])
         if ult_registro:
             tdelta_global = (datetime.now() - datetime.strptime(ult_registro['fecha_hora'], "%Y-%m-%d %H:%M:%S")).total_seconds()
             if tdelta_global < (cfg.get('anti_rebote_min', 5) * 60):
                 return JSONResponse(status_code=403, content={"msg": f"Sistema anti-rebote en curso. Aguarde {cfg.get('anti_rebote_min', 5)} minutos."})
-        
+
         lic = await db.fetchrow("SELECT s.concepto FROM solicitudes s JOIN tipos_solicitud ts ON s.concepto=ts.nombre WHERE s.dni=$1 AND ts.tipo='DIAS' AND s.estado='APROBADA' AND $2 BETWEEN s.fecha_ausencia AND s.fecha_fin", user['dni'], hoy)
         if lic: return JSONResponse(status_code=403, content={"msg": f"Usuario bajo concepto: {lic['concepto']}."})
 
         u = await db.fetchrow("SELECT sucursal, activo, hora_entrada FROM usuarios WHERE dni=$1", user['dni'])
         if u['activo'] == 0: return JSONResponse(status_code=403, content={"msg": "Usuario inactivo."})
-        
+
         ult_hoy = await db.fetchrow("SELECT id, fecha_hora, salida_manual FROM fichajes WHERE dni=$1 AND fecha_hora LIKE $2 ORDER BY id DESC LIMIT 1", user['dni'], f"{hoy}%")
         suc = await db.fetchrow("SELECT lat, lon, hora_apertura_feriado FROM sucursales WHERE nombre=$1", u['sucursal'])
-        
+
         dist = calc_dist(lat, lon, suc['lat'], suc['lon'])
         is_fuera_rango = dist > cfg.get('distancia_gps', 50)
-        
-        if is_fuera_rango and cfg.get('gps_estricto', 1) == 1: 
+
+        if is_fuera_rango and cfg.get('gps_estricto', 1) == 1:
             return JSONResponse(status_code=403, content={"msg": f"Fuera de rango establecido ({int(dist)}m. Límite: {int(cfg.get('distancia_gps', 50))}m)"})
-        
+
         fer = await db.fetchrow("SELECT sucs_abren FROM feriados WHERE fecha=$1", hoy)
         es_feriado_abierto = fer and (fer['sucs_abren'] == 'TODAS' or u['sucursal'] in fer['sucs_abren'])
         franco = await db.fetchrow("SELECT turno FROM mediofrancos WHERE dni=$1 AND fecha=$2", user['dni'], hoy)
-            
+
         if ult_hoy:
             if ult_hoy['salida_manual']: return JSONResponse(status_code=403, content={"msg": "Salida previamente registrada."})
             tdelta = (datetime.now() - datetime.strptime(ult_hoy['fecha_hora'], "%Y-%m-%d %H:%M:%S")).total_seconds()
             es_franco_tarde = franco and franco['turno'] == 'TARDE'
-            
+
             if es_franco_tarde:
-                if datetime.now().time() < datetime.strptime(cfg.get('franco_tarde_salida', '12:00'), "%H:%M").time(): 
+                if datetime.now().time() < datetime.strptime(cfg.get('franco_tarde_salida', '12:00'), "%H:%M").time():
                     return JSONResponse(status_code=403, content={"msg": f"Salida de Franco Tarde se habilita a las {cfg.get('franco_tarde_salida', '12:00')}hs."})
             else:
                 limite_minimo_segundos = cfg.get('jornada_minima_hs', 3.0) * 3600
-                if tdelta < limite_minimo_segundos: 
+                if tdelta < limite_minimo_segundos:
                     return JSONResponse(status_code=403, content={"msg": f"Jornada mínima no cumplida ({cfg.get('jornada_minima_hs', 3.0)}hs)."})
-            
+
             motivo_sal = f"App JZ PASS [GPS {int(dist)}m]" if is_fuera_rango else "App JZ PASS"
             await db.execute("UPDATE fichajes SET salida_manual=$1, motivo_salida=$2 WHERE id=$3", datetime.now().strftime("%H:%M"), motivo_sal, ult_hoy['id'])
             return {"msg": f"Salida registrada con éxito ({int(dist)}m)"}
@@ -413,14 +413,14 @@ async def fichar(request: Request, lat: float = Form(...), lon: float = Form(...
             else:
                 h_ent = datetime.strptime(u['hora_entrada'], "%H:%M")
                 if franco and franco['turno'] == 'MAÑANA': h_ent = datetime.strptime(cfg.get('franco_manana_ingreso', '15:00'), "%H:%M")
-            
+
             h_ent = h_ent + timedelta(minutes=cfg.get('tolerancia_tarde', 10))
-            
+
             if franco:
                 tarde = 0
             else:
                 tarde = 1 if datetime.strptime(datetime.now().strftime("%H:%M"), "%H:%M") > h_ent else 0
-            
+
             motivo_ent = f"[GPS {int(dist)}m - Auditoría]" if is_fuera_rango else ""
             await db.execute("INSERT INTO fichajes (dni, sucursal, fecha_hora, lat, lon, distancia, tarde, motivo_entrada) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)", user['dni'], u['sucursal'], datetime.now().strftime("%Y-%m-%d %H:%M:%S"), float(lat), float(lon), float(dist), tarde, motivo_ent)
             return {"msg": f"Ingreso registrado con éxito ({int(dist)}m)"}
@@ -431,7 +431,7 @@ async def crear_solicitud(request: Request, concepto: str = Form(...), fecha_aus
     user = await get_current_user(request)
     if not user: return JSONResponse(status_code=401, content={})
     filename = ""
-    
+
     async with get_db() as db:
         duplicado = await db.fetchrow("SELECT id FROM solicitudes WHERE dni=$1 AND concepto=$2 AND fecha_ausencia=$3 AND estado='PENDIENTE'", user['dni'], concepto, fecha_ausencia)
         if duplicado:
@@ -440,7 +440,7 @@ async def crear_solicitud(request: Request, concepto: str = Form(...), fecha_aus
         tipo_sol = await db.fetchrow("SELECT * FROM tipos_solicitud WHERE nombre=$1", concepto)
         cfg_row = await db.fetchrow("SELECT * FROM configuracion WHERE id=1")
         cfg = dict(cfg_row) if cfg_row else {'vac_anticipo_dias': 14}
-        
+
         if not tipo_sol: return JSONResponse(status_code=400, content={"msg": "Concepto inválido."})
         if tipo_sol['requiere_foto'] == 1 and (not comprobante or not comprobante.filename):
             return JSONResponse(status_code=400, content={"msg": "El documento adjunto es obligatorio."})
@@ -452,7 +452,7 @@ async def crear_solicitud(request: Request, concepto: str = Form(...), fecha_aus
             if not ext: return JSONResponse(status_code=400, content={"msg": "Formato de archivo no admitido."})
             filename = f"{uuid.uuid4().hex}.{ext}"
             with open(os.path.join("uploads", filename), "wb") as f: f.write(raw)
-        
+
         if tipo_sol['tipo'] == 'DIAS':
             try:
                 d_inicio = datetime.strptime(fecha_ausencia, "%Y-%m-%d")
@@ -460,7 +460,7 @@ async def crear_solicitud(request: Request, concepto: str = Form(...), fecha_aus
             except ValueError: return JSONResponse(status_code=400, content={"msg": "Estructura de fecha inválida."})
             if d_fin < d_inicio: return JSONResponse(status_code=400, content={"msg": "La fecha de fin es menor a la de inicio."})
             dias_solicitados = (d_fin - d_inicio).days + 1
-            
+
             async with db.transaction():
                 if tipo_sol['descuenta_dias'] == 1:
                     if (d_inicio - datetime.now()).days < cfg.get('vac_anticipo_dias', 14):
@@ -470,10 +470,10 @@ async def crear_solicitud(request: Request, concepto: str = Form(...), fecha_aus
                     h_pend = p_row['pendientes'] if p_row and p_row['pendientes'] else 0
                     if (dias_solicitados + h_pend) > u['dias_vacaciones']:
                         return JSONResponse(status_code=400, content={"msg": "Saldo de vacaciones insuficiente."})
-                        
+
                 horas_guardadas = dias_solicitados * float(tipo_sol['horas_por_dia'] if tipo_sol['horas_por_dia'] > 0 else 1)
                 f_carga = datetime.now().strftime("%Y-%m-%d %H:%M")
-                
+
                 nuevo_id = await db.fetchval("INSERT INTO solicitudes (dni, concepto, fecha_ausencia, fecha_fin, hora_inicio, hora_fin, horas, motivo, archivo, fecha_carga) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id", user['dni'], concepto, fecha_ausencia, fecha_fin, "", "", horas_guardadas, motivo, filename, f_carga)
             return {"msg": f"Solicitud registrada bajo el ID #{nuevo_id}."}
         else:
@@ -483,7 +483,7 @@ async def crear_solicitud(request: Request, concepto: str = Form(...), fecha_aus
             except ValueError: return JSONResponse(status_code=400, content={"msg": "Datos de horario incompletos."})
             horas_totales = (h_out - h_in).total_seconds() / 3600
             if horas_totales < 0: horas_totales += 24
-            
+
             f_carga = datetime.now().strftime("%Y-%m-%d %H:%M")
             nuevo_id = await db.fetchval("INSERT INTO solicitudes (dni, concepto, fecha_ausencia, fecha_fin, hora_inicio, hora_fin, horas, motivo, archivo, fecha_carga) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id", user['dni'], concepto, fecha_ausencia, "", h_in.strftime("%H:%M"), h_out.strftime("%H:%M"), round(horas_totales,2), motivo, filename, f_carga)
             return {"msg": f"Solicitud registrada bajo el ID #{nuevo_id}."}
@@ -512,14 +512,14 @@ async def cancelar_solicitud(request: Request, solicitud_id: int = Form(...)):
     if not user: return JSONResponse(status_code=401, content={})
     async with get_db() as db:
         sol = await db.fetchrow("SELECT id, archivo FROM solicitudes WHERE id=$1 AND dni=$2 AND estado='PENDIENTE'", solicitud_id, user['dni'])
-        if not sol: 
+        if not sol:
             return JSONResponse(status_code=400, content={"msg": "La solicitud no se encuentra o ya fue procesada."})
-        
+
         if sol['archivo'] and sol['archivo'] != "null":
             path = os.path.join("uploads", sol['archivo'])
             if os.path.isfile(path):
                 os.remove(path)
-                
+
         await db.execute("DELETE FROM solicitudes WHERE id=$1", solicitud_id)
     return {"msg": "Solicitud cancelada de manera exitosa."}
 
@@ -535,12 +535,12 @@ async def check_admin(request: Request, check_encargado=False):
 async def get_datos(request: Request):
     adm, err = await check_admin(request, check_encargado=True)
     if err: return err
-    
+
     async with get_db() as db:
         cfg_row = await db.fetchrow("SELECT * FROM configuracion WHERE id=1")
         cfg = dict(cfg_row) if cfg_row else {}
         tipos = [dict(r) for r in await db.fetch("SELECT * FROM tipos_solicitud")]
-        
+
         if adm['rol'] == 0:
             usuarios = [dict(r) for r in await db.fetch("SELECT dni, nombre, rol, sucursal, bloqueado_hasta, activo, hora_entrada, hora_salida, dias_vacaciones, calle, altura, depto, cp, mail, telefono, mapa, fecha_baja FROM usuarios")]
             sol = [dict(r) for r in await db.fetch("SELECT s.*, u.nombre, u.sucursal FROM solicitudes s JOIN usuarios u ON s.dni=u.dni ORDER BY s.id DESC")]
@@ -554,10 +554,10 @@ async def get_datos(request: Request):
             fr = [dict(r) for r in await db.fetch("SELECT m.*, u.nombre, u.sucursal FROM mediofrancos m JOIN usuarios u ON m.dni=u.dni WHERE u.sucursal=$1 ORDER BY m.fecha DESC", suc)]
             conv = [dict(r) for r in await db.fetch("SELECT fc.dni, fc.fecha, u.nombre, u.sucursal FROM feriados_convocados fc JOIN usuarios u ON fc.dni=u.dni WHERE u.sucursal=$1", suc)]
             fichajes = [dict(r) for r in await db.fetch("SELECT f.*, u.nombre, u.hora_entrada, u.hora_salida FROM fichajes f JOIN usuarios u ON f.dni=u.dni WHERE u.sucursal=$1 ORDER BY f.fecha_hora DESC LIMIT 1500", suc)]
-            
+
         sucs = [dict(r) for r in await db.fetch("SELECT * FROM sucursales")]
         fer = [dict(r) for r in await db.fetch("SELECT * FROM feriados ORDER BY fecha DESC")]
-        
+
         return {"rol": adm['rol'], "sucursal": adm['sucursal'], "usuarios": usuarios, "fichajes": fichajes, "sucursales": sucs, "francos": fr, "feriados": fer, "solicitudes": sol, "convocados": conv, "config": cfg, "tipos_solicitud": tipos}
 
 @app.post("/api/admin/{action}")
@@ -565,22 +565,22 @@ async def admin_actions(request: Request, action: str):
     adm, err = await check_admin(request, check_encargado=True)
     if err: return err
     form = await request.form()
-    
+
     async with get_db() as db:
         if adm['rol'] == 0:
-            if action == "guardar_suc": 
+            if action == "guardar_suc":
                 await db.execute("INSERT INTO sucursales (nombre,lat,lon,hora_cierre,hora_apertura_feriado,hora_cierre_feriado) VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT (nombre) DO UPDATE SET lat=EXCLUDED.lat, lon=EXCLUDED.lon, hora_cierre=EXCLUDED.hora_cierre, hora_apertura_feriado=EXCLUDED.hora_apertura_feriado, hora_cierre_feriado=EXCLUDED.hora_cierre_feriado", str(form.get('d1')), float(form.get('d2')), float(form.get('d3')), str(form.get('d4')), str(form.get('d6')), str(form.get('d7')))
-            elif action == "editar_suc": 
+            elif action == "editar_suc":
                 await db.execute("UPDATE sucursales SET nombre=$1, lat=$2, lon=$3, hora_cierre=$4, hora_apertura_feriado=$5, hora_cierre_feriado=$6 WHERE nombre=$7", str(form.get('d2')), float(form.get('d3')), float(form.get('d4')), str(form.get('d5')), str(form.get('d6')), str(form.get('d7')), str(form.get('d1')))
-            elif action == "borrar_suc": 
+            elif action == "borrar_suc":
                 await db.execute("DELETE FROM sucursales WHERE nombre=$1", str(form.get('d1')))
-            elif action == "guardar_feriado": 
+            elif action == "guardar_feriado":
                 await db.execute("INSERT INTO feriados (fecha, nombre, sucs_abren) VALUES ($1,$2,$3) ON CONFLICT (fecha) DO UPDATE SET nombre=EXCLUDED.nombre, sucs_abren=EXCLUDED.sucs_abren", str(form.get('d1')), str(form.get('d2')), str(form.get('d3')))
-            elif action == "borrar_feriado": 
+            elif action == "borrar_feriado":
                 await db.execute("DELETE FROM feriados WHERE fecha=$1", str(form.get('d1')))
-            elif action == "editar_franco": 
+            elif action == "editar_franco":
                 await db.execute("UPDATE mediofrancos SET fecha=$1, turno=$2 WHERE id=$3", str(form.get('d2')), str(form.get('d3')), int(form.get('d1')))
-            elif action == "borrar_franco": 
+            elif action == "borrar_franco":
                 await db.execute("DELETE FROM mediofrancos WHERE id=$1", int(form.get('d1')))
             elif action == "guardar_concepto":
                 await db.execute("INSERT INTO tipos_solicitud (nombre, tipo, requiere_foto, descuenta_dias, horas_por_dia) VALUES ($1,$2,$3,$4,$5) ON CONFLICT (nombre) DO UPDATE SET tipo=EXCLUDED.tipo, requiere_foto=EXCLUDED.requiere_foto, descuenta_dias=EXCLUDED.descuenta_dias, horas_por_dia=EXCLUDED.horas_por_dia", str(form.get('nombre')).strip(), str(form.get('tipo')), int(form.get('foto')), int(form.get('desc')), float(form.get('horas')))
@@ -588,7 +588,7 @@ async def admin_actions(request: Request, action: str):
                 await db.execute("DELETE FROM tipos_solicitud WHERE nombre=$1", str(form.get('nombre')))
             elif action == "guardar_config":
                 await db.execute("UPDATE configuracion SET empresa_nombre=$1, color_primario=$2, distancia_gps=$3, tolerancia_tarde=$4, anti_rebote_min=$5, vac_anticipo_dias=$6, intentos_login=$7, jornada_minima_hs=$8, franco_manana_ingreso=$9, franco_tarde_salida=$10, gps_estricto=$11, encargados_aprueban=$12, pw_prefijo=$13, pw_sufijo=$14, vacaciones_base=$15 WHERE id=1", str(form.get('empresa')), str(form.get('color')), float(form.get('gps')), int(form.get('tol')), int(form.get('anti')), int(form.get('vac_ant')), int(form.get('intentos')), float(form.get('jornada')), str(form.get('f_manana')), str(form.get('f_tarde')), int(form.get('gps_est')), int(form.get('enc_aprueba')), str(form.get('pw_pre')), str(form.get('pw_suf')), int(form.get('vac_base')))
-            
+
             elif action == "guardar_logo":
                 logo = form.get("logo")
                 if logo and hasattr(logo, 'filename') and logo.filename:
@@ -598,7 +598,7 @@ async def admin_actions(request: Request, action: str):
                         with open(os.path.join("uploads", "favicon.png"), "wb") as f: f.write(raw)
                         return {"msg": "Logo corporativo actualizado de manera correcta."}
                 return JSONResponse(status_code=400, content={"msg": "Archivo no admitido."})
-                
+
             elif action == "importar_csv":
                 archivo = form.get("archivo_csv")
                 if not archivo or not hasattr(archivo, 'filename'): return JSONResponse(status_code=400, content={"msg": "Archivo requerido."})
@@ -638,16 +638,16 @@ async def admin_actions(request: Request, action: str):
             if adm['rol'] == 1: suc_target = adm['sucursal']
             limite = datetime.strptime(fecha, "%Y-%m-%d").replace(hour=18, minute=0, second=0) - timedelta(days=1)
             if datetime.now() > limite: return JSONResponse(status_code=400, content={"msg": "Tiempo límite operativo excedido."})
-            
+
             valid_dnis = []
             for d in dnis:
                 if not d: continue
                 tgt = await db.fetchrow("SELECT sucursal FROM usuarios WHERE dni=$1", str(d))
                 if tgt and tgt['sucursal'] == suc_target: valid_dnis.append(d)
-            
+
             async with db.transaction():
                 await db.execute("DELETE FROM feriados_convocados WHERE fecha=$1 AND dni IN (SELECT dni FROM usuarios WHERE sucursal=$2)", str(fecha), str(suc_target))
-                for d in valid_dnis: 
+                for d in valid_dnis:
                     await db.execute("INSERT INTO feriados_convocados (dni, fecha) VALUES ($1,$2) ON CONFLICT DO NOTHING", str(d), str(fecha))
 
         elif action == "crear_user":
@@ -683,34 +683,34 @@ async def admin_actions(request: Request, action: str):
             calle, altura, depto, cp, mail, tel = form.get('calle',''), form.get('altura',''), form.get('depto',''), form.get('cp',''), form.get('mail',''), form.get('tel','')
             mapa_file = form.get("mapa")
             filename_mapa = None
-            
+
             curr_u = await db.fetchrow("SELECT activo, fecha_baja FROM usuarios WHERE dni=$1", str(d1))
             f_baja = curr_u['fecha_baja'] if curr_u else None
-            
-            # 🛡️ Lógica transaccional de estado (Asignación de Fecha de Baja)
+
+            # Lógica transaccional de estado (Asignación de Fecha de Baja)
             if curr_u and curr_u['activo'] == 1 and d8 == 0:
                 f_baja = datetime.now().strftime("%Y-%m-%d")
             elif d8 == 1:
                 f_baja = None
-            
+
             if mapa_file and hasattr(mapa_file, 'filename') and mapa_file.filename:
                 raw = await mapa_file.read(5 * 1024 * 1024 + 1)
                 ext = check_magic_bytes(raw)
                 if ext:
                     filename_mapa = f"map_{uuid.uuid4().hex}.{ext}"
                     with open(os.path.join("uploads", filename_mapa), "wb") as f: f.write(raw)
-                
-            if filename_mapa: 
+
+            if filename_mapa:
                 await db.execute("UPDATE usuarios SET dni=$1, nombre=$2, rol=$3, sucursal=$4, hora_entrada=$5, hora_salida=$6, activo=$7, dias_vacaciones=$8, calle=$9, altura=$10, depto=$11, cp=$12, mail=$13, telefono=$14, mapa=$15, fecha_baja=$17 WHERE dni=$16", d_new, str(d2), int(d3), str(d4), str(d5), str(d6), d8, int(d9), str(calle), str(altura), str(depto), str(cp), str(mail), str(tel), filename_mapa, str(d1), f_baja)
-            else: 
+            else:
                 await db.execute("UPDATE usuarios SET dni=$1, nombre=$2, rol=$3, sucursal=$4, hora_entrada=$5, hora_salida=$6, activo=$7, dias_vacaciones=$8, calle=$9, altura=$10, depto=$11, cp=$12, mail=$13, telefono=$14, fecha_baja=$16 WHERE dni=$15", d_new, str(d2), int(d3), str(d4), str(d5), str(d6), d8, int(d9), str(calle), str(altura), str(depto), str(cp), str(mail), str(tel), str(d1), f_baja)
-                                     
+
         elif action == "reset_pass":
             dni_target = form.get('d1').strip()
             if adm['rol'] == 1:
                 tgt = await db.fetchrow("SELECT sucursal FROM usuarios WHERE dni=$1", dni_target)
                 if not tgt or tgt['sucursal'] != adm['sucursal']: return JSONResponse(status_code=403, content={"msg": "Jurisdicción denegada."})
-            
+
             temp_pw = gen_temp_pw()
             hashed = await asyncio.to_thread(hash_pw, temp_pw)
             # Bump del epoch: invalida todas las sesiones activas del usuario reseteado.
@@ -727,14 +727,14 @@ async def admin_actions(request: Request, action: str):
             fich_id = int(form.get('d1'))
             d2 = form.get('d2')
             if not re.match(r'^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$', d2): return JSONResponse(status_code=400, content={"msg": "Formato de hora incorrecto."})
-            
+
             fich = await db.fetchrow("SELECT dni FROM fichajes WHERE id=$1", fich_id)
             if not fich: return JSONResponse(status_code=404, content={"msg": "Registro inexistente."})
-            
+
             if adm['rol'] == 1:
                 tgt = await db.fetchrow("SELECT sucursal FROM usuarios WHERE dni=$1", fich['dni'])
                 if not tgt or tgt['sucursal'] != adm['sucursal']: return JSONResponse(status_code=403, content={"msg": "Empleado fuera de jurisdicción."})
-                
+
             await db.execute("UPDATE fichajes SET salida_manual=$1, motivo_salida=$2 WHERE id=$3", str(d2), str(form.get('d3')), fich_id)
 
         elif action == "corregir_entrada":
@@ -743,10 +743,10 @@ async def admin_actions(request: Request, action: str):
             justificante = form.get('d3')
             if not re.match(r'^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$', nueva_hora) or not justificante or str(justificante).strip() == "":
                 return JSONResponse(status_code=400, content={"msg": "Información requerida faltante."})
-            
+
             fich = await db.fetchrow("SELECT dni, fecha_hora FROM fichajes WHERE id=$1", fich_id)
             if not fich: return JSONResponse(status_code=404, content={"msg": "Registro inexistente."})
-            
+
             if adm['rol'] == 1:
                 tgt = await db.fetchrow("SELECT sucursal FROM usuarios WHERE dni=$1", fich['dni'])
                 if not tgt or tgt['sucursal'] != adm['sucursal']: return JSONResponse(status_code=403, content={"msg": "Fuera de jurisdicción."})
@@ -755,43 +755,43 @@ async def admin_actions(request: Request, action: str):
             nueva_fecha_hora = f"{fecha_base} {nueva_hora}:00"
             usr = await db.fetchrow("SELECT hora_entrada FROM usuarios WHERE dni=$1", fich['dni'])
             cfg = await db.fetchrow("SELECT tolerancia_tarde, franco_manana_ingreso FROM configuracion WHERE id=1")
-            
+
             franco_corr = await db.fetchrow("SELECT turno FROM mediofrancos WHERE dni=$1 AND fecha=$2", fich['dni'], fecha_base)
-            
+
             tol = cfg['tolerancia_tarde'] if cfg else 10
             h_ent_str = usr['hora_entrada'] if usr else "09:00"
             t_limite = datetime.strptime(h_ent_str, "%H:%M") + timedelta(minutes=tol)
             t_nueva = datetime.strptime(nueva_hora, "%H:%M")
-            
+
             if franco_corr:
                 tarde = 0
             else:
                 tarde = 1 if t_nueva > t_limite else 0
-                
+
             await db.execute("UPDATE fichajes SET fecha_hora=$1, tarde=$2, motivo_entrada=$3 WHERE id=$4", nueva_fecha_hora, tarde, justificante.strip(), fich_id)
-            
+
         elif action == "asignar_franco":
             d1_raw = form.get('d1')
             d1 = d1_raw.split(' - ')[-1].strip() if ' - ' in d1_raw else d1_raw.strip()
-            
+
             d2, d3 = form.get('d2'), form.get('d3')
             f_dt = datetime.strptime(d2, "%Y-%m-%d")
-            dias_para_restar = f_dt.weekday() + 2 
+            dias_para_restar = f_dt.weekday() + 2
             limite = (f_dt - timedelta(days=dias_para_restar)).replace(hour=12, minute=0, second=0)
             if adm['rol'] == 1 and datetime.now() > limite: return JSONResponse(status_code=400, content={"msg": "El límite de tiempo para esta acción ha expirado."})
-            
+
             tgt = await db.fetchrow("SELECT sucursal FROM usuarios WHERE dni=$1", str(d1))
-            if tgt and (adm['rol'] == 0 or tgt['sucursal'] == adm['sucursal']): 
+            if tgt and (adm['rol'] == 0 or tgt['sucursal'] == adm['sucursal']):
                 await db.execute("INSERT INTO mediofrancos (dni, fecha, turno, asignado_por) VALUES ($1,$2,$3,$4)", str(d1), str(d2), str(d3), str(adm['nombre']))
             else: return JSONResponse(status_code=400, content={"msg": "La asignación no es válida."})
-        
+
         elif action == "estado_solicitud":
             cfg = await db.fetchrow("SELECT encargados_aprueban FROM configuracion WHERE id=1")
             puede_aprobar = True if adm['rol'] == 0 else (cfg and cfg['encargados_aprueban'] == 1)
-            
-            if not puede_aprobar: 
-                return JSONResponse(status_code=403, content={"msg": "Permisos insuficientes para esta operación."}) 
-                
+
+            if not puede_aprobar:
+                return JSONResponse(status_code=403, content={"msg": "Permisos insuficientes para esta operación."})
+
             d1, d2, d3, d4 = form.get('d1'), form.get('d2'), form.get('d3'), form.get('d4')
             sol = await db.fetchrow("SELECT s.dni, s.concepto, s.horas, s.estado, s.fecha_ausencia, s.fecha_fin, ts.tipo, ts.descuenta_dias, ts.horas_por_dia FROM solicitudes s JOIN tipos_solicitud ts ON s.concepto=ts.nombre WHERE s.id=$1", int(d1))
             if sol:
@@ -802,12 +802,12 @@ async def admin_actions(request: Request, action: str):
                             n_fi = datetime.strptime(d4, "%Y-%m-%d") if d4 else datetime.strptime(sol['fecha_fin'], "%Y-%m-%d")
                             if n_fi < n_in: return JSONResponse(status_code=400, content={"msg": "Inconsistencia en las fechas proporcionadas."})
                             n_d = (n_fi - n_in).days + 1
-                            if sol['descuenta_dias'] == 1 and sol['estado'] != 'APROBADA': 
+                            if sol['descuenta_dias'] == 1 and sol['estado'] != 'APROBADA':
                                 await db.execute("UPDATE usuarios SET dias_vacaciones = dias_vacaciones - $1 WHERE dni=$2", int(n_d), sol['dni'])
                             await db.execute("UPDATE solicitudes SET estado=$1, fecha_ausencia=$2, fecha_fin=$3, horas=$4 WHERE id=$5", str(d2), n_in.strftime("%Y-%m-%d"), n_fi.strftime("%Y-%m-%d"), float(n_d * float(sol['horas_por_dia'] if sol['horas_por_dia']>0 else 1)), int(d1))
                         except ValueError: return JSONResponse(status_code=400, content={"msg": "Formato de fecha no válido."})
                     else:
-                        if sol['descuenta_dias'] == 1 and sol['estado'] == 'APROBADA' and d2 != 'APROBADA': 
+                        if sol['descuenta_dias'] == 1 and sol['estado'] == 'APROBADA' and d2 != 'APROBADA':
                             await db.execute("UPDATE usuarios SET dias_vacaciones = dias_vacaciones + $1 WHERE dni=$2", int(sol['horas']), sol['dni'])
                         await db.execute("UPDATE solicitudes SET estado=$1 WHERE id=$2", str(d2), int(d1))
     return {"msg": "ok"}
@@ -816,11 +816,11 @@ async def admin_actions(request: Request, action: str):
 async def descargar_archivo(request: Request, filename: str):
     safe_name = os.path.basename(filename)
     path = os.path.join("uploads", safe_name)
-    
+
     if safe_name == "favicon.png":
         if os.path.isfile(path): return FileResponse(path)
         return Response(status_code=404)
-        
+
     user = await get_current_user(request)
     if not user: return Response(status_code=401)
     if not os.path.isfile(path): return Response(status_code=404)
@@ -842,36 +842,36 @@ async def reporte_excel(request: Request, d_desde: str, d_hasta: str, suc: str="
     adm, err = await check_admin(request, check_encargado=True)
     if err: return err
     if adm['rol'] == 1:
-        suc = adm['sucursal'] 
-        
+        suc = adm['sucursal']
+
     desde = datetime.strptime(d_desde, "%Y-%m-%d")
     hasta = datetime.strptime(d_hasta, "%Y-%m-%d")
     async with get_db() as db:
         p = []
         q = "SELECT * FROM usuarios WHERE 1=1"
-        if suc: 
+        if suc:
             p.append(suc)
             q += f" AND sucursal=${len(p)}"
-        if dni: 
+        if dni:
             p.append(dni)
             q += f" AND dni=${len(p)}"
-            
+
         empleados_raw = [dict(r) for r in await db.fetch(q, *p)]
         empleados = []
-        
+
         # Filtro de inclusión inteligente basado en fecha de corte
         for e in empleados_raw:
             if e['activo'] == 1:
                 empleados.append(e)
             elif e['fecha_baja'] and e['fecha_baja'] >= d_desde:
                 empleados.append(e)
-                
+
         sucs_db = {row['nombre']: dict(row) for row in await db.fetch("SELECT * FROM sucursales")}
-        
+
         fich_map = {}
         for r in await db.fetch("SELECT * FROM fichajes WHERE fecha_hora BETWEEN $1 AND $2", d_desde, d_hasta+' 23:59:59'):
             fich_map.setdefault(r['dni'], {})[r['fecha_hora'][:10]] = dict(r)
-            
+
         fran_map = {(r['dni'], r['fecha']): r['turno'] for r in await db.fetch("SELECT dni, fecha, turno FROM mediofrancos WHERE fecha BETWEEN $1 AND $2", d_desde, d_hasta)}
         fer_map = {r['fecha']: r['sucs_abren'] for r in await db.fetch("SELECT fecha, sucs_abren FROM feriados WHERE fecha BETWEEN $1 AND $2", d_desde, d_hasta)}
         convocados_set = {(r['dni'], r['fecha']) for r in await db.fetch("SELECT dni, fecha FROM feriados_convocados WHERE fecha BETWEEN $1 AND $2", d_desde, d_hasta)}
@@ -879,27 +879,27 @@ async def reporte_excel(request: Request, d_desde: str, d_hasta: str, suc: str="
 
     output = io.StringIO()
     writer = csv.writer(output, delimiter=';', quotechar='"')
-    
+
     writer.writerow(['DNI', 'Nombre', 'Sucursal', 'Días Trabajados', 'Llegadas Tarde', 'Cantidad Faltas Totales', 'Fechas de Faltas', 'Horas Totales', 'Días Vacaciones Tomados'])
     def scsv(v): return "'" + str(v) if str(v).startswith(('=','+','-','@')) else str(v)
-    
+
     for e in empleados:
         curr = desde
         total_hs, tardes, faltas, dias_trabajados, dias_vacaciones = 0, 0, 0, 0, 0
         fechas_faltas = []
-        
+
         while curr <= hasta:
             f_str = curr.strftime("%Y-%m-%d")
-            
-            # 🛡️ Aplicación de regla de negocio: Omisión contable post-baja
+
+            # Aplicación de regla de negocio: Omisión contable post-baja
             if e['activo'] == 0 and e['fecha_baja'] and f_str > e['fecha_baja']:
                 curr += timedelta(days=1)
                 continue
-                
+
             fer_abren = fer_map.get(f_str)
             es_feriado_abierto = fer_abren and (fer_abren == 'TODAS' or e['sucursal'] in fer_abren)
             permiso_multidia = next((v for v in multidias_db if v['dni'] == e['dni'] and v['fecha_ausencia'] <= f_str <= v['fecha_fin']), None)
-            
+
             if permiso_multidia:
                 if curr.weekday() != 6:
                     if permiso_multidia['descuenta_dias'] == 1: dias_vacaciones += 1
@@ -911,7 +911,7 @@ async def reporte_excel(request: Request, d_desde: str, d_hasta: str, suc: str="
                     dias_trabajados += 1
                     franco = fran_map.get((e['dni'], f_str))
                     if fich['tarde'] and not franco: tardes += 1
-                    
+
                     h_in = datetime.strptime(fich['fecha_hora'], "%Y-%m-%d %H:%M:%S").time()
                     if fich['salida_manual']: h_out = datetime.strptime(fich['salida_manual'], "%H:%M").time()
                     else:
@@ -921,7 +921,7 @@ async def reporte_excel(request: Request, d_desde: str, d_hasta: str, suc: str="
                         else:
                             cierre_suc = sucs_db[e['sucursal']]['hora_cierre']
                             h_out_limit = min(datetime.strptime(cierre_suc, "%H:%M") + timedelta(minutes=30), datetime.strptime(e['hora_salida'], "%H:%M"))
-                            if franco == 'TARDE': h_out_limit = min(h_out_limit, datetime.strptime("12:00", "%H:%M")) 
+                            if franco == 'TARDE': h_out_limit = min(h_out_limit, datetime.strptime("12:00", "%H:%M"))
                             h_out = h_out_limit.time()
                     hs = (h_out.hour * 60 + h_out.minute - h_in.hour * 60 - h_in.minute) / 60
                     total_hs += max(0, hs)
@@ -933,10 +933,10 @@ async def reporte_excel(request: Request, d_desde: str, d_hasta: str, suc: str="
                         faltas += 1
                         fechas_faltas.append(f_str)
             curr += timedelta(days=1)
-            
+
         faltas_str = " | ".join(fechas_faltas) if fechas_faltas else "-"
         writer.writerow([scsv(e['dni']), scsv(e['nombre']), scsv(e['sucursal']), dias_trabajados, tardes, faltas, scsv(faltas_str), round(total_hs, 2), dias_vacaciones])
-        
+
     r = Response(content=output.getvalue().encode('utf-8-sig'), media_type="text/csv")
     r.headers["Content-Disposition"] = 'attachment; filename="Reporte_Consolidated.csv"'
     return r
