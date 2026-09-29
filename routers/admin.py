@@ -11,7 +11,11 @@ from fastapi.responses import JSONResponse, Response
 
 from jztech_core import sessions
 
-from database import DB, get_db, requiere_panel, hash_pw, gen_temp_pw, check_magic_bytes
+from database import DB, get_db, requiere_panel, hash_pw, gen_temp_pw, check_magic_bytes, logger
+
+
+class CSVInvalido(ValueError):
+    pass
 
 router = APIRouter()
 
@@ -94,7 +98,7 @@ async def admin_actions(request: Request, action: str, adm: dict = Depends(requi
                     nuevos, actualizados, credenciales = 0, 0, []
                     async with db.transaction():
                         for i, row in enumerate(reader, start=2):
-                            if 'dni' not in row or 'nombre' not in row: raise Exception(f"Fila {i}: Falta DNI o Nombre.")
+                            if 'dni' not in row or 'nombre' not in row: raise CSVInvalido(f"Fila {i}: Falta DNI o Nombre.")
                             dni = str(row['dni']).strip()
                             if not dni: continue
                             existe = await db.fetchval("SELECT 1 FROM usuarios WHERE dni=$1", dni)
@@ -109,8 +113,12 @@ async def admin_actions(request: Request, action: str, adm: dict = Depends(requi
                                 credenciales.append({"dni": dni, "clave": temp_pw})
                                 nuevos += 1
                     return {"msg": f"Importación completada: {nuevos} nuevos, {actualizados} actualizados. Las claves provisorias se muestran una sola vez.", "credenciales": credenciales}
-                except Exception as e:
-                    return JSONResponse(status_code=400, content={"msg": f"Error en la lectura del CSV: {str(e)}"})
+                except CSVInvalido as e:
+                    # Mensaje armado por la validacion de arriba (sin detalles internos).
+                    return JSONResponse(status_code=400, content={"msg": str(e)})
+                except (UnicodeDecodeError, ValueError, KeyError) as e:
+                    logger.warning("Importacion de CSV rechazada: %r", e)
+                    return JSONResponse(status_code=400, content={"msg": "No se pudo leer el CSV: revisar que sea UTF-8, separado por punto y coma, con las columnas esperadas y valores numericos validos."})
 
         if action == "guardar_convocados":
             fecha = form.get('d2')

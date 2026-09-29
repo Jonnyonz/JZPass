@@ -6,7 +6,11 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from jztech_core import sessions
+from jztech_core.logging_setup import configure_logging, install_generic_error_handler
 from jztech_core.security_headers import SecurityHeadersMiddleware
+
+# Antes de importar database: ese modulo ya puede loguear al cargarse (p. ej. TRUSTED_PROXIES).
+configure_logging()
 
 from database import (
     DB, ORIGINES_PERMITIDOS, csrf_signer, limiter,
@@ -25,6 +29,9 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+# Cualquier excepcion no manejada: traceback completo al log (JSON a stdout) y al cliente solo
+# {"msg": "Error interno del servidor."} con 500. Nunca str(e).
+install_generic_error_handler(app, "jzpass")
 
 
 @app.exception_handler(ErrorAuth)

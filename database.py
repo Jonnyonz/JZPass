@@ -1,5 +1,6 @@
 import os
 import asyncio
+import logging
 import secrets
 import ipaddress
 import asyncpg
@@ -9,6 +10,8 @@ from fastapi.responses import JSONResponse
 from itsdangerous import URLSafeTimedSerializer
 from jztech_core import sessions
 from jztech_core.passwords import hash_password, needs_rehash, verify_legacy_password, verify_password
+
+logger = logging.getLogger("jzpass")
 from slowapi import Limiter
 
 
@@ -41,7 +44,7 @@ def _parse_networks(raw):
         part = part.strip()
         if not part: continue
         try: nets.append(ipaddress.ip_network(part, strict=False))
-        except ValueError: print(f"[JZPass] TRUSTED_PROXIES: valor invalido ignorado: {part}")
+        except ValueError: logger.warning("TRUSTED_PROXIES: valor invalido ignorado: %s", part)
     return nets
 
 TRUSTED_PROXIES = _parse_networks(os.environ.get("TRUSTED_PROXIES", "127.0.0.1/32,::1/128,172.16.0.0/12"))
@@ -93,11 +96,11 @@ async def init_db_schema():
             conn = await asyncpg.connect(DATABASE_URL)
             break
         except Exception as e:
-            print(f"[JZPass] Intento de conexion a PostgreSQL fallido: {e!r}")
+            logger.warning("Intento de conexion a PostgreSQL fallido: %r", e)
             await asyncio.sleep(2)
 
     if conn is None:
-        print("[JZPass] No se pudo conectar a PostgreSQL: la API respondera 503 hasta reiniciar el servicio.")
+        logger.error("No se pudo conectar a PostgreSQL: la API respondera 503 hasta reiniciar el servicio.")
         return
 
     async with conn.transaction():
@@ -115,8 +118,7 @@ async def init_db_schema():
             "pw_sufijo": "TEXT DEFAULT '*'"
         }
         for col, tipo in nuevas_columnas.items():
-            try: await conn.execute(f"ALTER TABLE configuracion ADD COLUMN IF NOT EXISTS {col} {tipo}")
-            except Exception: pass
+            await conn.execute(f"ALTER TABLE configuracion ADD COLUMN IF NOT EXISTS {col} {tipo}")
 
         await conn.execute('''CREATE TABLE IF NOT EXISTS tipos_solicitud (nombre TEXT PRIMARY KEY, tipo TEXT, requiere_foto INTEGER, descuenta_dias INTEGER, horas_por_dia REAL)''')
         await conn.execute("INSERT INTO tipos_solicitud VALUES ('TRAMITE', 'HORAS', 0, 0, 0) ON CONFLICT (nombre) DO NOTHING")
@@ -135,11 +137,10 @@ async def init_db_schema():
         await conn.execute("DELETE FROM jztech_sessions WHERE expires_at < now()")
         await conn.execute('''CREATE TABLE IF NOT EXISTS solicitudes (id SERIAL PRIMARY KEY, dni TEXT, fecha_ausencia TEXT, horas REAL, motivo TEXT, estado TEXT DEFAULT 'PENDIENTE', archivo TEXT, fecha_carga TEXT, hora_inicio TEXT DEFAULT '', hora_fin TEXT DEFAULT '', concepto TEXT DEFAULT 'TRAMITE', fecha_fin TEXT DEFAULT '')''')
 
-        # Migraciones Múltiples de Integridad
-        try: await conn.execute("ALTER TABLE fichajes ADD COLUMN IF NOT EXISTS motivo_entrada TEXT DEFAULT ''")
-        except Exception: pass
-        try: await conn.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS fecha_baja TEXT DEFAULT NULL")
-        except Exception: pass
+        # Columnas agregadas en versiones posteriores. ADD COLUMN IF NOT EXISTS no falla si ya
+        # existen; cualquier otro error se propaga y frena el arranque (no se silencia).
+        await conn.execute("ALTER TABLE fichajes ADD COLUMN IF NOT EXISTS motivo_entrada TEXT DEFAULT ''")
+        await conn.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS fecha_baja TEXT DEFAULT NULL")
 
     await conn.close()
 
@@ -170,7 +171,7 @@ def verify_pw(plain: str, hashed: str) -> bool:
         return verify_legacy_password(plain, hashed)
     except ValueError as e:
         # Hash bcrypt malformado en la base: no valida, y queda registrado para revisarlo.
-        print(f"[JZPass] Hash de clave con formato invalido: {e!r}")
+        logger.warning("Hash de clave con formato invalido: %r", e)
         return False
 
 
