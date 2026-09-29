@@ -622,12 +622,20 @@ async def admin_actions(request: Request, action: str):
             return {"msg": f"Registro creado. Credencial provisoria: {temp_pw}"}
 
         elif action == "editar_user":
-            if adm['rol'] == 1:
-                tgt = await db.fetchrow("SELECT sucursal FROM usuarios WHERE dni=$1", str(form.get('d1')))
-                if not tgt or tgt['sucursal'] != adm['sucursal']: return JSONResponse(status_code=403, content={"msg": "Usuario no correspondiente a la jurisdicción."})
-            
             d1, d2, d3, d4, d5, d6, d8, d9 = form.get('d1').strip(), form.get('d2'), int(form.get('d3','2')), form.get('d4'), form.get('d5'), form.get('d6'), int(form.get('d8','1')), int(form.get('d9','14'))
             d_new = str(form.get('d_new', d1)).strip()
+            if adm['rol'] == 1:
+                # Un encargado solo edita empleados (rol 2) de su sucursal y no puede:
+                # asignar rol admin/encargado, mover de sucursal, ni renombrar el DNI. Asi no
+                # puede escalar privilegios ni editarse a si mismo el rol (es rol 1, no rol 2).
+                tgt = await db.fetchrow("SELECT sucursal, rol FROM usuarios WHERE dni=$1", str(d1))
+                if not tgt or tgt['sucursal'] != adm['sucursal']:
+                    return JSONResponse(status_code=403, content={"msg": "Usuario no correspondiente a la jurisdicción."})
+                if tgt['rol'] in (0, 1):
+                    return JSONResponse(status_code=403, content={"msg": "No puede editar administradores ni encargados."})
+                d3 = 2
+                d4 = adm['sucursal']
+                d_new = str(d1)
             calle, altura, depto, cp, mail, tel = form.get('calle',''), form.get('altura',''), form.get('depto',''), form.get('cp',''), form.get('mail',''), form.get('tel','')
             mapa_file = form.get("mapa")
             filename_mapa = None
