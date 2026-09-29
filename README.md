@@ -59,7 +59,7 @@ el empleado tiene que cambiar en su primer ingreso.
 | FastAPI / Starlette | 0.141.1 / 1.7.0 |
 | Uvicorn | 0.54.0 |
 | asyncpg | 0.31.0 (SQL directo, sin ORM) |
-| PyJWT / itsdangerous | 2.15.1 / 2.2.0 (sesión y CSRF) |
+| itsdangerous | 2.2.0 (tokens CSRF firmados) |
 | slowapi | 0.1.10 (rate limit) |
 | PostgreSQL | 15 (imagen `postgres:15-alpine`) |
 | [jztech-core](https://github.com/Jonnyonz/jztech-core) | 0.1.4 (librería de seguridad común de JZTech) |
@@ -94,19 +94,20 @@ La app crea el esquema sola al arrancar (y agrega columnas nuevas si faltan):
 
 | Tabla | Contenido |
 |---|---|
-| `usuarios` | Personal (clave: `dni`): rol, sucursal, horario, saldo de vacaciones, hash de clave, bloqueo, época de sesión, datos de contacto |
+| `usuarios` | Personal (clave: `dni`): rol, sucursal, horario, saldo de vacaciones, hash de clave, bloqueo, datos de contacto |
 | `sucursales` | Nombre, coordenadas (para el GPS) y horarios, incluidos los de feriado |
 | `fichajes` | Entradas y salidas con ubicación, distancia a la sucursal y llegada tarde |
 | `solicitudes`, `tipos_solicitud` | Solicitudes del personal y los conceptos que las definen |
 | `mediofrancos`, `feriados`, `feriados_convocados` | Medio francos, feriados (y qué sucursales abren) y personal convocado |
 | `configuracion` | Una sola fila (`id=1`) con los parámetros del sistema |
-| `token_blacklist` | Sesiones cerradas (logout) hasta que vencen |
+| `jztech_sessions` | Sesiones abiertas: hash del token, DNI y vencimiento |
 
 ### Seguridad
 
-- **Sesión:** JWT firmado con `JWT_SECRET` en una cookie `HttpOnly` + `Secure` +
-  `SameSite=Strict` (7 días). El logout la invalida (lista negra) y el cambio de clave cierra
-  todas las demás sesiones del usuario.
+- **Sesiones opacas en base:** la cookie `HttpOnly` + `Secure` + `SameSite=Strict` lleva un
+  token aleatorio (7 días); en la base se guarda solo su hash SHA-256, así que una copia de la
+  base no permite robar sesiones. El logout la borra, y el cambio de clave o el reset por un
+  admin cierran todas las sesiones del usuario.
 - **Claves con Argon2id** (parámetros mínimos de OWASP). Las claves bcrypt de versiones
   anteriores se migran solas en el primer login correcto. Política: 8+ caracteres, una
   mayúscula, dos números y un carácter especial.
@@ -237,7 +238,7 @@ Y en el `.env`: `APP_BIND=127.0.0.1` (la app solo escucha en el propio servidor)
 
 | Variable | Obligatoria | Default | Para qué sirve |
 |---|---|---|---|
-| `JWT_SECRET` | Sí | — | Firma de las sesiones y de los tokens CSRF. Mínimo 32 caracteres (`openssl rand -hex 32`). La app no arranca sin ella. Cambiarla cierra todas las sesiones. |
+| `JWT_SECRET` | Sí | — | Firma de los tokens CSRF (el nombre quedó de versiones anteriores, que usaban JWT). Mínimo 32 caracteres (`openssl rand -hex 32`). La app no arranca sin ella. |
 | `DB_USER` / `DB_PASSWORD` / `DB_NAME` | Sí (Docker) | `jzadmin` / — / `jzpass_db` | Credenciales de Postgres. Con Docker, el compose arma `DATABASE_URL` con ellas. |
 | `DATABASE_URL` | Sí (sin Docker) | — | `postgresql://usuario:clave@host:puerto/base`. La app no arranca sin ella. |
 | `SETUP_TOKEN` | Sí (primera vez) | vacío | Crea el primer administrador, una sola vez. Vacío = deshabilitado. |
