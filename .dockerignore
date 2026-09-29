@@ -1,0 +1,12 @@
+# Lo que nunca debe terminar dentro de la imagen (el Dockerfile hace COPY . .).
+# Secretos: el .env real se pasa por environment en docker-compose.yml, no se copia.
+.env
+# Datos de usuarios: uploads/ se monta como volumen.
+uploads/
+# Entorno local y metadatos, no hacen falta para correr.
+.git/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.serena/
