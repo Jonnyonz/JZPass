@@ -26,8 +26,34 @@ SETUP_TOKEN = os.environ.get("SETUP_TOKEN", "")
 DUMMY_HASH = "$2b$12$7kBL9RIn.u8V5Nenx6OqfOQCm8vU098S/w29w/vXW7u8i19m1W9m."
 DATABASE_URL = _requerir_env("DATABASE_URL")
 
+import ipaddress
+# X-Forwarded-For solo se cree si la conexion viene de un proxy de confianza. Antes se tomaba
+# el primer valor de XFF sin validar (falsificable), lo que permitia evadir el rate limit.
+def _parse_networks(raw):
+    nets = []
+    for part in raw.split(","):
+        part = part.strip()
+        if not part: continue
+        try: nets.append(ipaddress.ip_network(part, strict=False))
+        except ValueError: print(f"[JZPass] TRUSTED_PROXIES: valor invalido ignorado: {part}")
+    return nets
+
+TRUSTED_PROXIES = _parse_networks(os.environ.get("TRUSTED_PROXIES", "127.0.0.1/32,::1/128,172.16.0.0/12"))
+
+def _is_trusted_proxy(ip):
+    try: addr = ipaddress.ip_address(ip)
+    except ValueError: return False
+    return any(addr in net for net in TRUSTED_PROXIES)
+
 def get_real_ip(request: Request):
-    return request.headers.get("X-Forwarded-For", request.client.host if request.client else "127.0.0.1").split(",")[0]
+    peer = request.client.host if request.client else "127.0.0.1"
+    if not _is_trusted_proxy(peer):
+        return peer
+    forwarded = [p.strip() for p in request.headers.get("X-Forwarded-For", "").split(",") if p.strip()]
+    for hop in reversed(forwarded):
+        if not _is_trusted_proxy(hop):
+            return hop
+    return forwarded[0] if forwarded else peer
 
 limiter = Limiter(key_func=get_real_ip)
 csrf_signer = None

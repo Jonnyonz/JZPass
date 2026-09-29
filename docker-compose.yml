@@ -7,9 +7,10 @@ services:
     container_name: jzpass_server
     restart: always
     ports:
-      - "${APP_PORT:-8000}:8000"
+      # Detras de un proxy inverso, poner APP_BIND=127.0.0.1 en el .env.
+      - "${APP_BIND:-0.0.0.0}:${APP_PORT:-8000}:8000"
     volumes:
-      - .:/app
+      # El codigo va dentro de la imagen (COPY . . en el Dockerfile); solo se monta uploads.
       - ./uploads:/app/uploads
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
@@ -17,9 +18,11 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - SETUP_TOKEN=${SETUP_TOKEN}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+      - TRUSTED_PROXIES=${TRUSTED_PROXIES:-127.0.0.1/32,::1/128,172.16.0.0/12}
       - TZ=${TZ}
       - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@jzpass-db:5432/${DB_NAME}
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips='*'
+    # La IP real la resuelve la app segun TRUSTED_PROXIES; no se delega en uvicorn.
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
     depends_on:
       - jzpass-db
     networks:
