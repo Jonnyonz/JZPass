@@ -2,13 +2,13 @@ import os
 import asyncio
 import secrets
 import ipaddress
-import bcrypt
 import jwt
 import asyncpg
 from contextlib import asynccontextmanager
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
 from itsdangerous import URLSafeTimedSerializer
+from jztech_core.passwords import hash_password, needs_rehash, verify_legacy_password, verify_password
 from slowapi import Limiter
 
 
@@ -28,7 +28,9 @@ if len(SECRET_KEY) < 32:
 
 ORIGINES_PERMITIDOS = os.environ.get("ALLOWED_ORIGINS", "http://localhost:8000").split(",")
 SETUP_TOKEN = os.environ.get("SETUP_TOKEN", "")
-DUMMY_HASH = "$2b$12$7kBL9RIn.u8V5Nenx6OqfOQCm8vU098S/w29w/vXW7u8i19m1W9m."
+# Hash de relleno para usuarios inexistentes en el login: se verifica igual para que el tiempo
+# de respuesta no revele si el DNI existe. Argon2id, como las claves reales.
+DUMMY_HASH = hash_password(secrets.token_hex(16))
 DATABASE_URL = _requerir_env("DATABASE_URL")
 
 # X-Forwarded-For solo se cree si la conexion viene de un proxy de confianza. Antes se tomaba
@@ -160,17 +162,26 @@ async def get_db():
 
 
 def verify_pw(plain: str, hashed: str) -> bool:
-    # Solo bcrypt. Las cuentas heredadas (texto plano o SHA-256 sin sal) ya no validan:
-    # un admin debe resetear su clave, que se guarda hasheada con bcrypt.
+    # Argon2id (actual) o bcrypt (legado, se re-hashea a Argon2id en el login: ver
+    # pw_necesita_rehash). Cualquier otro formato no valida: las cuentas heredadas en texto
+    # plano o SHA-256 sin sal requieren que un admin resetee la clave.
     if not hashed: return False
+    if hashed.startswith("$argon2"):
+        return verify_password(plain, hashed)
     try:
-        if hashed.startswith('$2b$') or hashed.startswith('$2a$'):
-            return bcrypt.checkpw(plain.encode('utf-8'), hashed.encode('utf-8'))
-    except Exception: pass
-    return False
+        return verify_legacy_password(plain, hashed)
+    except ValueError as e:
+        # Hash bcrypt malformado en la base: no valida, y queda registrado para revisarlo.
+        print(f"[JZPass] Hash de clave con formato invalido: {e!r}")
+        return False
 
 
-def hash_pw(pw: str) -> str: return bcrypt.hashpw(pw.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+def hash_pw(pw: str) -> str: return hash_password(pw)
+
+
+def pw_necesita_rehash(hashed: str) -> bool:
+    # True si el hash es de un esquema viejo (bcrypt) o de Argon2id con parametros desactualizados.
+    return not hashed.startswith("$argon2") or needs_rehash(hashed)
 
 
 # Clave provisoria aleatoria (se muestra una sola vez y siempre con req_cambio=1).

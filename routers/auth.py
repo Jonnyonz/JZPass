@@ -11,9 +11,8 @@ from fastapi.responses import JSONResponse
 from database import (
     SECRET_KEY, SETUP_TOKEN, DUMMY_HASH,
     csrf_signer, limiter, get_db, get_current_user,
-    verify_pw, hash_pw,
+    verify_pw, hash_pw, pw_necesita_rehash,
 )
-import bcrypt
 
 router = APIRouter()
 
@@ -36,7 +35,7 @@ async def login(request: Request, response: Response, dni: str = Form(...), pass
 
             u = await db.fetchrow("SELECT * FROM usuarios WHERE dni=$1", dni)
             if not u:
-                await asyncio.to_thread(bcrypt.checkpw, password.encode('utf-8'), DUMMY_HASH.encode('utf-8'))
+                await asyncio.to_thread(verify_pw, password, DUMMY_HASH)
                 return JSONResponse(status_code=400, content={"msg": "Credenciales inválidas."})
             if u['activo'] == 0: return JSONResponse(status_code=403, content={"msg": "Usuario inactivo."})
 
@@ -62,6 +61,11 @@ async def login(request: Request, response: Response, dni: str = Form(...), pass
                 return JSONResponse(status_code=400, content={"msg": f"Clave incorrecta. Intentos restantes: {max_intentos-i}"})
 
             await db.execute("UPDATE usuarios SET intentos=0, bloqueado_hasta=NULL WHERE dni=$1", dni)
+            # Migracion transparente a Argon2id: si el hash guardado es bcrypt (o Argon2id con
+            # parametros viejos), se re-hashea con la clave que se acaba de validar. Sin reset masivo.
+            if await asyncio.to_thread(pw_necesita_rehash, str(u['password'])):
+                nuevo_hash = await asyncio.to_thread(hash_pw, password)
+                await db.execute("UPDATE usuarios SET password=$1 WHERE dni=$2", nuevo_hash, dni)
 
             token = jwt.encode({"dni": dni, "exp": datetime.now(timezone.utc) + timedelta(days=7), "jti": str(uuid.uuid4()), "se": u['sess_epoch'] or 0}, SECRET_KEY, algorithm="HS256")
             if isinstance(token, bytes): token = token.decode('utf-8')
