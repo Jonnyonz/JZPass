@@ -154,9 +154,10 @@ docker compose up -d --build
 `install.sh` (como root) instala Docker si falta, clona el repo en `./jzpass_erp`, genera el
 `.env` con secretos aleatorios y levanta los contenedores.
 
-> **Cuidado:** `install.sh` es solo para la **primera** instalación. Cada vez que corre borra
-> la carpeta `jzpass_erp` y ejecuta `docker compose down -v`, que **elimina la base de datos**.
-> Para actualizar, ver [Operación](#operación).
+Se puede volver a correr para actualizar: hace `git pull` y respeta el `.env`, la base y
+`uploads/`. Si falta el `.env` pero quedó la base de una instalación anterior, **se detiene sin
+borrar nada** y explica las opciones: restaurar el `.env`, o empezar de cero borrando esos datos
+con `JZPASS_RESET_DB=1`.
 
 ### Primer ingreso
 
@@ -283,7 +284,7 @@ es nuevo se genera una clave temporal y el resultado de la importación muestra 
 docker compose ps
 docker compose logs -f jzpass-app
 
-# Actualizar a la última versión (NO usar install.sh para esto)
+# Actualizar a la última versión (o volver a correr install.sh, que hace lo mismo)
 git pull
 docker compose up -d --build
 
