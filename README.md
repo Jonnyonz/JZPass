@@ -13,7 +13,8 @@ pensado para correr en una PC de oficina común.
 - [Acceso desde la red (HTTPS)](#acceso-desde-la-red-https)
 - [Configuración](#configuración)
 - [Operación](#operación)
-- [Tests](#tests)
+- [Regenerar el lockfile](#regenerar-el-lockfile)
+- [Cambios](#cambios)
 - [Contribuir y licencia](#contribuir-y-licencia)
 
 ---
@@ -85,7 +86,6 @@ JZPass/
 ├── install-native.sh    # instalador sin Docker (Debian/Ubuntu + systemd + Caddy)
 ├── docker-compose.yml, Dockerfile, .dockerignore
 ├── requirements.in, requirements.txt
-└── conftest.py, test_*.py
 ```
 
 ### Modelo de datos
@@ -112,8 +112,7 @@ La app crea el esquema sola al arrancar (y agrega columnas nuevas si faltan):
   anteriores se migran solas en el primer login correcto. Política: 8+ caracteres, una
   mayúscula, dos números y un carácter especial.
 - **Denegar por defecto:** toda ruta exige sesión salvo una lista explícita de públicas (login,
-  configuración inicial, CSRF y las dos páginas). Un test (`test_deny_by_default.py`) falla si
-  se agrega una ruta sin proteger. Los permisos de panel (admin o encargado) se validan en el
+  configuración inicial, CSRF y las dos páginas). Los permisos de panel (admin o encargado) se validan en el
   servidor.
 - **CSRF:** cada acción (`POST`/`PUT`/`DELETE`) lleva un token firmado que se pide a
   `/api/csrf-token` y está atado al DNI de la sesión.
@@ -299,20 +298,9 @@ Incluir también la carpeta `uploads/` (adjuntos y logo) en las copias de seguri
 
 ---
 
-## Tests
+## Regenerar el lockfile
 
-```bash
-python -m venv .venv && . .venv/bin/activate
-pip install --require-hashes -r requirements.txt
-pip install pytest httpx
-python -m pytest
-```
-
-No necesitan base de datos (`conftest.py` define variables de prueba): cubren la arquitectura
-(rutas registradas, páginas servidas), que ninguna ruta quede sin proteger, el hash de claves
-y su migración, y las cabeceras de seguridad. Tardan unos 2 minutos porque la app reintenta conectarse a Postgres al arrancar.
-
-**Regenerar el lockfile** (al cambiar `requirements.in`): siempre en Linux, dentro de la misma
+Al cambiar `requirements.in`, el lockfile se regenera siempre en Linux, dentro de la misma
 imagen base del Dockerfile. En Windows `pip-compile` resuelve dependencias propias de Windows y
 el build de Docker falla.
 
@@ -324,10 +312,16 @@ docker run --rm -v "$PWD:/w" -w /w python:3.11-slim sh -c \
 
 ---
 
+## Cambios
+
+Lo que cambia en cada actualización está en `CHANGELOG.md`.
+
+---
+
 ## Contribuir y licencia
 
 Las contribuciones son bienvenidas: ver `CONTRIBUTING.md`. Cada commit tiene que llevar `Signed-off-by`
-(`git commit -s`, Developer Certificate of Origin), ser un único cambio probado y pasar los
-tests. Sin emojis en la interfaz: íconos solo en SVG.
+(`git commit -s`, Developer Certificate of Origin), ser un único cambio y estar
+probado. Sin emojis en la interfaz: íconos solo en SVG.
 
 Licencia: **AGPLv3** (GNU Affero General Public License v3). Ver `LICENSE`. Si ofrecés una versión modificada como servicio en red, tenés que publicar su código fuente.
