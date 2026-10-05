@@ -20,3 +20,7 @@ uploads/*
 # Archivos del sistema operativo
 .DS_Store
 Thumbs.db
+
+# Generados por install.sh (Docker): Caddyfile y CA local, y copias de la base
+caddy/
+backups/

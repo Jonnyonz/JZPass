@@ -240,7 +240,9 @@ uvicorn main:app --host 127.0.0.1 --port 8000
 
 ## Acceso desde la red (HTTPS)
 
-`install-native.sh` ya configura Caddy. Con Docker, poner un proxy adelante; por ejemplo con
+Los dos instaladores ya lo configuran con Caddy: `install.sh` (Docker) levanta un contenedor `jzpass_caddy`
+y avisa al final la dirección y qué hacer con el certificado; `install-native.sh` usa el Caddy del sistema.
+Para un proxy propio, por ejemplo
 [Caddy](https://caddyserver.com/) en el mismo servidor:
 
 ```

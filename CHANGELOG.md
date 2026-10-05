@@ -4,6 +4,17 @@ Cambios de JZPass, del más nuevo al más viejo. Cada entrada corresponde a un p
 
 ## Sin versión todavía (2026-10-05)
 
+### Agregado (HTTPS en la instalación con Docker)
+- `install.sh` configura HTTPS: levanta un contenedor de Caddy (`jzpass_caddy`, perfil `https` del compose)
+  delante de la app. Con dominio (`JZPASS_DOMAIN=rrhh.empresa.com`, o contestando la pregunta) saca el
+  certificado solo; sin dominio usa la IP del servidor con la CA local de Caddy y deja el certificado raíz en
+  `caddy/ca-local.crt`. Si el 443 ya está en uso, queda en el primero libre entre 8443, 9443 y 10443. Al terminar
+  muestra un aviso con la dirección y qué hacer con el certificado. Sin HTTPS no se podía iniciar sesión desde
+  otra PC ni fichar con el GPS del celular. `JZPASS_HTTPS=no` lo desactiva.
+- Al actualizar respalda la base en `backups/` antes de reconstruir, y sigue con la versión recién bajada del
+  propio instalador. Una instalación nueva deja la app escuchando solo en el servidor (se entra por Caddy).
+- Ya no instala el `docker-compose` viejo por separado: usa el plugin `docker compose` del Docker oficial.
+
 ### Cambiado (instalación sin Docker)
 - `install-native.sh` rehecho con el mismo esquema que Tracker360 y JZTravell (Debian 12/13, Ubuntu 24.04):
   cada versión en su propia carpeta con su entorno de Python (`/opt/jzpass/releases`), los adjuntos aparte en
