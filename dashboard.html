@@ -406,7 +406,7 @@
                         <select id="tp_foto"><option value="0">Certificado Opcional</option><option value="1">Certificado Obligatorio</option></select>
                         <select id="tp_desc"><option value="0">No descuenta Vacaciones</option><option value="1">Descuenta Vacaciones</option></select>
                         <input type="number" id="tp_horas" placeholder="Horas pagas x Día" value="0">
-                        <button onclick="accion('guardar_concepto', {nombre:v('tp_nombre').toUpperCase(), tipo:v('tp_tipo'), foto:v('tp_foto'), desc:v('tp_desc'), horas:v('tp_horas')})"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Añadir Parámetro</button>
+                        <button id="btn-crear-concepto" onclick="crearConcepto()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Añadir Parámetro</button>
                     </div>
                     <div class="table-responsive"><table><thead><tr><th>Concepto</th><th>Naturaleza</th><th>Exige Certificado</th><th>Resta Vacaciones</th><th>Carga Horaria</th><th>Acción</th></tr></thead><tbody id="b-conceptos"></tbody></table></div>
                 </div>
@@ -639,6 +639,14 @@
         return r.ok; 
     }
     async function accion(path, data) { if(await postData('/api/admin/'+path, data)) { dG = await (await fetch('/api/datos_panel')).json(); if(document.getElementById('t-hub').classList.contains('hidden')) ver(document.querySelector('.content-wrapper > .content > .card:not(.hidden)').id); else verHub(); } }
+    async function crearConcepto() {
+        let nombre = v('tp_nombre').trim();
+        if(!nombre) { alert('Escribí un nombre para el concepto (Ej: MUDANZA).'); return; }
+        let btn = document.getElementById('btn-crear-concepto');
+        btn.disabled = true;
+        try { await accion('guardar_concepto', {nombre:nombre.toUpperCase(), tipo:v('tp_tipo'), foto:v('tp_foto'), desc:v('tp_desc'), horas:v('tp_horas')}); }
+        finally { btn.disabled = false; }
+    }
     async function logout() { await postData('/api/logout', {}); location.href='/'; }
     function cerrarM(id) { document.getElementById(id).classList.add('hidden'); }
     function abrirSalida(id) { document.getElementById('eoI').value=id; document.getElementById('m-o').classList.remove('hidden'); }

@@ -69,7 +69,9 @@ async def admin_actions(request: Request, action: str, adm: dict = Depends(requi
             elif action == "borrar_franco":
                 await db.execute("DELETE FROM mediofrancos WHERE id=$1", int(form.get('d1')))
             elif action == "guardar_concepto":
-                await db.execute("INSERT INTO tipos_solicitud (nombre, tipo, requiere_foto, descuenta_dias, horas_por_dia) VALUES ($1,$2,$3,$4,$5) ON CONFLICT (nombre) DO UPDATE SET tipo=EXCLUDED.tipo, requiere_foto=EXCLUDED.requiere_foto, descuenta_dias=EXCLUDED.descuenta_dias, horas_por_dia=EXCLUDED.horas_por_dia", str(form.get('nombre')).strip(), str(form.get('tipo')), int(form.get('foto')), int(form.get('desc')), float(form.get('horas')))
+                nombre = str(form.get('nombre') or '').strip()
+                if not nombre: return JSONResponse(status_code=400, content={"msg": "El concepto necesita un nombre."})
+                await db.execute("INSERT INTO tipos_solicitud (nombre, tipo, requiere_foto, descuenta_dias, horas_por_dia) VALUES ($1,$2,$3,$4,$5) ON CONFLICT (nombre) DO UPDATE SET tipo=EXCLUDED.tipo, requiere_foto=EXCLUDED.requiere_foto, descuenta_dias=EXCLUDED.descuenta_dias, horas_por_dia=EXCLUDED.horas_por_dia", nombre, str(form.get('tipo')), int(form.get('foto')), int(form.get('desc')), float(form.get('horas')))
             elif action == "borrar_concepto":
                 await db.execute("DELETE FROM tipos_solicitud WHERE nombre=$1", str(form.get('nombre')))
             elif action == "guardar_config":
