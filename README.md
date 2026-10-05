@@ -84,6 +84,7 @@ JZPass/
 ├── uploads/             # adjuntos y logo (volumen en Docker)
 ├── install.sh           # instalador con Docker
 ├── install-native.sh    # instalador sin Docker (Debian/Ubuntu + systemd + Caddy)
+├── tools/jzpass-actualizar  # actualizador de la instalación sin Docker
 ├── docker-compose.yml, Dockerfile, .dockerignore
 ├── requirements.in, requirements.txt
 ```
@@ -174,26 +175,44 @@ con `JZPASS_RESET_DB=1`.
 
 ## Instalación nativa (sin Docker)
 
-### Opción A: `install-native.sh` (Debian/Ubuntu)
+### Opción A: `install-native.sh` (Debian 12/13, Ubuntu 24.04)
 
-Deja todo listo para producción en un servidor: paquetes, usuario de sistema sin login,
-Postgres con clave aleatoria, entorno virtual, `/etc/jzpass/jzpass.env` (permisos `0640`),
-servicio `systemd` endurecido y Caddy con HTTPS. Es idempotente (se puede volver a correr para
-actualizar) y no pisa los secretos ya generados.
+Deja JZPass como servicio del sistema, listo para producción:
+
+| Qué | Dónde |
+|---|---|
+| Código de cada versión, con su propio entorno de Python | `/opt/jzpass/releases/<commit>/` (en uso: `/opt/jzpass/current`) |
+| Adjuntos, mapas y logo (no se tocan al actualizar) | `/var/lib/jzpass/uploads/` |
+| Configuración y secretos (`root:jzpass`, `0640`) | `/etc/jzpass/jzpass.env` |
+| Servicio | `jzpass` (usuario propio sin login, código de solo lectura), en `127.0.0.1:8020` |
+| Base | `jzpass_db` en el PostgreSQL del servidor (las tablas las crea la app al arrancar) |
+| HTTPS | Caddy: con dominio saca el certificado solo; sin dominio usa la IP con la CA local de Caddy |
+| Actualizador | `sudo jzpass-actualizar` |
 
 ```bash
 git clone https://github.com/Jonnyonz/JZPass.git
 cd JZPass
-sudo ./install-native.sh
+sudo ./install-native.sh                                  # red interna: https://<IP del servidor>
+sudo JZPASS_DOMAIN=rrhh.miempresa.com ./install-native.sh   # dominio público que apunta al servidor
 ```
 
-Se puede ajustar con variables antes de correrlo: `JZPASS_DOMAIN` (default `jzpass.local`),
-`JZPASS_PORT` (8000), `JZPASS_DIR` (`/opt/jzpass`), `JZPASS_USER`, `JZPASS_DB_NAME`,
-`JZPASS_DB_USER`. Al terminar muestra el `SETUP_TOKEN`. Probado en una VM Debian 13 limpia,
-login desde el navegador incluido.
+Al terminar muestra la dirección y el token para crear el administrador. Se puede volver a correr: no pisa
+los secretos ni lo agregado a mano en el `.env`. Instala las dependencias sin compilar, verificando los
+hashes (con una carpeta `wheelhouse/` al lado, sin internet). Variables opcionales: `JZPASS_IP` (IP para el
+certificado local), `JZPASS_PORT` (8020), `JZPASS_CADDY=0` (no tocar Caddy, si ya hay otro proxy HTTPS;
+agregar su IP a `TRUSTED_PROXIES` si está en otra máquina).
 
-Con el dominio por defecto (`jzpass.local`), Caddy usa una CA local (`tls internal`): en cada
-equipo cliente hay que resolver ese nombre (DNS interno o archivo `hosts`) y confiar en la CA.
+Sin dominio, el navegador avisa que la conexión no es privada hasta que se instala en cada PC o celular el
+certificado raíz de Caddy (`/var/lib/caddy/.local/share/caddy/pki/authorities/local/root.crt`). HTTPS hace
+falta igual: sin él no se guarda la sesión ni el celular da la ubicación para fichar.
+
+**Actualizar:** `sudo jzpass-actualizar` trae la última versión, respalda la base (`/var/backups/jzpass`),
+cambia y verifica que responda; si no responde, vuelve sola a la anterior (y restaura la base si el esquema
+cambió). `--buscar` solo avisa si hay versión nueva; `--volver` vuelve a la anterior.
+
+**Instalaciones nativas anteriores** (código directo en `/opt/jzpass`): volver a correr `install-native.sh`
+desde un clon nuevo las pasa a este esquema, con la misma base, secretos, puerto y dominio; los adjuntos se
+copian a `/var/lib/jzpass/uploads` y el código viejo queda en `/opt/jzpass/anterior-*`.
 
 ### Opción B: a mano (desarrollo)
 

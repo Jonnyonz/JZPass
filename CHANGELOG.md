@@ -2,6 +2,24 @@
 
 Cambios de JZPass, del más nuevo al más viejo. Cada entrada corresponde a un push a `main`.
 
+## Sin versión todavía (2026-10-05)
+
+### Cambiado (instalación sin Docker)
+- `install-native.sh` rehecho con el mismo esquema que Tracker360 y JZTravell (Debian 12/13, Ubuntu 24.04):
+  cada versión en su propia carpeta con su entorno de Python (`/opt/jzpass/releases`), los adjuntos aparte en
+  `/var/lib/jzpass/uploads` (no se tocan al actualizar), código de solo lectura para el servicio y HTTPS con
+  Caddy por dominio (certificado automático) o por la IP del servidor (antes usaba un nombre de prueba en
+  `/etc/hosts`). Instala las dependencias sin compilar, verificando los hashes. Ya no apaga Apache: si ocupa el
+  puerto 80, Caddy atiende solo HTTPS. Antes de seguir comprueba que la base acepte la clave del `.env`.
+- Una instalación nativa anterior se pasa sola a este esquema al volver a correr el instalador, conservando la
+  base, los secretos, el puerto, el dominio y los adjuntos.
+
+### Agregado
+- Actualizador `sudo jzpass-actualizar` (`--buscar`, `--volver`): arma la versión nueva aparte, respalda la
+  base, cambia y verifica que responda; si no responde, vuelve sola a la anterior y, si el esquema cambió,
+  restaura la base como estaba.
+- `.gitattributes`: los scripts de Linux siempre con finales de línea LF.
+
 ## 2.5.1 — 2026-10-05
 
 ### Cambiado
