@@ -2,6 +2,12 @@
 
 Cambios de JZPass, del más nuevo al más viejo. Cada entrada corresponde a un push a `main`.
 
+## Sin versión todavía (2026-10-05)
+
+### Corregido
+- El inicio de sesión informaba rol "empleado" (2) a los administradores (rol 0). La pantalla no lo usaba
+  (toma el rol de otro lado), así que no cambia nada para el usuario; queda correcto para quien lo consulte.
+
 ## 2.5.0 — 2026-10-05
 
 ### Agregado
