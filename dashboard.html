@@ -260,7 +260,7 @@
         <div id="t-asist" class="card hidden">
             <div class="card-body">
                 <div class="filters">
-                    <strong>Liquidación Mensual:</strong> <input type="date" id="rD"> a <input type="date" id="rH"> <select id="rS"></select> 
+                    <strong>Reporte:</strong> <input type="date" id="rD"> a <input type="date" id="rH"> <select id="rS" onchange="llenarEmpleadosReporte()"></select> <select id="rE" title="Empleado"></select> <select id="rT" title="Tipo de reporte"><option value="resumido">Resumido</option><option value="detallado">Detallado (día por día)</option></select> 
                     <button class="btn-secondary" onclick="bajarExcel()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Descargar Reporte</button>
                 </div>
                 <div class="filters" style="margin-top:-5px;">
@@ -576,6 +576,8 @@
             document.getElementById('conv-sucursal').innerHTML = dG.sucursales.map(s => `<option value="${esc(s.nombre)}">${esc(s.nombre)}</option>`).join('');
         }
         
+        llenarEmpleadosReporte();
+
         let selEmpsDataList = dG.usuarios.map(u => `<option value="${esc(u.nombre)} - ${esc(u.dni)}">`).join('');
         ['cFranDniList', 'cFranDniList2'].forEach(id => {if(document.getElementById(id)) document.getElementById(id).innerHTML = selEmpsDataList;});
         
@@ -1005,7 +1007,19 @@
     }
     function cambiarMes(dir) { fechaCalendario.setMonth(fechaCalendario.getMonth() + dir); renderCalendario(); }
     function abrirOpcionesDia(fecha) { document.getElementById('cal-selected-date').value = fecha; document.getElementById('cal-modal-title').innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> Gestión: <span class="mono">${fecha}</span>`; document.getElementById('box-admin-cal').classList.remove('hidden'); document.getElementById('m-cal-opts').classList.remove('hidden'); }
-    function bajarExcel() { let d=v('rD'), h=v('rH'); if(d&&h) window.open(`/api/reporte_excel?d_desde=${d}&d_hasta=${h}&suc=${v('rS')}`, '_blank'); else alert("Fechas requeridas para el reporte consolidado."); }
+    function llenarEmpleadosReporte() {
+        let el = document.getElementById('rE'); if(!el) return;
+        let actual = el.value, suc = v('rS');
+        let emps = dG.usuarios.filter(u => u.rol !== 0 && (!suc || u.sucursal === suc)).sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
+        el.innerHTML = `<option value="">Todos los empleados</option>` + emps.map(u => `<option value="${esc(u.dni)}">${esc(u.nombre)} - ${esc(u.dni)}${u.activo === 0 ? ' (baja)' : ''}</option>`).join('');
+        if(emps.some(u => u.dni === actual)) el.value = actual;
+    }
+    function bajarExcel() {
+        let d=v('rD'), h=v('rH');
+        if(!d || !h) { alert("Fechas requeridas para el reporte."); return; }
+        let q = new URLSearchParams({d_desde: d, d_hasta: h, suc: v('rS'), dni: v('rE'), tipo: v('rT')});
+        window.open('/api/reporte_excel?' + q.toString(), '_blank');
+    }
 
     function ejecutarGuardarConfig() {
         let p = {

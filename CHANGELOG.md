@@ -2,7 +2,16 @@
 
 Cambios de JZPass, del más nuevo al más viejo. Cada entrada corresponde a un push a `main`.
 
-## 2026-10-05
+## 2.5.0 — 2026-10-05
+
+### Agregado
+- Reporte de asistencia resumido o detallado. El resumido es el de siempre (una fila por empleado, con días
+  trabajados, llegadas tarde, faltas, horas y vacaciones). El detallado muestra día por día cada jornada:
+  estado (trabajado, falta, feriado, domingo o el concepto de la licencia), ingreso, salida (marcando cuando
+  es estimada porque no se fichó), horas, llegada tarde, medio franco y los motivos. Los dos usan el mismo
+  cálculo, así que los totales del detallado coinciden con el resumido.
+- El reporte se puede sacar para un empleado en particular (o para todos, como hasta ahora), filtrando la
+  lista por sucursal. El archivo lleva el tipo y el DNI en el nombre.
 
 ### Cambiado
 - Barra lateral del panel igual que la de Tracker360: angosta con los iconos y, al pasar el mouse, se

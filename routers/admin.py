@@ -307,7 +307,9 @@ async def admin_actions(request: Request, action: str, adm: dict = Depends(requi
 
 
 @router.get("/api/reporte_excel")
-async def reporte_excel(request: Request, d_desde: str, d_hasta: str, suc: str="", dni: str="", adm: dict = Depends(requiere_panel)):
+async def reporte_excel(request: Request, d_desde: str, d_hasta: str, suc: str="", dni: str="", tipo: str="resumido", adm: dict = Depends(requiere_panel)):
+    if tipo not in ("resumido", "detallado"):
+        return JSONResponse(status_code=400, content={"msg": "Tipo de reporte no válido."})
     if adm['rol'] == 1:
         suc = adm['sucursal']
 
@@ -346,64 +348,93 @@ async def reporte_excel(request: Request, d_desde: str, d_hasta: str, suc: str="
 
     output = io.StringIO()
     writer = csv.writer(output, delimiter=';', quotechar='"')
-
-    writer.writerow(['DNI', 'Nombre', 'Sucursal', 'Días Trabajados', 'Llegadas Tarde', 'Cantidad Faltas Totales', 'Fechas de Faltas', 'Horas Totales', 'Días Vacaciones Tomados'])
     def scsv(v): return "'" + str(v) if str(v).startswith(('=','+','-','@')) else str(v)
 
-    for e in empleados:
-        curr = desde
-        total_hs, tardes, faltas, dias_trabajados, dias_vacaciones = 0, 0, 0, 0, 0
-        fechas_faltas = []
+    def evaluar_dia(e, curr):
+        # Una jornada de un empleado, con las reglas de la liquidacion. None: dia posterior a la baja (no se informa).
+        f_str = curr.strftime("%Y-%m-%d")
+        if e['activo'] == 0 and e['fecha_baja'] and f_str > e['fecha_baja']:
+            return None
+        d = {"fecha": f_str, "estado": "", "ingreso": "", "salida": "", "salida_estimada": False, "horas": 0,
+             "tarde": False, "falta": False, "vacacion": False, "trabajado": False, "franco": "", "motivo_entrada": "", "motivo_salida": ""}
+        fer_abren = fer_map.get(f_str)
+        es_feriado_abierto = fer_abren and (fer_abren == 'TODAS' or e['sucursal'] in fer_abren)
+        permiso_multidia = next((v for v in multidias_db if v['dni'] == e['dni'] and v['fecha_ausencia'] <= f_str <= v['fecha_fin']), None)
+        fich = fich_map.get(e['dni'], {}).get(f_str)
+        if fich:
+            d["ingreso"] = fich['fecha_hora'][11:16]
+            d["salida"] = fich['salida_manual'] or ""
+            d["motivo_entrada"] = fich.get('motivo_entrada') or ""
+            d["motivo_salida"] = fich.get('motivo_salida') or ""
 
-        while curr <= hasta:
-            f_str = curr.strftime("%Y-%m-%d")
+        if curr.weekday() == 6:
+            d["estado"] = "Domingo"
+        elif permiso_multidia:
+            d["estado"] = permiso_multidia['concepto']
+            if permiso_multidia['descuenta_dias'] == 1: d["vacacion"] = True
+            if permiso_multidia['horas_por_dia'] > 0: d["horas"] = permiso_multidia['horas_por_dia']
+        elif fich:
+            d["trabajado"] = True
+            d["estado"] = "Trabajado (feriado)" if fer_abren else "Trabajado"
+            franco = fran_map.get((e['dni'], f_str))
+            d["franco"] = franco or ""
+            if fich['tarde'] and not franco: d["tarde"] = True
 
-            # Aplicación de regla de negocio: Omisión contable post-baja
-            if e['activo'] == 0 and e['fecha_baja'] and f_str > e['fecha_baja']:
-                curr += timedelta(days=1)
-                continue
-
-            fer_abren = fer_map.get(f_str)
-            es_feriado_abierto = fer_abren and (fer_abren == 'TODAS' or e['sucursal'] in fer_abren)
-            permiso_multidia = next((v for v in multidias_db if v['dni'] == e['dni'] and v['fecha_ausencia'] <= f_str <= v['fecha_fin']), None)
-
-            if permiso_multidia:
-                if curr.weekday() != 6:
-                    if permiso_multidia['descuenta_dias'] == 1: dias_vacaciones += 1
-                    if permiso_multidia['horas_por_dia'] > 0:
-                        total_hs += permiso_multidia['horas_por_dia']
-            elif curr.weekday() != 6:
-                fich = fich_map.get(e['dni'], {}).get(f_str)
-                if fich:
-                    dias_trabajados += 1
-                    franco = fran_map.get((e['dni'], f_str))
-                    if fich['tarde'] and not franco: tardes += 1
-
-                    h_in = datetime.strptime(fich['fecha_hora'], "%Y-%m-%d %H:%M:%S").time()
-                    if fich['salida_manual']: h_out = datetime.strptime(fich['salida_manual'], "%H:%M").time()
-                    else:
-                        if es_feriado_abierto:
-                            cierre_suc = sucs_db[e['sucursal']]['hora_cierre_feriado']
-                            h_out = min(datetime.strptime(cierre_suc, "%H:%M") + timedelta(minutes=30), datetime.strptime(cierre_suc, "%H:%M")).time()
-                        else:
-                            cierre_suc = sucs_db[e['sucursal']]['hora_cierre']
-                            h_out_limit = min(datetime.strptime(cierre_suc, "%H:%M") + timedelta(minutes=30), datetime.strptime(e['hora_salida'], "%H:%M"))
-                            if franco == 'TARDE': h_out_limit = min(h_out_limit, datetime.strptime("12:00", "%H:%M"))
-                            h_out = h_out_limit.time()
-                    hs = (h_out.hour * 60 + h_out.minute - h_in.hour * 60 - h_in.minute) / 60
-                    total_hs += max(0, hs)
+            h_in = datetime.strptime(fich['fecha_hora'], "%Y-%m-%d %H:%M:%S").time()
+            if fich['salida_manual']: h_out = datetime.strptime(fich['salida_manual'], "%H:%M").time()
+            else:
+                if es_feriado_abierto:
+                    cierre_suc = sucs_db[e['sucursal']]['hora_cierre_feriado']
+                    h_out = min(datetime.strptime(cierre_suc, "%H:%M") + timedelta(minutes=30), datetime.strptime(cierre_suc, "%H:%M")).time()
                 else:
-                    if es_feriado_abierto and ((e['dni'], f_str) in convocados_set):
-                        faltas += 1
-                        fechas_faltas.append(f_str)
-                    elif not fer_abren:
-                        faltas += 1
-                        fechas_faltas.append(f_str)
+                    cierre_suc = sucs_db[e['sucursal']]['hora_cierre']
+                    h_out_limit = min(datetime.strptime(cierre_suc, "%H:%M") + timedelta(minutes=30), datetime.strptime(e['hora_salida'], "%H:%M"))
+                    if franco == 'TARDE': h_out_limit = min(h_out_limit, datetime.strptime("12:00", "%H:%M"))
+                    h_out = h_out_limit.time()
+                d["salida"] = h_out.strftime("%H:%M"); d["salida_estimada"] = True
+            hs = (h_out.hour * 60 + h_out.minute - h_in.hour * 60 - h_in.minute) / 60
+            d["horas"] = max(0, hs)
+        elif es_feriado_abierto and ((e['dni'], f_str) in convocados_set):
+            d["falta"] = True; d["estado"] = "Falta (feriado convocado)"
+        elif not fer_abren:
+            d["falta"] = True; d["estado"] = "Falta"
+        else:
+            d["estado"] = "Feriado"
+        return d
+
+    def jornadas(e):
+        curr = desde
+        while curr <= hasta:
+            d = evaluar_dia(e, curr)
+            if d is not None: yield d
             curr += timedelta(days=1)
 
-        faltas_str = " | ".join(fechas_faltas) if fechas_faltas else "-"
-        writer.writerow([scsv(e['dni']), scsv(e['nombre']), scsv(e['sucursal']), dias_trabajados, tardes, faltas, scsv(faltas_str), round(total_hs, 2), dias_vacaciones])
+    if tipo == "detallado":
+        dias_semana = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
+        writer.writerow(['DNI', 'Nombre', 'Sucursal', 'Fecha', 'Día', 'Estado', 'Ingreso', 'Salida', 'Salida estimada', 'Horas', 'Llegada Tarde', 'Medio Franco', 'Motivo Ingreso', 'Motivo Salida'])
+        for e in empleados:
+            for d in jornadas(e):
+                dia = dias_semana[datetime.strptime(d["fecha"], "%Y-%m-%d").weekday()]
+                writer.writerow([scsv(e['dni']), scsv(e['nombre']), scsv(e['sucursal']), d["fecha"], dia, scsv(d["estado"]), d["ingreso"], d["salida"],
+                                 "Sí" if d["salida_estimada"] else "", round(d["horas"], 2) if d["horas"] else "", "Sí" if d["tarde"] else "", d["franco"],
+                                 scsv(d["motivo_entrada"]), scsv(d["motivo_salida"])])
+        nombre = "Reporte_Detallado"
+    else:
+        writer.writerow(['DNI', 'Nombre', 'Sucursal', 'Días Trabajados', 'Llegadas Tarde', 'Cantidad Faltas Totales', 'Fechas de Faltas', 'Horas Totales', 'Días Vacaciones Tomados'])
+        for e in empleados:
+            total_hs, tardes, faltas, dias_trabajados, dias_vacaciones = 0, 0, 0, 0, 0
+            fechas_faltas = []
+            for d in jornadas(e):
+                total_hs += d["horas"]
+                if d["trabajado"]: dias_trabajados += 1
+                if d["tarde"]: tardes += 1
+                if d["vacacion"]: dias_vacaciones += 1
+                if d["falta"]: faltas += 1; fechas_faltas.append(d["fecha"])
+            faltas_str = " | ".join(fechas_faltas) if fechas_faltas else "-"
+            writer.writerow([scsv(e['dni']), scsv(e['nombre']), scsv(e['sucursal']), dias_trabajados, tardes, faltas, scsv(faltas_str), round(total_hs, 2), dias_vacaciones])
+        nombre = "Reporte_Consolidated"
 
+    if dni and empleados: nombre += "_" + re.sub(r'[^0-9A-Za-z]', '', str(dni))
     r = Response(content=output.getvalue().encode('utf-8-sig'), media_type="text/csv")
-    r.headers["Content-Disposition"] = 'attachment; filename="Reporte_Consolidated.csv"'
+    r.headers["Content-Disposition"] = f'attachment; filename="{nombre}.csv"'
     return r
