@@ -2,7 +2,7 @@
 
 Cambios de JZPass, del más nuevo al más viejo. Cada entrada corresponde a un push a `main`.
 
-## Sin versión todavía (2026-10-05)
+## 2.5.1 — 2026-10-05
 
 ### Cambiado
 - Reportes de asistencia (resumido y detallado): los empleados salen ordenados por nombre. Antes el orden
