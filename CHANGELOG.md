@@ -4,6 +4,10 @@ Cambios de JZPass, del más nuevo al más viejo. Cada entrada corresponde a un p
 
 ## Sin versión todavía (2026-10-05)
 
+### Cambiado
+- Reportes de asistencia (resumido y detallado): los empleados salen ordenados por nombre. Antes el orden
+  dependía de la base y podía cambiar entre una descarga y otra.
+
 ### Corregido
 - Barra lateral (2.5.0): con la barra cerrada no se veían los iconos de los módulos (el navegador centraba
   icono + nombre dentro del botón y el icono quedaba afuera). Ahora se ven cerrada, abierta y en el celular.

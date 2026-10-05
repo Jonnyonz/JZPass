@@ -325,6 +325,7 @@ async def reporte_excel(request: Request, d_desde: str, d_hasta: str, suc: str="
             p.append(dni)
             q += f" AND dni=${len(p)}"
 
+        q += " ORDER BY nombre, dni"
         empleados_raw = [dict(r) for r in await db.fetch(q, *p)]
         empleados = []
 
