@@ -68,7 +68,7 @@ async def login(request: Request, response: Response, dni: str = Form(...), pass
             await db.execute("UPDATE usuarios SET password=$1 WHERE dni=$2", nuevo_hash, dni)
 
         await abrir_sesion(response, dni)
-        return {"msg": "ok", "req_cambio": u['req_cambio'] or 0, "rol": u['rol'] or 2}
+        return {"msg": "ok", "req_cambio": u['req_cambio'] or 0, "rol": u['rol'] if u['rol'] is not None else 2}
 
 
 @router.post("/api/logout")
