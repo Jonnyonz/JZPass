@@ -4,6 +4,10 @@ Cambios de JZPass, del más nuevo al más viejo. Cada entrada corresponde a un p
 
 ## 2026-10-05
 
+### Cambiado
+- Barra lateral del panel igual que la de Tracker360: angosta con los iconos y, al pasar el mouse, se
+  despliega con el nombre de cada sección. En el celular se abre con el botón de menú y muestra los nombres.
+
 ### Corregido
 - Conceptos de solicitud: ya no se puede crear uno sin nombre (el panel avisa y el servidor lo rechaza;
   antes quedaba un concepto vacío en la lista). El botón "Añadir Parámetro" se bloquea mientras guarda,
