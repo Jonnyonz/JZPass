@@ -5,6 +5,8 @@ Cambios de JZPass, del más nuevo al más viejo. Cada entrada corresponde a un p
 ## Sin versión todavía (2026-10-05)
 
 ### Corregido
+- Barra lateral (2.5.0): con la barra cerrada no se veían los iconos de los módulos (el navegador centraba
+  icono + nombre dentro del botón y el icono quedaba afuera). Ahora se ven cerrada, abierta y en el celular.
 - El inicio de sesión informaba rol "empleado" (2) a los administradores (rol 0). La pantalla no lo usaba
   (toma el rol de otro lado), así que no cambia nada para el usuario; queda correcto para quien lo consulte.
 
