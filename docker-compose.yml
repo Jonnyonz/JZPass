@@ -7,7 +7,8 @@ services:
     container_name: jzpass_server
     restart: always
     ports:
-      # Detras de un proxy inverso, poner APP_BIND=127.0.0.1 en el .env.
+      # El HTTPS lo pone el proxy del servidor, que tiene que llegar a este puerto: por eso 0.0.0.0 (se cambia
+      # con APP_BIND en el .env).
       - "${APP_BIND:-0.0.0.0}:${APP_PORT:-8000}:8000"
     volumes:
       # El codigo va dentro de la imagen (COPY . . en el Dockerfile); solo se monta uploads.
@@ -18,6 +19,8 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - SETUP_TOKEN=${SETUP_TOKEN}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+      # 172.16.0.0/12: redes de Docker (un proxy en un contenedor de este mismo servidor). Proxy en otro equipo:
+      # su IP se agrega con JZPASS_PROXY_IP=<IP> bash install.sh.
       - TRUSTED_PROXIES=${TRUSTED_PROXIES:-127.0.0.1/32,::1/128,172.16.0.0/12}
       - TZ=${TZ}
       - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@jzpass-db:5432/${DB_NAME}
@@ -45,31 +48,9 @@ services:
     networks:
       - jzpass-net
 
-  # HTTPS delante de la app. Lo activa install.sh (COMPOSE_PROFILES=https en el .env) y escribe
-  # caddy/Caddyfile: con dominio saca el certificado solo; sin dominio usa la IP del servidor con la CA local
-  # de Caddy. Sin HTTPS no se guarda la sesion desde otra PC ni el celular da la ubicacion para fichar.
-  caddy:
-    image: caddy:2-alpine
-    container_name: jzpass_caddy
-    profiles: ["https"]
-    restart: always
-    depends_on:
-      - jzpass-app
-    ports:
-      - "${CADDY_HTTP_BIND:-0.0.0.0}:${CADDY_HTTP_PORT-80}:80"
-      - "0.0.0.0:${CADDY_HTTPS_PORT:-443}:443"
-    volumes:
-      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-    networks:
-      - jzpass-net
-
 networks:
   jzpass-net:
     driver: bridge
 
 volumes:
   pgdata:
-  caddy_data:
-  caddy_config:

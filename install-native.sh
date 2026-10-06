@@ -5,8 +5,8 @@
 # Para Debian 12/13 y Ubuntu 24.04 (apt, Python 3.11 o mas nuevo). Correr como root desde la raiz de un
 # clon del repositorio:
 #
-#   sudo ./install-native.sh                                   red interna: HTTPS por la IP del servidor
-#   sudo JZPASS_DOMAIN=rrhh.empresa.com ./install-native.sh    dominio publico: certificado automatico
+#   sudo ./install-native.sh                                   sin dominio (se pregunta en una instalacion nueva)
+#   sudo JZPASS_DOMAIN=rrhh.empresa.com ./install-native.sh    dominio publico con el que se va a entrar
 #
 # Queda asi:
 #   /opt/jzpass/src/                 clon de git del que se actualiza (lo usa jzpass-actualizar)
@@ -15,9 +15,10 @@
 #   /var/lib/jzpass/uploads/         adjuntos de las solicitudes, mapas y logo (fuera del codigo: no se tocan
 #                                    al actualizar; cada version tiene un enlace uploads -> aca)
 #   /etc/jzpass/jzpass.env           configuracion y secretos (root:jzpass, 0640)
-#   servicio systemd "jzpass"        uvicorn en 127.0.0.1:8020, un worker
+#   servicio systemd "jzpass"        uvicorn por http en 0.0.0.0:8020, un worker
 #   base "jzpass_db" propia en el PostgreSQL del servidor (las tablas las crea la app al arrancar)
-#   Caddy delante con HTTPS (la sesion usa cookies Secure y el fichaje usa el GPS del celular: sin HTTPS
+#   El HTTPS lo da el proxy del servidor, que tiene el 80/443 y saca los certificados: al terminar se
+#   muestra donde quedo escuchando (la sesion usa cookies Secure y el fichaje usa el GPS del celular: sin HTTPS
 #   no se puede ingresar desde otra PC ni fichar)
 #   /usr/local/sbin/jzpass-actualizar  actualizador (respaldo, chequeo y vuelta atras)
 #
@@ -29,13 +30,16 @@
 # instalador previas a 2.5.1), la pasa a este esquema: conserva la base, los secretos, el puerto y el
 # dominio, y mueve los adjuntos a /var/lib/jzpass/uploads (el codigo viejo queda en /opt/jzpass/anterior-*).
 #
+# Las versiones 2.6.0 de este instalador ponian Caddy delante (la app solo en 127.0.0.1): ahora la app pasa a
+# 0.0.0.0 para que llegue el proxy. Caddy no se desinstala solo (puede usarlo otra app): se avisa como sacarlo.
+#
 # Es independiente de la instalacion con Docker (install.sh): no se pueden usar las dos en el mismo puerto.
 #
 # Variables opcionales:
-#   JZPASS_DOMAIN=rrhh.empresa.com  dominio publico (Caddy saca el certificado solo; tiene que apuntar aca)
-#   JZPASS_IP=192.168.1.10          sin dominio: IP para el certificado local (por defecto, la primera IP)
-#   JZPASS_CADDY=0                  no instalar ni tocar Caddy (si el servidor ya usa otro proxy HTTPS)
-#   JZPASS_PORT=8020                puerto local del servicio
+#   JZPASS_DOMAIN=rrhh.empresa.com  dominio publico (lo atiende el proxy; se agrega a los origenes permitidos)
+#   JZPASS_BIND=0.0.0.0             interfaz donde escucha el servicio (por defecto 0.0.0.0, para que el proxy llegue)
+#   JZPASS_PROXY_IP=192.168.1.5     IP del proxy si esta en otro equipo (se agrega a TRUSTED_PROXIES)
+#   JZPASS_PORT=8020                puerto del servicio
 #   JZPASS_REPO_URL=...             repositorio del que se actualiza (por defecto, el origin de este clon)
 # ==============================================================================
 
@@ -50,10 +54,11 @@ DATOS="/var/lib/$APP_NAME"
 ENV_DIR="/etc/$APP_NAME"
 ENV_FILE="$ENV_DIR/$APP_NAME.env"
 SERVICE="$APP_NAME"
-APP_BIND="127.0.0.1"
-CADDY="${JZPASS_CADDY:-1}"
 ACTUALIZADOR="/usr/local/sbin/jzpass-actualizar"
-CA_LOCAL="/var/lib/caddy/.local/share/caddy/pki/authorities/local/root.crt"
+if [ -n "${JZPASS_CADDY:-}${JZPASS_IP:-}" ]; then
+  echo "Aviso: JZPASS_CADDY y JZPASS_IP ya no se usan (ya no hay Caddy): se ignoran."
+fi
+PROXIES_DEFECTO="127.0.0.1/32,::1/128,172.16.0.0/12"   # loopback y redes de Docker (un proxy en este servidor)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd /   # psql como postgres no puede entrar a la carpeta desde la que se corre (por ejemplo /root)
@@ -88,12 +93,15 @@ fi
 # Configuracion: lo pedido, lo de la instalacion anterior o el valor por defecto.
 APP_PORT="${JZPASS_PORT:-$(valor_env APP_PORT)}"; APP_PORT="${APP_PORT:-8020}"
 DOMAIN="${JZPASS_DOMAIN:-$(valor_env JZPASS_DOMAIN)}"
-IP="${JZPASS_IP:-$(valor_env JZPASS_IP)}"
-if [ "$ANTERIOR" = "1" ] && [ -z "$DOMAIN" ] && [ -z "$IP" ]; then
+if [ "$ANTERIOR" = "1" ] && [ -z "$DOMAIN" ]; then
   # El instalador anterior no guardaba el dominio: se toma de ALLOWED_ORIGINS (https://dominio).
   DOMAIN="$(valor_env ALLOWED_ORIGINS | cut -d, -f1 | sed -e 's#^https\?://##' -e 's#[:/].*$##')"
-  if [[ "$DOMAIN" =~ ^[0-9.]+$ ]]; then IP="$DOMAIN"; DOMAIN=""; fi
+  if [[ "$DOMAIN" =~ ^[0-9.]+$ ]] || [ "$DOMAIN" = "localhost" ]; then DOMAIN=""; fi
 fi
+if [ -z "$DOMAIN" ] && [ ! -f "$ENV_FILE" ] && { : < /dev/tty; } 2> /dev/null; then
+  read -r -p "Dominio publico de JZPass (ej. rrhh.empresa.com; Enter para entrar por la IP del servidor): " DOMAIN < /dev/tty || DOMAIN=""
+fi
+DOMAIN="${DOMAIN#http://}"; DOMAIN="${DOMAIN#https://}"; DOMAIN="${DOMAIN%%/*}"
 if [ -n "$DOMAIN" ] && ! [[ "$DOMAIN" =~ ^[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?$ ]]; then
   echo "Error: dominio invalido: $DOMAIN" >&2
   exit 1
@@ -102,25 +110,34 @@ if ! [[ "$APP_PORT" =~ ^[0-9]+$ ]]; then
   echo "Error: puerto invalido: $APP_PORT" >&2
   exit 1
 fi
+# Las instalaciones con Caddy escuchaban solo en 127.0.0.1 (la 2.6.0 no guardaba APP_BIND; la anterior a la
+# 2.5.1 guardaba 127.0.0.1): pasan a 0.0.0.0. Un JZPASS_BIND elegido en una instalacion nueva se respeta.
+APP_BIND="${JZPASS_BIND:-$(valor_env APP_BIND)}"
+if [ -z "${JZPASS_BIND:-}" ] && [ "$ANTERIOR" = "1" ]; then APP_BIND=""; fi
+APP_BIND="${APP_BIND:-0.0.0.0}"
+if ! [[ "$APP_BIND" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  echo "Error: JZPASS_BIND tiene que ser una IPv4 (ej. 0.0.0.0): $APP_BIND" >&2
+  exit 1
+fi
+if [ -n "${JZPASS_PROXY_IP:-}" ] && ! [[ "$JZPASS_PROXY_IP" =~ ^[0-9A-Fa-f.:]+(/[0-9]+)?$ ]]; then
+  echo "Error: JZPASS_PROXY_IP invalida: $JZPASS_PROXY_IP" >&2
+  exit 1
+fi
+if [ "$APP_BIND" = "0.0.0.0" ]; then LOCAL="127.0.0.1"; else LOCAL="$APP_BIND"; fi
 
 # 2. Paquetes del sistema (sin compilador ni cabeceras de Python)
 echo "Instalando paquetes del sistema..."
 apt-get update -qq
 apt-get install -y -qq python3 python3-venv postgresql postgresql-client openssl curl rsync git ca-certificates \
-  gnupg iproute2 > /dev/null
+  iproute2 > /dev/null
 if ! python3 -c 'import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)'; then
   echo "Error: hace falta Python 3.11 o mas nuevo (este sistema tiene $(python3 --version 2>&1))." >&2
   echo "Sistemas soportados: Debian 12, Debian 13, Ubuntu 24.04." >&2
   exit 1
 fi
-if [ -z "$DOMAIN" ] && [ -z "$IP" ]; then
-  IP="$(hostname -I 2>/dev/null | awk '{print $1}')"
-fi
-if [ -z "$DOMAIN" ] && ! [[ "$IP" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  echo "Error: no se pudo saber la IP del servidor. Indicarla con JZPASS_IP=192.168.1.10 (o usar JZPASS_DOMAIN)." >&2
-  exit 1
-fi
-if [ -n "$DOMAIN" ]; then SITIO="https://$DOMAIN"; else SITIO="https://$IP"; fi
+IP="$(hostname -I 2> /dev/null | awk '{print $1}')"
+if [ -z "$IP" ]; then IP="$(ip -4 route get 1.1.1.1 2> /dev/null | awk '{for (i = 1; i < NF; i++) if ($i == "src") print $(i + 1)}')"; fi
+IP="${IP:-<IP del servidor>}"
 
 # El puerto local tiene que estar libre (por ejemplo, ocupado por la instalacion con Docker).
 OCUPANTE="$(ss -ltnpH "( sport = :$APP_PORT )" 2>/dev/null || true)"
@@ -253,9 +270,22 @@ if [ -f "$ENV_FILE" ]; then
   # Lo que el administrador agrego a mano se conserva (TRUSTED_PROXIES incluido: puede haber otro proxy).
   ADICIONALES="$(grep -Ev '^(#|$|DB_(USER|PASSWORD|NAME)=|DATABASE_URL=|JWT_SECRET=|SETUP_TOKEN=|ALLOWED_ORIGINS=|APP_(PORT|BIND)=|JZPASS_(DOMAIN|IP|INSTALACION|REPO_URL)=|PYTHONDONTWRITEBYTECODE=|TZ=)' "$ENV_FILE" || true)"
 fi
-if ! printf '%s\n' "$ADICIONALES" | grep -q '^TRUSTED_PROXIES='; then
-  ADICIONALES="TRUSTED_PROXIES=127.0.0.1/32,::1/128${ADICIONALES:+
+PROXIES="$(printf '%s\n' "$ADICIONALES" | sed -n 's/^TRUSTED_PROXIES=//p' | tail -n1)"
+# El default de las versiones anteriores (solo loopback) no cubre a el proxy en un contenedor de este servidor.
+if [ -z "$PROXIES" ] || [ "$PROXIES" = "127.0.0.1/32,::1/128" ]; then PROXIES="$PROXIES_DEFECTO"; fi
+if [ -n "${JZPASS_PROXY_IP:-}" ]; then
+  case ",$PROXIES," in
+    *",$JZPASS_PROXY_IP,"*|*",$JZPASS_PROXY_IP/32,"*) ;;
+    *) PROXIES="$PROXIES,$JZPASS_PROXY_IP";;
+  esac
+fi
+ADICIONALES="$(printf '%s\n' "$ADICIONALES" | grep -v '^TRUSTED_PROXIES=' || true)"
+ADICIONALES="TRUSTED_PROXIES=$PROXIES${ADICIONALES:+
 $ADICIONALES}"
+# Origenes permitidos (CORS): los que ya estaban (o localhost) y, con dominio, https://<dominio> una sola vez.
+ORIGENES="$(valor_env ALLOWED_ORIGINS)"; ORIGENES="${ORIGENES:-http://localhost:$APP_PORT}"
+if [ -n "$DOMAIN" ]; then
+  case ",$ORIGENES," in *",https://$DOMAIN,"*) ;; *) ORIGENES="$ORIGENES,https://$DOMAIN";; esac
 fi
 ZONA="$(valor_env TZ)"; ZONA="${ZONA:-${TZ:-America/Argentina/Buenos_Aires}}"
 TMP_ENV="$(mktemp "$ENV_DIR/.env.XXXXXX")"
@@ -268,10 +298,10 @@ DB_NAME=$DB_NAME
 DATABASE_URL=postgresql://$DB_USER:$DB_PASSWORD@127.0.0.1:5432/$DB_NAME
 JWT_SECRET=$JWT_SECRET
 SETUP_TOKEN=$SETUP_TOKEN
-ALLOWED_ORIGINS=$SITIO
+ALLOWED_ORIGINS=$ORIGENES
 APP_PORT=$APP_PORT
+APP_BIND=$APP_BIND
 JZPASS_DOMAIN=$DOMAIN
-JZPASS_IP=$IP
 JZPASS_INSTALACION=nativa
 JZPASS_REPO_URL=$REPO_URL
 TZ=$ZONA
@@ -331,14 +361,14 @@ systemctl restart "$SERVICE"
 echo "Esperando que el servicio responda..."
 OK=0
 for _ in $(seq 1 45); do
-  if curl -fsS --max-time 5 "http://$APP_BIND:$APP_PORT/api/setup/status" > /dev/null 2>&1; then
+  if curl -fsS --max-time 5 "http://$LOCAL:$APP_PORT/api/setup/status" > /dev/null 2>&1; then
     OK=1
     break
   fi
   sleep 2
 done
 if [ "$OK" != "1" ]; then
-  echo "Error: el servicio no responde en http://$APP_BIND:$APP_PORT." >&2
+  echo "Error: el servicio no responde en http://$LOCAL:$APP_PORT." >&2
   echo "Ver el detalle con: journalctl -u $SERVICE -n 50 --no-pager" >&2
   exit 1
 fi
@@ -347,89 +377,10 @@ echo "Servicio en marcha (version $VERSION)."
 # 9. Actualizador
 install -m 0755 "$DEST/tools/jzpass-actualizar" "$ACTUALIZADOR"
 
-# 10. Proxy HTTPS (Caddy). Si el 443 lo usa otro programa, no se toca nada. Si el 80 lo usa otro programa
-#     (por ejemplo Apache), Caddy se configura igual solo en el 443, sin redireccion desde http.
-if [ -n "$DOMAIN" ]; then
-  BLOQUE="$DOMAIN {
-    reverse_proxy $APP_BIND:$APP_PORT
-}"
-else
-  BLOQUE="https://$IP {
-    tls internal
-    reverse_proxy $APP_BIND:$APP_PORT
-}"
-fi
-SIN_REDIRECCION=0
-if [ "$CADDY" = "1" ]; then
-  EN_443="$(ss -ltnpH '( sport = :443 )' 2>/dev/null | grep -v '"caddy"' || true)"
-  EN_80="$(ss -ltnpH '( sport = :80 )' 2>/dev/null | grep -v '"caddy"' || true)"
-  if [ -n "$EN_443" ]; then
-    echo "Aviso: el puerto 443 lo usa otro programa; no se configura Caddy." >&2
-    echo "$EN_443" >&2
-    CADDY="0"
-  elif [ -n "$EN_80" ]; then
-    echo "Aviso: el puerto 80 lo usa otro programa; Caddy atiende solo HTTPS (443), sin redireccion desde http." >&2
-    SIN_REDIRECCION=1
-  fi
-fi
-if [ "$CADDY" = "1" ]; then
-  CADDYFILE="/etc/caddy/Caddyfile"
-  MARCA="# Gestionado por los instaladores nativos de JZTech"
-  GLOBAL=""
-  [ "$SIN_REDIRECCION" = "1" ] && GLOBAL="{
-	auto_https disable_redirects
-}
-"
-  mkdir -p /etc/caddy
-  # Mismo criterio que los otros instaladores de JZTech: el Caddyfile de ejemplo compite por el puerto 80.
-  # Se escribe antes de instalar Caddy para que arranque con este y no con el de ejemplo.
-  if [ ! -f "$CADDYFILE" ] || ! grep -q "$MARCA" "$CADDYFILE"; then
-    printf '%s%s\n%s\n' "$GLOBAL" "$MARCA (install-native.sh)." "# Cada app agrega su propio bloque de sitio abajo." > "$CADDYFILE"
-  elif [ -n "$GLOBAL" ] && ! grep -q "auto_https disable_redirects" "$CADDYFILE"; then
-    { printf '%s' "$GLOBAL"; cat "$CADDYFILE"; } > "$CADDYFILE.tmp" && mv -f "$CADDYFILE.tmp" "$CADDYFILE"
-  fi
-  PRIMERA="$(printf '%s\n' "$BLOQUE" | head -n1)"
-  if grep -qxF "$PRIMERA" "$CADDYFILE"; then
-    # Ya hay un bloque para este sitio: si apunta a este servicio es el nuestro (reinstalacion o instalacion
-    # anterior); si no, lo usa otra app.
-    if ! grep -A3 -xF "$PRIMERA" "$CADDYFILE" | grep -q "reverse_proxy $APP_BIND:$APP_PORT"; then
-      echo "Aviso: el sitio $SITIO ya lo usa otra app en $CADDYFILE; no se agrega. Usar JZPASS_DOMAIN o JZPASS_IP distintos." >&2
-    fi
-  else
-    printf '\n# jzpass\n%s\n' "$BLOQUE" >> "$CADDYFILE"
-  fi
-  if ! command -v caddy &> /dev/null; then
-    echo "Instalando Caddy..."
-    if ! DEBIAN_FRONTEND=noninteractive apt-get install -y -qq -o Dpkg::Options::=--force-confold caddy > /dev/null 2>&1; then
-      curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' \
-        | gpg --dearmor --yes -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
-      curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' > /etc/apt/sources.list.d/caddy-stable.list
-      apt-get update -qq
-      DEBIAN_FRONTEND=noninteractive apt-get install -y -qq -o Dpkg::Options::=--force-confold caddy > /dev/null
-    fi
-  fi
-  if caddy validate --config "$CADDYFILE" --adapter caddyfile > /dev/null 2>&1; then
-    systemctl enable --now caddy > /dev/null
-    systemctl reload caddy 2> /dev/null || systemctl restart caddy
-    # Caddy saca el certificado unos segundos despues de arrancar: se espera a que el HTTPS responda antes
-    # de dar la direccion (con dominio publico, el certificado automatico puede tardar mas).
-    if [ -n "$DOMAIN" ]; then
-      PRUEBA=(--resolve "$DOMAIN:443:127.0.0.1" "https://$DOMAIN/api/setup/status")
-    else
-      PRUEBA=("https://$IP/api/setup/status")
-    fi
-    HTTPS_OK=0
-    for _ in $(seq 1 30); do
-      if curl -fsSk --max-time 5 "${PRUEBA[@]}" > /dev/null 2>&1; then HTTPS_OK=1; break; fi
-      sleep 2
-    done
-    if [ "$HTTPS_OK" != "1" ]; then
-      echo "Aviso: el HTTPS todavia no responde en $SITIO. Con dominio, revisar que apunte a este servidor;" >&2
-      echo "el detalle esta en: journalctl -u caddy -n 50 --no-pager" >&2
-    fi
-  else
-    echo "Aviso: el Caddyfile no valida; no se recargo Caddy. Revisar $CADDYFILE." >&2
-  fi
+# 10. Caddy de una version anterior de este instalador: no se desinstala (puede usarlo otra app), se avisa.
+CADDY_ANTERIOR=0
+if command -v caddy > /dev/null 2>&1 && grep -qsE '^# (jzpass|Gestionado por los instaladores nativos de JZTech)' /etc/caddy/Caddyfile; then
+  CADDY_ANTERIOR=1
 fi
 
 # 11. Resumen
@@ -438,14 +389,10 @@ echo ""
 echo "================================================================="
 echo "INSTALACION COMPLETADA - JZPass $VERSION"
 echo "================================================================="
-echo "Entrar desde el navegador: $SITIO"
-if [ "$CADDY" != "1" ]; then
-  echo "Caddy no se configuro. Agregar al proxy HTTPS del servidor el equivalente a:"
-  echo "$BLOQUE"
-  echo "y, si el proxy esta en otra maquina, su IP a TRUSTED_PROXIES en $ENV_FILE."
-elif [ -z "$DOMAIN" ]; then
-  echo "Certificado de la CA local de Caddy: el navegador avisa que la conexion no es privada hasta que se"
-  echo "instala en cada PC, celular o tablet el certificado raiz: $CA_LOCAL"
+if [ "$APP_BIND" = "0.0.0.0" ]; then ESCUCHA="$IP"; else ESCUCHA="$APP_BIND"; fi
+echo "Escuchando en: http://$ESCUCHA:$APP_PORT"
+if [ -n "$DOMAIN" ]; then
+  echo "Direccion publica: https://$DOMAIN (tiene que llegar a http://$ESCUCHA:$APP_PORT)"
 fi
 if [ "$ADMINS" = "0" ]; then
   echo ""
@@ -454,4 +401,11 @@ if [ "$ADMINS" = "0" ]; then
 fi
 echo ""
 echo "Para actualizar mas adelante: sudo jzpass-actualizar"
+if [ "$CADDY_ANTERIOR" = "1" ]; then
+  echo ""
+  echo "AVISO: sigue instalado el Caddy de una version anterior de este instalador (no se desinstala solo); ocupa"
+  echo "los puertos 80 y 443. Si ninguna otra app lo usa (ver /etc/caddy/Caddyfile), sacarlo con:"
+  echo "  sudo systemctl disable --now caddy"
+  echo "  sudo apt purge caddy"
+fi
 echo "================================================================="

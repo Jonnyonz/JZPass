@@ -2,6 +2,27 @@
 
 Cambios de JZPass, del más nuevo al más viejo. Cada entrada corresponde a un push a `main`.
 
+## Sin versión todavía (2026-10-06)
+
+### Cambiado (instaladores sin Caddy)
+- `install.sh` (Docker) e `install-native.sh` ya no levantan ni instalan Caddy: instalan JZPass y lo dejan
+  escuchando por http en su puerto (8000 con Docker, 8020 sin Docker) de todas las interfaces (`JZPASS_BIND` lo
+  cambia). El HTTPS lo pone el proxy del servidor. Al terminar muestran dónde quedó escuchando, la dirección
+  pública (`JZPASS_DOMAIN`, que queda en `ALLOWED_ORIGINS`) y el token inicial. `JZPASS_PROXY_IP=<IP>` suma a
+  `TRUSTED_PROXIES` la IP de un proxy que esté en otro equipo. Se saca el servicio `caddy` y su perfil `https`
+  del compose. `JZPASS_HTTPS`, `JZPASS_IP`, `JZPASS_HTTPS_PORT` y `JZPASS_CADDY` se ignoran con un aviso.
+
+### Cómo migra una instalación existente
+- Con Docker: volver a correr `sudo bash install.sh` en la carpeta de la instalación. Respalda la base, saca el
+  contenedor `jzpass_caddy` (`--remove-orphans` y `docker rm -f`), la carpeta `caddy/` y las claves que ya no se
+  usan del `.env` (`CADDY_*`, `JZPASS_HTTPS`, `JZPASS_IP`, `COMPOSE_PROFILES=https`), y la app pasa a escuchar en
+  `0.0.0.0` (un `APP_BIND=127.0.0.1` puesto a mano sin Caddy se respeta). Los volúmenes de certificados de
+  Caddy no se borran solos: el instalador muestra el `docker volume rm`. Una instalación anterior a Caddy
+  (2.5.1, sin esas claves) se actualiza igual que siempre.
+- Sin Docker: volver a correr `sudo ./install-native.sh` desde el clon (el actualizador solo cambia el código y
+  avisa si el servicio sigue escuchando solo en `127.0.0.1`). Un Caddy configurado por una versión anterior no
+  se desinstala (puede usarlo otra app): el instalador avisa cómo sacarlo.
+
 ## 2.6.0 — 2026-10-06
 
 Tag `v2.6.0`, publicado en GitHub Releases. Junta los cambios posteriores a 2.5.1.

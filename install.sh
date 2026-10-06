@@ -3,16 +3,21 @@
 # Instalador con Docker de JZPass (la instalacion sin Docker es install-native.sh)
 # ==============================================================================
 #   sudo bash install.sh                                (clona en ./jzpass_erp; si ya existe, la ACTUALIZA)
-#   sudo JZPASS_DOMAIN=rrhh.empresa.com bash install.sh  dominio publico: certificado automatico
+#   sudo JZPASS_DOMAIN=rrhh.empresa.com bash install.sh  dominio publico con el que se va a entrar
 #
 # Instala Docker si falta, trae la ultima version (git pull --ff-only), respalda la base en backups/ antes de
-# reconstruir y configura HTTPS con un contenedor de Caddy (perfil "https" del compose). Sin HTTPS no se guarda
-# la sesion desde otra PC ni el celular da la ubicacion para fichar. Nunca borra la carpeta: ahi viven el .env y
-# uploads/ (adjuntos del personal).
+# reconstruir y deja la app escuchando por http en APP_BIND:APP_PORT (por defecto 0.0.0.0:8000). No instala
+# ningun proxy: el HTTPS lo pone el proxy del servidor (sin HTTPS no se guarda la sesion desde otra PC ni el
+# celular da la ubicacion para fichar). Nunca borra la carpeta: ahi viven el .env y uploads/ (adjuntos del personal).
 #
-# Variables opcionales: JZPASS_DOMAIN, JZPASS_IP (sin dominio: IP para el certificado local), JZPASS_HTTPS=no,
-# JZPASS_HTTPS_PORT, JZPASS_NO_UPDATE=1, JZPASS_RESET_DB=1 (borrar la base de una instalacion anterior cuando
-# no hay .env).
+# Variables opcionales: JZPASS_DOMAIN (en una instalacion nueva, si no esta, se pregunta), JZPASS_BIND
+# (interfaz donde escucha la app; por defecto 0.0.0.0 para que llegue el proxy), JZPASS_PROXY_IP (IP del proxy si
+# esta en otro equipo: se agrega a TRUSTED_PROXIES), JZPASS_NO_UPDATE=1, JZPASS_RESET_DB=1 (borrar la base de una
+# instalacion anterior cuando no hay .env).
+#
+# Instalaciones anteriores con Caddy (2.6.0): se sacan del .env las claves de Caddy, se borra su contenedor
+# (jzpass_caddy) y la app pasa a escuchar en 0.0.0.0. Las variables de entonces (JZPASS_HTTPS, JZPASS_IP,
+# JZPASS_HTTPS_PORT) se ignoran con un aviso.
 # ==============================================================================
 set -e
 
@@ -80,6 +85,9 @@ fi
 leer() { grep -E "^$1=" .env 2>/dev/null | tail -n1 | cut -d= -f2- | tr -d '\r'; }
 poner() { if grep -qE "^$1=" .env; then sed -i "s#^$1=.*#$1=$2#" .env; else printf '%s=%s\n' "$1" "$2" >> .env; fi; }
 
+# Nombre del proyecto de compose: prefijo de los volumenes (pgdata y, en instalaciones con Caddy, caddy_*).
+PROJECT="${COMPOSE_PROJECT_NAME:-$(basename "$PWD" | tr '[:upper:]' '[:lower:]' | tr -cd 'a-z0-9_-')}"
+
 # 3. .env: se genera solo la primera vez (las claves no se pisan nunca).
 SETUP_TOKEN=""
 NUEVA=0
@@ -89,7 +97,6 @@ else
   NUEVA=1
   # Postgres solo aplica la clave al crear su volumen: un .env nuevo no sirve contra la base de una
   # instalacion anterior. Si ese volumen existe, no se toca nada salvo que se pida explicitamente.
-  PROJECT="${COMPOSE_PROJECT_NAME:-$(basename "$PWD" | tr '[:upper:]' '[:lower:]' | tr -cd 'a-z0-9_-')}"
   VOLUME="${PROJECT}_pgdata"
   if docker volume inspect "$VOLUME" > /dev/null 2>&1; then
     if [ "${JZPASS_RESET_DB:-}" = "1" ]; then
@@ -105,6 +112,7 @@ else
   fi
   echo "Generando claves..."
   cp .env.example .env
+  sed -i 's/\r$//' .env   # un .env.example con finales CRLF (copiado desde Windows) dejaria \r en las claves
   SETUP_TOKEN=$(openssl rand -hex 24)
   sed -i "s/ingresa_una_cadena_muy_larga_y_segura_aqui/$(openssl rand -hex 32)/g" .env
   sed -i "s/ingresa_tu_password_segura/$(openssl rand -hex 16)/g" .env
@@ -112,11 +120,23 @@ else
   chmod 600 .env
 fi
 
-# 4. HTTPS con Caddy (servicio "caddy" del compose, perfil https).
-HTTPS="${JZPASS_HTTPS:-$(leer JZPASS_HTTPS)}"; HTTPS="${HTTPS:-si}"
-NO_SE_PUDO=0
-CADDY_CORRIENDO=0
-if compose ps --status running --services 2>/dev/null | grep -qx caddy; then CADDY_CORRIENDO=1; fi
+
+# 4. Red: la app escucha por http en APP_BIND:APP_PORT; el proxy del servidor le pasa el trafico de
+#    https://<dominio>.
+if [ -n "${JZPASS_HTTPS:-}${JZPASS_IP:-}${JZPASS_HTTPS_PORT:-}" ]; then
+  echo "Aviso: JZPASS_HTTPS, JZPASS_IP y JZPASS_HTTPS_PORT ya no se usan (ya no hay Caddy): se ignoran."
+fi
+# Instalaciones anteriores con Caddy (perfil "https" del compose): se sacan sus claves del .env y sus archivos.
+CADDY_ANTERIOR=0
+if grep -qE '^(CADDY_[A-Z_]+|JZPASS_HTTPS)=' .env || [ "$(leer COMPOSE_PROFILES)" = "https" ] \
+    || docker ps -a --format '{{.Names}}' 2>/dev/null | grep -qx jzpass_caddy; then
+  CADDY_ANTERIOR=1
+fi
+case "$(leer COMPOSE_PROFILES)" in https|"") sed -i '/^COMPOSE_PROFILES=/d' .env;; esac
+sed -i -E '/^(CADDY_[A-Z_]+|JZPASS_HTTPS|JZPASS_IP)=/d' .env
+rm -f caddy/Caddyfile caddy/ca-local.crt
+rmdir caddy 2> /dev/null || true
+
 DOMAIN="${JZPASS_DOMAIN:-$(leer JZPASS_DOMAIN)}"
 if [ -z "$DOMAIN" ] && ! grep -qE '^JZPASS_DOMAIN=' .env; then
   # Instalaciones anteriores: el dominio puede estar en ALLOWED_ORIGINS (https://rrhh.empresa.com).
@@ -127,80 +147,57 @@ if [ -z "$DOMAIN" ] && ! grep -qE '^JZPASS_DOMAIN=' .env; then
     fi
   done
 fi
-if [ -z "$DOMAIN" ] && [ "$NUEVA" = "1" ] && [ -r /dev/tty ]; then
-  read -r -p "Dominio publico de JZPass (ej. rrhh.empresa.com; Enter para usar la IP del servidor): " DOMAIN < /dev/tty || DOMAIN=""
+if [ -z "$DOMAIN" ] && [ "$NUEVA" = "1" ] && { : < /dev/tty; } 2> /dev/null; then
+  read -r -p "Dominio publico de JZPass (ej. rrhh.empresa.com; Enter para entrar por la IP del servidor): " DOMAIN < /dev/tty || DOMAIN=""
 fi
-if [ "$HTTPS" = "si" ]; then
-  IP="${JZPASS_IP:-$(leer JZPASS_IP)}"
-  if [ -z "$DOMAIN" ] && [ -z "$IP" ]; then
-    IP="$(hostname -I 2>/dev/null | awk '{print $1}')"
-    if [ -z "$IP" ]; then IP="$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for (i = 1; i < NF; i++) if ($i == "src") print $(i + 1)}')"; fi
-  fi
-  if [ -z "$DOMAIN" ] && ! [[ "$IP" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-    echo "AVISO: no se pudo saber la IP del servidor; no se configura HTTPS (indicarla con JZPASS_IP=192.168.1.10)."
-    HTTPS="no"; NO_SE_PUDO=1
-  fi
+DOMAIN="${DOMAIN#http://}"; DOMAIN="${DOMAIN#https://}"; DOMAIN="${DOMAIN%%/*}"
+if [ -n "$DOMAIN" ] && ! [[ "$DOMAIN" =~ ^[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?$ ]]; then
+  echo "Error: dominio invalido: $DOMAIN"
+  exit 1
 fi
-if [ "$HTTPS" = "si" ]; then
-  # Un puerto esta "ocupado" si lo usa otro programa (el Caddy de esta instalacion no cuenta).
-  ocupado() { [ "$CADDY_CORRIENDO" = "0" ] && command -v ss > /dev/null && [ -n "$(ss -ltnH "( sport = :$1 )" 2>/dev/null)" ]; }
-  PUERTO_HTTPS="${JZPASS_HTTPS_PORT:-$(leer CADDY_HTTPS_PORT)}"
-  if [ -z "$PUERTO_HTTPS" ]; then
-    for P in 443 8443 9443 10443; do
-      PUERTO_HTTPS="$P"
-      if ! ocupado "$P"; then break; fi
-    done
-  fi
-  if ocupado "$PUERTO_HTTPS"; then
-    echo "AVISO: el puerto $PUERTO_HTTPS ya esta en uso; no se configura HTTPS (elegir otro con JZPASS_HTTPS_PORT=...)."
-    HTTPS="no"; NO_SE_PUDO=1
-  fi
+poner JZPASS_DOMAIN "$DOMAIN"
+
+# Interfaz: 0.0.0.0 para que llegue el proxy (tambien desde otro equipo). Detras de Caddy la app quedaba solo en
+# 127.0.0.1: esa instalacion pasa a 0.0.0.0. Un 127.0.0.1 puesto a mano (sin Caddy) se respeta.
+BIND="${JZPASS_BIND:-$(leer APP_BIND)}"
+if [ -z "${JZPASS_BIND:-}" ] && { [ -z "$BIND" ] || { [ "$BIND" = "127.0.0.1" ] && [ "$CADDY_ANTERIOR" = "1" ]; }; }; then
+  BIND="0.0.0.0"
 fi
-if [ "$HTTPS" = "si" ]; then
-  if grep -qE '^CADDY_HTTP_PORT=' .env; then
-    PUERTO_HTTP="$(leer CADDY_HTTP_PORT)"; BIND_HTTP="$(leer CADDY_HTTP_BIND)"
-  elif [ "$PUERTO_HTTPS" = "443" ] && ! ocupado 80; then
-    PUERTO_HTTP=80; BIND_HTTP=0.0.0.0
-  else
-    PUERTO_HTTP=""; BIND_HTTP=127.0.0.1
-  fi
-  if [ -n "$DOMAIN" ]; then HOST="$DOMAIN"; else HOST="$IP"; fi
-  SITIO="https://$HOST"
-  if [ "$PUERTO_HTTPS" != "443" ]; then SITIO="$SITIO:$PUERTO_HTTPS"; fi
-  mkdir -p caddy
-  {
-    # default_sni: por IP el navegador no manda el nombre del sitio (SNI) y Caddy, dentro del contenedor, no ve
-    # la IP del servidor: sin esto no sabe que certificado dar y corta la conexion.
-    GLOBALES=""
-    if [ "$PUERTO_HTTP" != "80" ] || [ "$PUERTO_HTTPS" != "443" ]; then GLOBALES="${GLOBALES}	auto_https disable_redirects
-"; fi
-    if [ -z "$DOMAIN" ]; then GLOBALES="${GLOBALES}	default_sni $IP
-"; fi
-    if [ -n "$GLOBALES" ]; then printf '{\n%s}\n\n' "$GLOBALES"; fi
-    echo "# Generado por install.sh: se vuelve a escribir en cada corrida (no editar a mano)."
-    if [ -n "$DOMAIN" ]; then
-      printf '%s {\n\treverse_proxy jzpass-app:8000\n}\n' "$DOMAIN"
-    else
-      printf 'https://%s, https://localhost {\n\ttls internal\n\treverse_proxy jzpass-app:8000\n}\n' "$IP"
-    fi
-  } > caddy/Caddyfile
-  poner JZPASS_HTTPS si
-  poner JZPASS_DOMAIN "$DOMAIN"
-  poner JZPASS_IP "$IP"
-  poner COMPOSE_PROFILES https
-  poner CADDY_HTTPS_PORT "$PUERTO_HTTPS"
-  poner CADDY_HTTP_PORT "$PUERTO_HTTP"
-  poner CADDY_HTTP_BIND "$BIND_HTTP"
-  ORIGENES="$(leer ALLOWED_ORIGINS)"
-  case ",$ORIGENES," in *",$SITIO,"*) ;; *) poner ALLOWED_ORIGINS "${ORIGENES:+$ORIGENES,}$SITIO";; esac
-  # Instalacion nueva: la app solo en el propio servidor (se entra por Caddy). Las existentes no se cambian.
-  if [ "$NUEVA" = "1" ]; then poner APP_BIND 127.0.0.1; fi
-else
-  # "no" queda guardado solo si lo eligio el usuario; si no se pudo (puertos o IP), se reintenta la proxima vez.
-  if [ "$NO_SE_PUDO" != "1" ]; then poner JZPASS_HTTPS no; fi
-  poner COMPOSE_PROFILES ""
-  if [ "$CADDY_CORRIENDO" = "1" ]; then compose --profile https stop caddy > /dev/null 2>&1 || true; fi
+if ! [[ "$BIND" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  echo "Error: JZPASS_BIND/APP_BIND tiene que ser una IPv4 (ej. 0.0.0.0): $BIND"
+  exit 1
 fi
+poner APP_BIND "$BIND"
+PUERTO="$(leer APP_PORT)"; PUERTO="${PUERTO:-8000}"
+
+# Proxy en otro equipo: su IP tiene que estar en TRUSTED_PROXIES para que la app vea la IP real de cada usuario
+# (rate limit del login). Un proxy en este mismo servidor ya esta cubierto por las redes de Docker del default.
+if [ -n "${JZPASS_PROXY_IP:-}" ]; then
+  if ! [[ "$JZPASS_PROXY_IP" =~ ^[0-9A-Fa-f.:]+(/[0-9]+)?$ ]]; then
+    echo "Error: JZPASS_PROXY_IP invalida: $JZPASS_PROXY_IP"
+    exit 1
+  fi
+  PROXIES="$(leer TRUSTED_PROXIES)"; PROXIES="${PROXIES:-127.0.0.1/32,::1/128,172.16.0.0/12}"
+  case ",$PROXIES," in
+    *",$JZPASS_PROXY_IP,"*|*",$JZPASS_PROXY_IP/32,"*) ;;
+    *) poner TRUSTED_PROXIES "$PROXIES,$JZPASS_PROXY_IP";;
+  esac
+fi
+
+# Origenes permitidos (CORS): con dominio, https://<dominio> (una sola vez).
+ORIGENES="$(leer ALLOWED_ORIGINS)"
+if [ "$NUEVA" = "1" ]; then
+  # El .env.example trae un dominio de ejemplo.
+  ORIGENES="$(printf '%s' "$ORIGENES" | tr ',' '\n' | grep -vx 'https://midominio.com' | tr '\n' ',' | sed 's/,$//')"
+fi
+if [ -n "$DOMAIN" ]; then
+  case ",$ORIGENES," in *",https://$DOMAIN,"*) ;; *) ORIGENES="${ORIGENES:+$ORIGENES,}https://$DOMAIN";; esac
+fi
+if [ "$ORIGENES" != "$(leer ALLOWED_ORIGINS)" ]; then poner ALLOWED_ORIGINS "$ORIGENES"; fi
+
+IP="$(hostname -I 2> /dev/null | awk '{print $1}')"
+if [ -z "$IP" ]; then IP="$(ip -4 route get 1.1.1.1 2> /dev/null | awk '{for (i = 1; i < NF; i++) if ($i == "src") print $(i + 1)}')"; fi
+IP="${IP:-<IP del servidor>}"
 
 # 5. Copia de la base antes de reconstruir (al arrancar, la app agrega lo que falte al esquema).
 if compose ps --status running --services 2>/dev/null | grep -qx jzpass-db; then
@@ -217,32 +214,34 @@ if compose ps --status running --services 2>/dev/null | grep -qx jzpass-db; then
   fi
 fi
 
-# 6. Construir y levantar
+
+# 6. Construir y levantar (--remove-orphans saca el contenedor de Caddy de las instalaciones anteriores)
 echo "Construyendo y levantando los contenedores (la primera vez tarda unos minutos)..."
-compose up -d --build --quiet-pull
-
-APP_PORT_SHOWN="$(leer APP_PORT)"; APP_PORT_SHOWN="${APP_PORT_SHOWN:-8000}"
-HTTPS_OK=0
-if [ "$HTTPS" = "si" ]; then
-  for _ in $(seq 1 45); do
-    if curl -fsSk --max-time 5 --resolve "$HOST:$PUERTO_HTTPS:127.0.0.1" "https://$HOST:$PUERTO_HTTPS/api/setup/status" > /dev/null 2>&1; then
-      HTTPS_OK=1; break
-    fi
-    sleep 2
-  done
-  if [ -z "$DOMAIN" ]; then
-    compose cp caddy:/data/caddy/pki/authorities/local/root.crt caddy/ca-local.crt > /dev/null 2>&1 || true
-  fi
+compose up -d --build --quiet-pull --remove-orphans
+if docker ps -a --format '{{.Names}}' | grep -qx jzpass_caddy; then
+  docker rm -f jzpass_caddy > /dev/null
 fi
+if [ "$CADDY_ANTERIOR" = "1" ]; then echo "Se saco el Caddy de la version anterior (contenedor jzpass_caddy): los puertos 80 y 443 quedaron libres."; fi
 
+if [ "$BIND" = "0.0.0.0" ]; then PRUEBA="127.0.0.1"; else PRUEBA="$BIND"; fi
+APP_OK=0
+for _ in $(seq 1 45); do
+  if curl -fsS --max-time 5 "http://$PRUEBA:$PUERTO/api/setup/status" > /dev/null 2>&1; then APP_OK=1; break; fi
+  sleep 2
+done
+VOL_CADDY="$(docker volume ls -q 2> /dev/null | grep -xE "${PROJECT}_caddy_(data|config)" | tr '\n' ' ' | sed 's/ $//' || true)"
+
+if [ "$BIND" = "0.0.0.0" ]; then ESCUCHA="$IP"; else ESCUCHA="$BIND"; fi
 echo ""
 echo "================================================================="
 echo "INSTALACION COMPLETADA"
 echo "================================================================="
-if [ "$HTTPS" = "si" ]; then
-  echo "Entrar desde el navegador: $SITIO"
-else
-  echo "Entrar desde el navegador: http://localhost:${APP_PORT_SHOWN} (en este servidor)"
+echo "Escuchando en: http://$ESCUCHA:$PUERTO"
+if [ -n "$DOMAIN" ]; then
+  echo "Direccion publica: https://$DOMAIN (tiene que llegar a http://$ESCUCHA:$PUERTO)"
+fi
+if [ "$APP_OK" != "1" ]; then
+  echo "ATENCION: la app todavia no responde en http://$PRUEBA:$PUERTO. Ver: docker compose logs jzpass-app"
 fi
 if [ -n "$SETUP_TOKEN" ]; then
   echo ""
@@ -251,29 +250,8 @@ if [ -n "$SETUP_TOKEN" ]; then
   echo "IMPORTANTE: guardar el .env de $PWD en un lugar seguro (sin el no se puede reinstalar sobre esta base)."
 fi
 echo "Para actualizar mas adelante: volver a correr este instalador (conserva datos, adjuntos y configuracion)."
-echo ""
-echo "------------------------------ AVISO HTTPS ------------------------------"
-if [ "$HTTPS" = "si" ]; then
-  echo "Se configuro HTTPS con Caddy (contenedor jzpass_caddy): $SITIO"
-  if [ "$HTTPS_OK" != "1" ]; then
-    echo "ATENCION: el HTTPS todavia no responde. Ver: docker compose logs caddy"
-  fi
-  if [ -n "$DOMAIN" ]; then
-    echo "- El certificado lo saca Caddy solo: $DOMAIN tiene que apuntar a este servidor y los puertos 80 y"
-    echo "  443 tienen que llegar desde internet."
-  else
-    echo "- Sin dominio, el certificado es de la CA local de Caddy: el navegador avisa que la conexion no es"
-    echo "  privada hasta que se instala en cada PC y celular el certificado raiz:"
-    echo "  $PWD/caddy/ca-local.crt (o aceptar la excepcion del navegador para probar)."
-    echo "- Para usar un dominio: sudo JZPASS_DOMAIN=rrhh.empresa.com bash install.sh"
-  fi
-  if [ "$PUERTO_HTTPS" != "443" ]; then
-    echo "- El puerto 443 lo usa otro programa de este servidor: HTTPS quedo en el $PUERTO_HTTPS."
-  fi
-  echo "- Para no usar HTTPS: sudo JZPASS_HTTPS=no bash install.sh"
-else
-  echo "HTTPS desactivado: se entra por http en el puerto ${APP_PORT_SHOWN}."
-  echo "Desde otra PC o el celular no se puede iniciar sesion ni fichar por http (cookie Secure y GPS)."
-  echo "Para activarlo: sudo JZPASS_HTTPS=si bash install.sh"
+if [ -n "$VOL_CADDY" ]; then
+  echo "Quedaron los volumenes del Caddy anterior (certificados viejos). Si no se usan: docker volume rm $VOL_CADDY"
 fi
 echo "================================================================="
+if [ "$APP_OK" != "1" ]; then exit 1; fi

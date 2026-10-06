@@ -48,6 +48,8 @@ done
 valor() { sed -n "s/^$1=//p" "$ENV_FILE" | tail -n1; }
 DB_NAME="$(valor DB_NAME)"; DB_USER="$(valor DB_USER)"
 PUERTO="$(valor APP_PORT)"; PUERTO="${PUERTO:-8020}"
+# Interfaz del servicio (APP_BIND; las instalaciones con Caddy no la guardaban y escuchaban en 127.0.0.1).
+LOCAL="$(valor APP_BIND)"; [ -n "$LOCAL" ] && [ "$LOCAL" != "0.0.0.0" ] || LOCAL="127.0.0.1"
 GIT="git -c safe.directory=* -C $SRC"
 
 version_de() { cat "$1/.jzpass-version" 2>/dev/null || true; }
@@ -62,7 +64,7 @@ esquema() { sudo -u postgres pg_dump --schema-only --no-owner --no-privileges "$
 salud() {   # espera que el servicio responda (el servicio se detiene antes del cambio: responde la version nueva)
   for _ in $(seq 1 45); do
     if systemctl is-active --quiet "$SERVICE" \
-        && curl -fsS --max-time 5 "http://127.0.0.1:$PUERTO/api/setup/status" > /dev/null 2>&1; then
+        && curl -fsS --max-time 5 "http://$LOCAL:$PUERTO/api/setup/status" > /dev/null 2>&1; then
       return 0
     fi
     sleep 2
@@ -202,6 +204,11 @@ if salud; then
   echo "Listo: actualizado de la $ACTUAL a la $NUEVA. Respaldo previo: $RESPALDO"
   echo "Los cambios de cada version estan en $DEST/CHANGELOG.md"
   echo "Si hiciera falta volver atras: sudo jzpass-actualizar --volver"
+  if [ -z "$(valor APP_BIND)" ] && grep -q -- '--host 127.0.0.1 ' "/etc/systemd/system/$SERVICE.service" 2> /dev/null; then
+    # Instalacion de cuando el HTTPS lo daba Caddy: la app escucha solo en 127.0.0.1 y el proxy del servidor no llega.
+    echo "Aviso: el servicio escucha solo en 127.0.0.1 (instalacion de cuando estaba Caddy). Para que escuche en"
+    echo "0.0.0.0, correr una vez: sudo git -C $SRC pull --ff-only && sudo bash $SRC/install-native.sh"
+  fi
   exit 0
 fi
 

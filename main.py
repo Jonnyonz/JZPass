@@ -62,8 +62,9 @@ async def security_middleware(request: Request, call_next):
                 return JSONResponse(status_code=403, content={"msg": "CSRF no corresponde a la sesión."})
     response = await call_next(request)
     # HSTS se sigue mandando siempre desde aca (no desde jztech_core, que solo la manda si la app
-    # ve https): detras de Caddy uvicorn corre sin --proxy-headers y ve http. Por http plano los
-    # navegadores la ignoran, asi que mandarla siempre no tiene efecto negativo.
+    # ve https): detras del proxy del servidor uvicorn corre sin --proxy-headers y ve
+    # http. Por http plano los navegadores la ignoran, asi que mandarla siempre no tiene efecto
+    # negativo.
     response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     return response
 

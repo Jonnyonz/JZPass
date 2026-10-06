@@ -83,7 +83,7 @@ JZPass/
 ├── dashboard.html       # panel de admin/encargado
 ├── uploads/             # adjuntos y logo (volumen en Docker)
 ├── install.sh           # instalador con Docker
-├── install-native.sh    # instalador sin Docker (Debian/Ubuntu + systemd + Caddy)
+├── install-native.sh    # instalador sin Docker (Debian/Ubuntu + systemd)
 ├── tools/jzpass-actualizar  # actualizador de la instalación sin Docker
 ├── docker-compose.yml, Dockerfile, .dockerignore
 ├── requirements.in, requirements.txt
@@ -152,12 +152,18 @@ docker compose up -d --build
 ### Opción B: instalador
 
 `install.sh` (como root) instala Docker si falta, clona el repo en `./jzpass_erp`, genera el
-`.env` con secretos aleatorios y levanta los contenedores.
+`.env` con secretos aleatorios, levanta los contenedores y deja la app escuchando por http en el puerto 8000
+(`APP_PORT`) de todas las interfaces (`JZPASS_BIND` lo cambia). Pregunta el dominio público (o se pasa con
+`JZPASS_DOMAIN=rrhh.empresa.com`), que queda en `ALLOWED_ORIGINS`. Al terminar muestra dónde quedó escuchando,
+la dirección pública y el token inicial. No instala ningún proxy: el HTTPS lo pone el proxy del servidor (ver
+[Acceso desde la red](#acceso-desde-la-red-https)). Si el proxy está en otro equipo, `JZPASS_PROXY_IP=<su IP>`
+lo suma a `TRUSTED_PROXIES`.
 
 Se puede volver a correr para actualizar: hace `git pull` y respeta el `.env`, la base y
 `uploads/`. Si falta el `.env` pero quedó la base de una instalación anterior, **se detiene sin
 borrar nada** y explica las opciones: restaurar el `.env`, o empezar de cero borrando esos datos
-con `JZPASS_RESET_DB=1`.
+con `JZPASS_RESET_DB=1`. Una instalación anterior con Caddy propio (`jzpass_caddy`) se pasa sola a este
+esquema: se saca el contenedor, la carpeta `caddy/` y las claves que ya no se usan del `.env`.
 
 ### Primer ingreso
 
@@ -184,27 +190,22 @@ Deja JZPass como servicio del sistema, listo para producción:
 | Código de cada versión, con su propio entorno de Python | `/opt/jzpass/releases/<commit>/` (en uso: `/opt/jzpass/current`) |
 | Adjuntos, mapas y logo (no se tocan al actualizar) | `/var/lib/jzpass/uploads/` |
 | Configuración y secretos (`root:jzpass`, `0640`) | `/etc/jzpass/jzpass.env` |
-| Servicio | `jzpass` (usuario propio sin login, código de solo lectura), en `127.0.0.1:8020` |
+| Servicio | `jzpass` (usuario propio sin login, código de solo lectura), escuchando por http en `0.0.0.0:8020` |
 | Base | `jzpass_db` en el PostgreSQL del servidor (las tablas las crea la app al arrancar) |
-| HTTPS | Caddy: con dominio saca el certificado solo; sin dominio usa la IP con la CA local de Caddy |
 | Actualizador | `sudo jzpass-actualizar` |
 
 ```bash
 git clone https://github.com/Jonnyonz/JZPass.git
 cd JZPass
-sudo ./install-native.sh                                  # red interna: https://<IP del servidor>
-sudo JZPASS_DOMAIN=rrhh.miempresa.com ./install-native.sh   # dominio público que apunta al servidor
+sudo JZPASS_DOMAIN=rrhh.miempresa.com ./install-native.sh
 ```
 
-Al terminar muestra la dirección y el token para crear el administrador. Se puede volver a correr: no pisa
-los secretos ni lo agregado a mano en el `.env`. Instala las dependencias sin compilar, verificando los
-hashes (con una carpeta `wheelhouse/` al lado, sin internet). Variables opcionales: `JZPASS_IP` (IP para el
-certificado local), `JZPASS_PORT` (8020), `JZPASS_CADDY=0` (no tocar Caddy, si ya hay otro proxy HTTPS;
-agregar su IP a `TRUSTED_PROXIES` si está en otra máquina).
-
-Sin dominio, el navegador avisa que la conexión no es privada hasta que se instala en cada PC o celular el
-certificado raíz de Caddy (`/var/lib/caddy/.local/share/caddy/pki/authorities/local/root.crt`). HTTPS hace
-falta igual: sin él no se guarda la sesión ni el celular da la ubicación para fichar.
+Al terminar muestra dónde quedó escuchando, la dirección pública y el token para crear el administrador.
+Se puede volver a correr: no pisa los secretos ni lo agregado a mano en el `.env`. Instala las dependencias
+sin compilar, verificando los hashes (con una carpeta `wheelhouse/` al lado, sin internet). Variables
+opcionales: `JZPASS_DOMAIN`, `JZPASS_PORT` (8020), `JZPASS_BIND` (0.0.0.0) y `JZPASS_PROXY_IP` (IP del proxy si
+está en otra máquina). Un Caddy que haya configurado una versión anterior del instalador no se desinstala
+solo: el instalador avisa cómo sacarlo.
 
 **Actualizar:** `sudo jzpass-actualizar` trae la última versión, respalda la base (`/var/backups/jzpass`),
 cambia y verifica que responda; si no responde, vuelve sola a la anterior (y restaura la base si el esquema
@@ -240,20 +241,11 @@ uvicorn main:app --host 127.0.0.1 --port 8000
 
 ## Acceso desde la red (HTTPS)
 
-Los dos instaladores ya lo configuran con Caddy: `install.sh` (Docker) levanta un contenedor `jzpass_caddy`
-y avisa al final la dirección y qué hacer con el certificado; `install-native.sh` usa el Caddy del sistema.
-Para un proxy propio, por ejemplo
-[Caddy](https://caddyserver.com/) en el mismo servidor:
-
-```
-# /etc/caddy/Caddyfile
-jzpass.miempresa.com {
-    reverse_proxy 127.0.0.1:8000
-}
-```
-
-Y en el `.env`: `APP_BIND=127.0.0.1` (la app solo escucha en el propio servidor) y
-`ALLOWED_ORIGINS=https://jzpass.miempresa.com`.
+Desde celulares u otras PCs hace falta HTTPS: la cookie de sesión es `Secure` y el navegador solo da la
+ubicación GPS en sitios seguros. Los instaladores dejan la app escuchando por http en su puerto (8000 con
+Docker, 8020 sin Docker); el HTTPS lo pone el proxy del servidor, que recibe el dominio
+(`https://rrhh.miempresa.com`) y lo reenvía a `http://<IP del servidor>:<puerto>`. El dominio queda en
+`ALLOWED_ORIGINS`.
 
 ---
 
