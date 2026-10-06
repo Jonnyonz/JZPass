@@ -2,7 +2,9 @@
 
 Cambios de JZPass, del más nuevo al más viejo. Cada entrada corresponde a un push a `main`.
 
-## Sin versión todavía (2026-10-05)
+## 2.6.0 — 2026-10-06
+
+Tag `v2.6.0`, publicado en GitHub Releases. Junta los cambios posteriores a 2.5.1.
 
 ### Agregado (HTTPS en la instalación con Docker)
 - `install.sh` configura HTTPS: levanta un contenedor de Caddy (`jzpass_caddy`, perfil `https` del compose)
