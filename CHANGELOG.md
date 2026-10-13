@@ -12,7 +12,8 @@ Cambios de JZPass, del más nuevo al más viejo. Cada entrada corresponde a un p
   vieron), y **Descargar Reporte** (CSV `;` con fecha de visto, fecha de firma e IP de la firma).
 - En la pantalla del empleado, arriba del fichaje, **Avisos de la empresa**: los 3 más nuevos sin firmar (el resto
   con "Ver todos"). **Ver más** despliega el mensaje y registra el visto (la primera vez); **Aceptado / Recibido**
-  registra la firma con fecha, hora e IP y saca el aviso de la lista.
+  pide la contraseña del empleado (para que no sea un clic sin querer), registra la firma con fecha, hora e IP y
+  saca el aviso de la lista. Hasta 5 intentos de firma por minuto y por sesión.
 - Tablas nuevas `anuncios` y `anuncio_lecturas` (se crean solas al arrancar). Rutas en `routers/anuncios.py`.
 
 ### Corregido (seguridad)

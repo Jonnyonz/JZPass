@@ -1,11 +1,13 @@
+import asyncio
 import csv
 import io
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import JSONResponse, Response
+from jztech_core import sessions
 
-from database import ErrorAuth, get_db, get_real_ip, requiere_panel, requiere_sesion
+from database import ErrorAuth, get_db, get_real_ip, limiter, requiere_panel, requiere_sesion, verify_pw
 
 router = APIRouter()
 
@@ -40,10 +42,16 @@ async def marcar_visto(anuncio_id: int, user: dict = Depends(requiere_sesion)):
 
 
 @router.post("/api/anuncios/{anuncio_id}/firmar")
-async def firmar(request: Request, anuncio_id: int, user: dict = Depends(requiere_sesion)):
-    # Firma de recibido: fecha, hora e IP. Si no se habia abierto antes, cuenta tambien como visto.
+# Limite por sesion y no por IP: los empleados de una sucursal suelen salir por la misma IP publica.
+@limiter.limit("5/minute", key_func=lambda request: request.cookies.get(sessions.SESSION_COOKIE_NAME) or get_real_ip(request))
+async def firmar(request: Request, anuncio_id: int, password: str = Form(""), user: dict = Depends(requiere_sesion)):
+    # Firma de recibido: exige la contraseña del usuario (que no sea un clic sin querer) y guarda fecha, hora
+    # e IP. Si no se habia abierto antes, cuenta tambien como visto.
     ahora = _ahora()
     async with get_db() as db:
+        hashed = await db.fetchval("SELECT password FROM usuarios WHERE dni=$1", user['dni'])
+        if not password or not await asyncio.to_thread(verify_pw, password, str(hashed or "")):
+            return JSONResponse(status_code=400, content={"msg": "Contraseña incorrecta. El aviso no se firmó."})
         res = await db.execute("UPDATE anuncio_lecturas l SET firmado_en=$3, firma_ip=$4, visto_en=COALESCE(l.visto_en, $3) FROM anuncios a WHERE a.id=l.anuncio_id AND l.anuncio_id=$1 AND l.dni=$2 AND l.firmado_en IS NULL AND a.anulado_en IS NULL", anuncio_id, user['dni'], ahora, get_real_ip(request))
     if res == "UPDATE 0":
         return JSONResponse(status_code=400, content={"msg": "El anuncio ya fue firmado o no está disponible."})
