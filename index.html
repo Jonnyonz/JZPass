@@ -101,6 +101,8 @@
         .theme-toggle { position: absolute; top: 15px; right: 15px; background: transparent; border: 1px solid var(--border); color: var(--text-primary); width: 36px; height: 36px; padding: 0; border-radius: 8px;}
 
         .req-list { background: var(--bg-surface); border: 1px solid var(--border); padding: 12px; border-radius: 8px; margin-bottom: 10px; font-size: 13px; text-align: left; }
+        .anuncio { border-left: 4px solid var(--accent); }
+        .anuncio-cuerpo { white-space: pre-wrap; word-wrap: break-word; color: var(--text-primary); line-height: 1.5; margin-top: 10px; padding: 10px; background: var(--bg-page); border-radius: 6px; }
     </style>
 </head>
 <body>
@@ -173,6 +175,14 @@
         <div style="text-align:center; margin-bottom: 25px; display:flex; justify-content:center; gap:10px;">
             <span id="d-sucursal" class="badge badge-info"></span>
             <span id="d-vacaciones" class="badge badge-warning"></span>
+        </div>
+
+        <div id="anuncios-box" class="hidden" style="margin-bottom:20px;">
+            <h3 style="display:flex; align-items:center; gap:8px; font-size:16px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                Avisos de la empresa
+            </h3>
+            <div id="lista-anuncios"></div>
         </div>
 
         <button id="btn-fichar" onclick="ficharGPS()" style="height:60px; font-size:18px;">
@@ -366,7 +376,7 @@
         });
 
         function cerrarModal(id) { document.getElementById(id).classList.add('hidden'); }
-        function esc(s) { return String(s||"").replace(/[&<>'"]/g, m => ({'&':'&','<':'<','>':'>',"'":"'",'"':'"'}[m])); }
+        function esc(s) { return String(s??"").replace(/[&<>'"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m])); }
 
         async function req(url, data={}) {
             let fd = new FormData(); for(let k in data) fd.append(k, data[k]);
@@ -525,6 +535,53 @@
             solicitudesGlobales = d.solicitudes || [];
             renderSolicitudes();
             vista('v-dash');
+            cargarAnuncios();
+        }
+
+        // Anuncios generales: "Ver más" despliega el texto y registra el visto (la primera vez);
+        // "Aceptado / Recibido" es la firma de recibido y saca el aviso de la lista.
+        let anunciosPend = [], anunciosTodos = false;
+        async function cargarAnuncios() {
+            try {
+                let r = await fetch('/api/anuncios/pendientes');
+                if(!r.ok) return;
+                anunciosPend = (await r.json()).anuncios || [];
+            } catch(e) { return; }
+            renderAnuncios();
+        }
+
+        function renderAnuncios() {
+            document.getElementById('anuncios-box').classList.toggle('hidden', anunciosPend.length === 0);
+            // Los 3 mas nuevos; el resto detras de "Ver todos" para no tapar el boton de fichaje.
+            let lista = anunciosTodos ? anunciosPend : anunciosPend.slice(0, 3);
+            let resto = anunciosPend.length - lista.length;
+            document.getElementById('lista-anuncios').innerHTML = lista.map(a => `<div class="req-list anuncio">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+                    <div><strong style="font-size:14px;">${esc(a.titulo)}</strong><br><span class="mono" style="color:var(--text-secondary); font-size:12px;">${esc((a.creado_en||'').slice(0,16))}</span></div>
+                    ${a.visto_en ? '' : '<span class="badge badge-info">Nuevo</span>'}
+                </div>
+                <div id="anuncio-det-${a.id}" class="hidden">
+                    <div class="anuncio-cuerpo">${esc(a.cuerpo)}</div>
+                    <button class="btn-green" onclick="firmarAnuncio(${a.id})" style="padding:10px; font-size:14px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Aceptado / Recibido</button>
+                </div>
+                <button id="anuncio-vm-${a.id}" class="btn-secondary" onclick="verAnuncio(${a.id})" style="padding:8px; font-size:13px; margin-top:10px;">Ver más</button>
+            </div>`).join('')
+                + (resto > 0 ? `<button class="btn-secondary" onclick="anunciosTodos=true; renderAnuncios();" style="margin-top:0; font-size:13px;">Ver todos los avisos (${resto} más)</button>` : '');
+        }
+
+        function verAnuncio(id) {
+            document.getElementById('anuncio-det-' + id).classList.remove('hidden');
+            document.getElementById('anuncio-vm-' + id).classList.add('hidden');
+            let a = anunciosPend.find(x => x.id === id);
+            if(a && !a.visto_en) { a.visto_en = 'ahora'; req(`/api/anuncios/${id}/visto`); }
+        }
+
+        async function firmarAnuncio(id) {
+            if(!confirm('¿Confirmás que leíste y recibiste este aviso? Queda registrado con fecha y hora.')) return;
+            let r = await req(`/api/anuncios/${id}/firmar`);
+            if(!r.ok) { alert(r.data.msg || 'No se pudo registrar.'); cargarAnuncios(); return; }
+            anunciosPend = anunciosPend.filter(x => x.id !== id);
+            renderAnuncios();
         }
 
         function generarHTMLSolicitudes(lista) {

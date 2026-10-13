@@ -142,6 +142,12 @@ async def init_db_schema():
         await conn.execute("ALTER TABLE fichajes ADD COLUMN IF NOT EXISTS motivo_entrada TEXT DEFAULT ''")
         await conn.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS fecha_baja TEXT DEFAULT NULL")
 
+        # Anuncios generales: los destinatarios se fijan al publicar (usuarios activos en ese momento),
+        # asi el reporte de vistos/firmados no cambia con altas o bajas posteriores.
+        await conn.execute('''CREATE TABLE IF NOT EXISTS anuncios (id SERIAL PRIMARY KEY, titulo TEXT NOT NULL, cuerpo TEXT NOT NULL, creado_por TEXT, creado_en TEXT, anulado_por TEXT, anulado_en TEXT)''')
+        await conn.execute('''CREATE TABLE IF NOT EXISTS anuncio_lecturas (anuncio_id INTEGER REFERENCES anuncios(id) ON DELETE CASCADE, dni TEXT, visto_en TEXT, firmado_en TEXT, firma_ip TEXT, PRIMARY KEY(anuncio_id, dni))''')
+        await conn.execute("CREATE INDEX IF NOT EXISTS anuncio_lecturas_dni ON anuncio_lecturas (dni)")
+
     await conn.close()
 
     DB.pool = await asyncpg.create_pool(DATABASE_URL, min_size=5, max_size=25)

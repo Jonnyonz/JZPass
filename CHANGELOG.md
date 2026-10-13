@@ -2,7 +2,22 @@
 
 Cambios de JZPass, del más nuevo al más viejo. Cada entrada corresponde a un push a `main`.
 
-## Sin versión todavía (2026-10-06)
+## Sin versión todavía (2026-10-06 / 2026-10-13)
+
+### Agregado (anuncios generales con firma de recibido, 2026-10-13)
+- Módulo **Notificaciones** en el panel (solo administrador): publicar un anuncio (título y mensaje) que les llega
+  a todos los usuarios activos en ese momento. Listado de 10 por página con vistos y firmados de cada anuncio,
+  botón **Anular** (deja de mostrarse a los empleados; el registro se conserva) y **Ver detalles**: tabla
+  deslizable de quién lo vio y quién lo firmó, con búsqueda y filtro (firmaron / vieron sin firmar / no lo
+  vieron), y **Descargar Reporte** (CSV `;` con fecha de visto, fecha de firma e IP de la firma).
+- En la pantalla del empleado, arriba del fichaje, **Avisos de la empresa**: los 3 más nuevos sin firmar (el resto
+  con "Ver todos"). **Ver más** despliega el mensaje y registra el visto (la primera vez); **Aceptado / Recibido**
+  registra la firma con fecha, hora e IP y saca el aviso de la lista.
+- Tablas nuevas `anuncios` y `anuncio_lecturas` (se crean solas al arrancar). Rutas en `routers/anuncios.py`.
+
+### Corregido (seguridad)
+- `esc()` de `index.html` y `dashboard.html` no escapaba nada (cada carácter se reemplazaba por sí mismo desde
+  septiembre): un motivo de solicitud o un nombre con HTML se ejecutaba en el panel. Ahora escapa `& < > ' "`.
 
 ### Cambiado (instaladores sin Caddy)
 - `install.sh` (Docker) e `install-native.sh` ya no levantan ni instalan Caddy: instalan JZPass y lo dejan

@@ -16,7 +16,7 @@ from database import (
     DB, ORIGINES_PERMITIDOS, csrf_signer, limiter,
     init_db_schema, close_db_pool, ErrorAuth,
 )
-from routers import auth, empleado, admin, archivos
+from routers import auth, empleado, admin, archivos, anuncios
 
 
 @asynccontextmanager
@@ -89,6 +89,7 @@ app.include_router(auth.router)
 app.include_router(empleado.router)
 app.include_router(admin.router)
 app.include_router(archivos.router)
+app.include_router(anuncios.router)
 
 
 @app.get("/", response_class=HTMLResponse)

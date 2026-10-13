@@ -105,8 +105,14 @@
     
     .hidden { display: none !important; }
     .filters { background: var(--filter-bg); padding:15px; border-radius:8px; margin-bottom:20px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; border: 1px solid var(--border);}
-    input, select { background:var(--bg-surface); color:var(--text-primary); border:1px solid var(--border); padding:10px 12px; border-radius:8px; outline:none; transition: 0.2s; font-size:14px;}
-    input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(41,98,255,0.15); }
+    .paginador { display:flex; gap:6px; justify-content:center; flex-wrap:wrap; margin-top:15px; }
+    .paginador button { padding:6px 12px; font-size:13px; }
+    .tabla-rapida { max-height: 50vh; overflow: auto; border: 1px solid var(--border); border-radius: 8px; }
+    .tabla-rapida table { min-width: 560px; }
+    .tabla-rapida th { position: sticky; top: 0; z-index: 1; }
+    .tabla-rapida th, .tabla-rapida td { padding: 8px 10px; font-size: 13px; }
+    input, select, textarea { background:var(--bg-surface); color:var(--text-primary); border:1px solid var(--border); padding:10px 12px; border-radius:8px; outline:none; transition: 0.2s; font-size:14px;}
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(41,98,255,0.15); }
     
     .badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight:700; display: inline-flex; align-items: center; gap: 4px; letter-spacing: 0.3px;}
     .badge-info { background: var(--badge-info-bg); color: var(--badge-info-text); }
@@ -199,6 +205,9 @@
         <button class="rail-btn" id="nav-t-francos" title="Medios Francos" onclick="ver('t-francos')">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg><span class="rail-label">Medios Francos</span>
         </button>
+        <button class="rail-btn" id="nav-t-notif" title="Notificaciones" onclick="ver('t-notif')">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg><span class="rail-label">Notificaciones</span>
+        </button>
         <button class="rail-btn" id="nav-t-corporativa" title="Organización" onclick="ver('t-corporativa')">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg><span class="rail-label">Organización</span>
         </button>
@@ -245,6 +254,10 @@
                     <div class="hub-card" onclick="ver('t-francos')">
                         <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg> Medios Francos</h3>
                         <div class="preview-box" id="p-francos">Cargando...</div>
+                    </div>
+                    <div id="hub-notif" class="hub-card" onclick="ver('t-notif')">
+                        <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg> Notificaciones</h3>
+                        <div class="preview-box">Anuncios generales y registro de firmas</div>
                     </div>
                     <div id="hub-corp" class="hub-card" onclick="ver('t-corporativa')">
                         <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> Organización</h3>
@@ -316,6 +329,13 @@
         <div id="t-francos" class="card hidden">
             <div class="card-body">
                 <div class="table-responsive"><table><thead><tr><th>Empleado</th><th>Sucursal</th><th>Fecha Asignada</th><th>Turno</th><th>Asignado Por</th><th>Acción</th></tr></thead><tbody id="b-francos"></tbody></table></div>
+            </div>
+        </div>
+
+        <div id="t-notif" class="card hidden">
+            <div class="card-body">
+                <div class="table-responsive"><table><thead><tr><th>#</th><th>Título</th><th>Publicado</th><th>Estado</th><th>Vistos</th><th>Firmados</th><th>Acción</th></tr></thead><tbody id="b-notif"></tbody></table></div>
+                <div id="notif-paginador" class="paginador"></div>
             </div>
         </div>
 
@@ -471,6 +491,10 @@
 
 <div id="m-cal-opts" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-cal-opts')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button><h3 id="cal-modal-title" style="margin-top:0;"></h3><input type="hidden" id="cal-selected-date"><div id="box-admin-cal" class="hidden"><h4>Feriado Nacional</h4><div class="form-group"><input type="text" id="cFerMotivo2" placeholder="Identificador del Feriado"></div><div class="form-group"><select id="cFerSucs2"><option value="TODAS">TODAS</option></select></div><button onclick="accion('guardar_feriado', {d1:v('cal-selected-date'), d2:v('cFerMotivo2'), d3:v('cFerSucs2')}); cerrarM('m-cal-opts')" style="width:100%; margin-top:10px;">Registrar Feriado</button></div><hr style="margin:20px 0; border:0; border-top:1px solid var(--border);"><h4 style="margin-top:0;">Gestionar Convocatoria</h4><button class="btn-secondary" onclick="abrirConvocatoria()" style="width:100%; margin-bottom:15px;">Ver/Editar Personal Convocado</button><hr style="margin:20px 0; border:0; border-top:1px solid var(--border);"><h4 style="margin-top:0;">Asignar Franco</h4><div class="form-group"><input type="text" id="cFranDni2" class="mono" list="cFranDniList2" placeholder="Búsqueda de empleado..." autocomplete="off"><datalist id="cFranDniList2"></datalist></div><div class="form-group"><select id="cFranTurno2"><option value="MAÑANA">MAÑANA</option><option value="TARDE">TARDE</option></select></div><button onclick="accion('asignar_franco', {d1:v('cFranDni2'), d2:v('cal-selected-date'), d3:v('cFranTurno2')}); cerrarM('m-cal-opts')" style="width:100%; margin-top:10px;">Confirmar Asignación</button><button onclick="cerrarM('m-cal-opts')" class="btn-secondary" style="width:100%; margin-top:8px;">Cerrar Panel</button></div></div>
 
+<div id="m-notif-nuevo" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-notif-nuevo')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button><h3 style="margin-top:0;">Nuevo Anuncio General</h3><p style="font-size:13px; color:var(--text-secondary); margin-top:-5px;">Les llega a todos los usuarios activos. Cada uno lo ve como aviso y firma el recibido.</p><div class="form-group"><label>Título</label><input type="text" id="nfTitulo" maxlength="150"></div><div class="form-group" style="margin-top:10px;"><label>Mensaje</label><textarea id="nfCuerpo" rows="8" maxlength="5000" style="resize:vertical; font:inherit;"></textarea></div><button id="btn-nf-publicar" onclick="publicarAnuncio()" style="width:100%; margin-top:15px;">Publicar Anuncio</button><button onclick="cerrarM('m-notif-nuevo')" class="btn-secondary" style="width:100%; margin-top:8px;">Cancelar</button></div></div>
+
+<div id="m-notif-det" class="modal hidden"><div class="modal-content" style="width:800px;"><button class="close-x" onclick="cerrarM('m-notif-det')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button><h3 id="nd-titulo" style="margin-top:0; padding-right:30px;"></h3><div id="nd-info" style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;"></div><div class="filters" style="padding:10px; margin-bottom:10px;"><input type="text" id="nd-buscar" placeholder="Buscar legajo o nombre..." oninput="renderDetalleNotif()" style="flex:1; min-width:160px;"><select id="nd-filtro" onchange="renderDetalleNotif()"><option value="">Todos</option><option value="firmado">Firmaron</option><option value="visto">Vieron sin firmar</option><option value="nada">No lo vieron</option></select></div><div class="tabla-rapida"><table><thead><tr><th>Legajo</th><th>Nombre</th><th>Sucursal</th><th>Visto</th><th>Firmado</th></tr></thead><tbody id="nd-body"></tbody></table></div><button id="nd-reporte" onclick="bajarReporteNotif()" style="width:100%; margin-top:15px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Descargar Reporte</button><button onclick="cerrarM('m-notif-det')" class="btn-secondary" style="width:100%; margin-top:8px;">Cerrar</button></div></div>
+
 <!-- Modal Política de Privacidad -->
 <div id="m-privacidad" class="modal hidden">
     <div class="modal-content" style="max-width: 550px; width: 90%;">
@@ -540,7 +564,7 @@
         document.getElementById('mainSidebar').classList.toggle('active-mobile');
     }
 
-    function esc(s) { return String(s||"").replace(/[&<>'"]/g, m => ({'&':'&','<':'<','>':'>',"'":"'",'"':'"'}[m])); }
+    function esc(s) { return String(s??"").replace(/[&<>'"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m])); }
     function v(id) { return document.getElementById(id).value; }
     function timeToMins(t) { if(!t) return 0; let p = t.split(':'); return parseInt(p[0])*60 + parseInt(p[1]); }
     
@@ -561,6 +585,8 @@
         if(dG.rol === 1) {
             document.getElementById('nav-t-ajustes').classList.add('hidden');
             document.getElementById('hub-ajustes').classList.add('hidden');
+            document.getElementById('nav-t-notif').classList.add('hidden');
+            document.getElementById('hub-notif').classList.add('hidden');
             document.getElementById('btn-sub-identidad').classList.add('hidden');
             document.getElementById('btn-sub-sucursales').classList.add('hidden');
             
@@ -622,7 +648,12 @@
             headerActions.innerHTML = `<button onclick="document.getElementById('m-franco').classList.remove('hidden')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Asignar Medio Franco</button>`;
             renderFrancos(); 
         }
-        if(id==='t-corporativa') { 
+        if(id==='t-notif') {
+            headerTitle.innerHTML = 'Notificaciones';
+            headerActions.innerHTML = `<button onclick="abrirNuevoAnuncio()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Nuevo Anuncio</button>`;
+            cargarNotif(notifPagina);
+        }
+        if(id==='t-corporativa') {
             headerTitle.innerHTML = 'Estructura Organizacional';
             if(dG.rol === 1) switchCorpTab('sub-personal'); 
             else switchCorpTab('sub-identidad'); 
@@ -632,6 +663,85 @@
             headerTitle.innerHTML = 'Ajustes del Sistema';
             switchAjustesTab('sub-parametros'); renderConfig(); renderConceptos(); 
         }
+    }
+
+    // === NOTIFICACIONES (anuncios generales; solo admin) ===
+    let notifPagina = 1, notifDetalle = null;
+
+    async function cargarNotif(pagina) {
+        let r = await fetch('/api/anuncios/admin?pagina=' + pagina);
+        if(!r.ok) { alert('No se pudieron cargar las notificaciones.'); return; }
+        let d = await r.json();
+        if(d.pagina > d.paginas) return cargarNotif(d.paginas);
+        notifPagina = d.pagina;
+        document.getElementById('b-notif').innerHTML = d.anuncios.map(a => {
+            let estado = a.anulado_en ? `<span class="badge badge-danger">Anulado</span>` : `<span class="badge badge-success">Vigente</span>`;
+            let anular = a.anulado_en ? '' : `<button class="btn-secondary" style="color:var(--danger); border-color:var(--danger); padding:4px 8px; font-size:12px;" onclick="anularAnuncio(${a.id})">Anular</button>`;
+            return `<tr><td><span class="mono" style="color:var(--text-muted);">#${a.id}</span></td><td><b style="color:var(--text-primary);">${esc(a.titulo)}</b><br><small style="color:var(--text-muted);">${esc(a.creado_por_nombre)}</small></td><td><span class="mono">${esc((a.creado_en||'').slice(0,16))}</span></td><td>${estado}</td><td><b>${a.vistos}</b> / ${a.destinatarios}</td><td><b>${a.firmados}</b> / ${a.destinatarios}</td><td><button class="btn-secondary" style="padding:4px 8px; font-size:12px; margin-right:5px;" onclick="verDetalleNotif(${a.id})">Ver detalles</button>${anular}</td></tr>`;
+        }).join('') || '<tr><td colspan="7" style="text-align:center; color:var(--text-muted);"><i>Todavía no hay anuncios publicados.</i></td></tr>';
+
+        // Paginas: anterior, hasta 2 a cada lado de la actual, siguiente.
+        let html = '';
+        if(d.paginas > 1) {
+            html += `<button class="btn-secondary" ${d.pagina === 1 ? 'disabled' : ''} onclick="cargarNotif(${d.pagina - 1})">&laquo;</button>`;
+            for(let p = Math.max(1, d.pagina - 2); p <= Math.min(d.paginas, d.pagina + 2); p++)
+                html += `<button class="${p === d.pagina ? '' : 'btn-secondary'}" onclick="cargarNotif(${p})">${p}</button>`;
+            html += `<button class="btn-secondary" ${d.pagina === d.paginas ? 'disabled' : ''} onclick="cargarNotif(${d.pagina + 1})">&raquo;</button>`;
+            html += `<span style="align-self:center; font-size:13px; color:var(--text-muted); margin-left:8px;">Página ${d.pagina} de ${d.paginas} (${d.total} anuncios)</span>`;
+        }
+        document.getElementById('notif-paginador').innerHTML = html;
+    }
+
+    function abrirNuevoAnuncio() {
+        document.getElementById('nfTitulo').value = '';
+        document.getElementById('nfCuerpo').value = '';
+        document.getElementById('m-notif-nuevo').classList.remove('hidden');
+    }
+
+    async function publicarAnuncio() {
+        let titulo = v('nfTitulo').trim(), cuerpo = v('nfCuerpo').trim();
+        if(!titulo || !cuerpo) { alert('Completá el título y el mensaje.'); return; }
+        if(!confirm('El anuncio se envía a todos los usuarios activos. ¿Publicarlo?')) return;
+        let btn = document.getElementById('btn-nf-publicar');
+        btn.disabled = true;
+        try {
+            if(await postData('/api/anuncios/admin/crear', {titulo, cuerpo})) { cerrarM('m-notif-nuevo'); cargarNotif(1); }
+        } finally { btn.disabled = false; }
+    }
+
+    async function anularAnuncio(id) {
+        if(!confirm('¿Anular el anuncio #' + id + '? Deja de mostrarse a los empleados; el registro de vistos y firmas se conserva.')) return;
+        if(await postData(`/api/anuncios/admin/${id}/anular`, {})) cargarNotif(notifPagina);
+    }
+
+    async function verDetalleNotif(id) {
+        let r = await fetch('/api/anuncios/admin/' + id);
+        if(!r.ok) { alert('No se pudo cargar el detalle.'); return; }
+        notifDetalle = await r.json();
+        let a = notifDetalle.anuncio, l = notifDetalle.lecturas;
+        document.getElementById('nd-titulo').innerText = `#${a.id} ${a.titulo}`;
+        document.getElementById('nd-info').innerHTML = `Publicado <span class="mono">${esc((a.creado_en||'').slice(0,16))}</span> por ${esc(a.creado_por_nombre || a.creado_por)}`
+            + (a.anulado_en ? ` &middot; <span class="badge badge-danger">Anulado ${esc(a.anulado_en.slice(0,16))}</span>` : '')
+            + `<br><b>${l.filter(x => x.visto_en).length}</b> vieron &middot; <b>${l.filter(x => x.firmado_en).length}</b> firmaron &middot; ${l.length} destinatarios`
+            + `<div style="white-space:pre-wrap; margin-top:10px; padding:10px; background:var(--bg-page); border-radius:6px; max-height:120px; overflow:auto; color:var(--text-primary);">${esc(a.cuerpo)}</div>`;
+        document.getElementById('nd-buscar').value = '';
+        document.getElementById('nd-filtro').value = '';
+        renderDetalleNotif();
+        document.getElementById('m-notif-det').classList.remove('hidden');
+    }
+
+    function renderDetalleNotif() {
+        let t = v('nd-buscar').toLowerCase(), f = v('nd-filtro');
+        let filas = notifDetalle.lecturas.filter(x =>
+            (!t || (x.nombre || '').toLowerCase().includes(t) || x.dni.includes(t)) &&
+            (!f || (f === 'firmado' && x.firmado_en) || (f === 'visto' && x.visto_en && !x.firmado_en) || (f === 'nada' && !x.visto_en)));
+        let celda = (fecha) => fecha ? `<span class="badge badge-success">Sí</span> <span class="mono" style="font-size:12px;">${esc(fecha.slice(0,16))}</span>` : `<span class="badge badge-neutral">No</span>`;
+        document.getElementById('nd-body').innerHTML = filas.map(x => `<tr><td><span class="mono">${esc(x.dni)}</span></td><td>${esc(x.nombre)}</td><td>${esc(x.sucursal)}</td><td>${celda(x.visto_en)}</td><td>${celda(x.firmado_en)}</td></tr>`).join('')
+            || '<tr><td colspan="5" style="text-align:center; color:var(--text-muted);"><i>Sin resultados.</i></td></tr>';
+    }
+
+    function bajarReporteNotif() {
+        if(notifDetalle) window.open(`/api/anuncios/admin/${notifDetalle.anuncio.id}/reporte`, '_blank');
     }
 
     function renderHubPreviews() {
