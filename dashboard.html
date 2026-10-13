@@ -238,6 +238,7 @@
                     <h2 id="hub-empresa-nombre" style="margin:0; font-size:24px; color:var(--text-primary);">Panel de Administración</h2>
                     <p style="color:var(--text-secondary); font-size:15px;">Seleccione el módulo al que desea ingresar.</p>
                 </div>
+                <div id="aviso-version" class="hidden" style="background:var(--badge-info-bg); color:var(--badge-info-text); border:1px solid var(--accent); border-radius:10px; padding:15px 20px; margin-bottom:25px; font-size:14px; line-height:1.6;"></div>
                 <div class="hub-grid">
                     <div class="hub-card" onclick="ver('t-asist')">
                         <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Asistencias</h3>
@@ -452,7 +453,7 @@
             <svg width="24" height="24" viewBox="0 0 203 281" style="opacity:0.3; margin-bottom:5px;">
                 <path d="M 73.0,261.5 L 62.0,261.5 L 49.0,256.5 L 45.5,253.0 L 43.5,247.0 L 45.5,237.0 L 51.0,232.5 L 61.0,231.5 L 68.5,236.0 L 78.0,252.5 L 86.0,252.5 L 92.5,240.0 L 94.5,219.0 L 47.0,218.5 L 44.5,216.0 L 44.5,212.0 L 89.0,146.5 L 89.5,188.0 L 74.5,210.0 L 94.5,210.0 L 94.5,83.0 L 74.0,86.5 L 63.0,92.5 L 54.5,103.0 L 50.5,114.0 L 46.0,114.5 L 44.5,113.0 L 44.5,80.0 L 52.0,73.5 L 94.5,73.0 L 93.5,33.0 L 91.5,29.0 L 87.0,26.5 L 70.0,24.5 L 70.0,19.5 L 140.0,19.5 L 141.0,24.5 L 127.0,27.5 L 123.5,34.0 L 123.5,73.0 L 158.0,73.5 L 161.5,76.0 L 161.5,80.0 L 129.0,128.5 L 128.5,88.0 L 132.5,81.0 L 123.5,81.0 L 122.5,208.0 L 137.0,206.5 L 148.0,200.5 L 158.5,183.0 L 160.5,175.0 L 166.0,173.5 L 166.5,214.0 L 163.0,218.5 L 121.0,218.5 L 113.5,238.0 L 101.0,251.5 L 88.0,258.5 L 73.0,261.5 Z" fill="#ffffff" stroke="#000000" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
             </svg>
-            <span>Powered by <a href="https://jz-tech.mywire.org" target="_blank">JZ Tech Solutions</a></span>
+            <span>Powered by <a href="https://jz-tech.mywire.org" target="_blank">JZ Tech Solutions</a> &middot; <span id="version-instalada" class="mono"></span></span>
             <span style="display:flex; gap:10px;">
                 <a href="#" onclick="document.getElementById('m-privacidad').classList.remove('hidden'); return false;">Privacidad</a> | 
                 <a href="#" onclick="document.getElementById('m-terminos').classList.remove('hidden'); return false;">Términos de Uso</a>
@@ -608,8 +609,25 @@
         let selEmpsDataList = dG.usuarios.map(u => `<option value="${esc(u.nombre)} - ${esc(u.dni)}">`).join('');
         ['cFranDniList', 'cFranDniList2'].forEach(id => {if(document.getElementById(id)) document.getElementById(id).innerHTML = selEmpsDataList;});
         
-        if(dG.rol > 1) return location.href='/'; 
-        verHub(); 
+        if(dG.rol > 1) return location.href='/';
+        document.getElementById('version-instalada').innerText = 'JZPass v' + (dG.version || '');
+        verHub();
+        if(dG.rol === 0) avisoVersion();
+    }
+
+    // Aviso de version nueva publicada en GitHub (solo admin). Solo informa: se actualiza en el servidor.
+    async function avisoVersion() {
+        try {
+            let r = await fetch('/api/admin/actualizacion');
+            if(!r.ok) return;
+            let d = await r.json();
+            if(!d.hay_nueva) return;
+            let caja = document.getElementById('aviso-version');
+            caja.innerHTML = `<b>Hay una versión nueva de JZPass: v${esc(d.version_nueva)}</b> (instalada: v${esc(d.version_actual)})`
+                + (d.url && d.url.startsWith('https://github.com/') ? ` &middot; <a href="${esc(d.url)}" target="_blank" rel="noopener" style="color:inherit; font-weight:600;">Ver qué cambia</a>` : '')
+                + `<br>Para actualizar, en el servidor: con Docker <code>sudo bash install.sh</code> en la carpeta de la instalación (respalda la base antes); sin Docker <code>sudo jzpass-actualizar</code>.`;
+            caja.classList.remove('hidden');
+        } catch(e) {}
     }
     
     function verHub() {

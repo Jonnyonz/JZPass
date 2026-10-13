@@ -2,9 +2,17 @@
 
 Cambios de JZPass, del más nuevo al más viejo. Cada entrada corresponde a un push a `main`.
 
-## Sin versión todavía (2026-10-06 / 2026-10-13)
+## 2.7.0 — 2026-10-13
 
-### Agregado (anuncios generales con firma de recibido, 2026-10-13)
+Tag `v2.7.0`, publicado en GitHub Releases. Junta los cambios posteriores a 2.6.0.
+
+### Agregado (aviso de versión nueva)
+- El administrador ve en el inicio del panel un aviso cuando hay una versión más nueva publicada en GitHub
+  Releases, con el enlace a qué cambia y cómo actualizar (`sudo bash install.sh` con Docker, `sudo jzpass-actualizar`
+  sin Docker). Solo informa: no descarga ni cambia nada. La consulta se guarda una hora; sin internet no muestra
+  nada. La versión instalada se ve al pie del panel. Necesita salida a internet hacia `api.github.com`.
+
+### Agregado (anuncios generales con firma de recibido)
 - Módulo **Notificaciones** en el panel (solo administrador): publicar un anuncio (título y mensaje) que les llega
   a todos los usuarios activos en ese momento. Listado de 10 por página con vistos y firmados de cada anuncio,
   botón **Anular** (deja de mostrarse a los empleados; el registro se conserva) y **Ver detalles**: tabla

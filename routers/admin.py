@@ -1,8 +1,11 @@
 import asyncio
 import csv
 import io
+import json
 import os
 import re
+import time
+import urllib.request
 import uuid
 from datetime import datetime, timedelta
 
@@ -11,7 +14,7 @@ from fastapi.responses import JSONResponse, Response
 
 from jztech_core import sessions
 
-from database import DB, get_db, requiere_panel, hash_pw, gen_temp_pw, check_magic_bytes, logger
+from database import DB, VERSION, get_db, requiere_panel, hash_pw, gen_temp_pw, check_magic_bytes, logger
 
 
 class CSVInvalido(ValueError):
@@ -45,7 +48,45 @@ async def get_datos(request: Request, adm: dict = Depends(requiere_panel)):
         sucs = [dict(r) for r in await db.fetch("SELECT * FROM sucursales")]
         fer = [dict(r) for r in await db.fetch("SELECT * FROM feriados ORDER BY fecha DESC")]
 
-        return {"rol": adm['rol'], "sucursal": adm['sucursal'], "usuarios": usuarios, "fichajes": fichajes, "sucursales": sucs, "francos": fr, "feriados": fer, "solicitudes": sol, "convocados": conv, "config": cfg, "tipos_solicitud": tipos}
+        return {"version": VERSION, "rol": adm['rol'], "sucursal": adm['sucursal'], "usuarios": usuarios, "fichajes": fichajes, "sucursales": sucs, "francos": fr, "feriados": fer, "solicitudes": sol, "convocados": conv, "config": cfg, "tipos_solicitud": tipos}
+
+
+# === AVISO DE VERSION NUEVA (GitHub Releases) ===
+# Solo informa: la actualizacion se aplica en el servidor (install.sh con Docker, jzpass-actualizar sin Docker),
+# nunca descargando codigo desde la app. Se guarda una hora: sin token GitHub permite 60 consultas por hora.
+_ultima_consulta = {"t": 0.0, "datos": None}
+
+
+def _version_tupla(v: str):
+    partes = []
+    for p in str(v).lower().lstrip("v").strip().split(".")[:3]:
+        partes.append(int(p) if p.isdigit() else 0)
+    return tuple(partes + [0] * (3 - len(partes)))
+
+
+def _ultima_publicada() -> dict:
+    req = urllib.request.Request("https://api.github.com/repos/Jonnyonz/JZPass/releases/latest",
+                                 headers={"User-Agent": "JZPass-UpdateCheck", "Accept": "application/vnd.github+json"})
+    with urllib.request.urlopen(req, timeout=10) as r:
+        d = json.loads(r.read().decode("utf-8"))
+    return {"tag": d.get("tag_name") or "v0.0.0", "nombre": d.get("name") or "", "notas": (d.get("body") or "")[:4000],
+            "publicada": d.get("published_at") or "", "url": d.get("html_url") or ""}
+
+
+@router.get("/api/admin/actualizacion")
+async def consultar_actualizacion(adm: dict = Depends(requiere_panel)):
+    if adm['rol'] != 0: return JSONResponse(status_code=403, content={"msg": "Acceso denegado."})
+    if _ultima_consulta["datos"] is None or time.monotonic() - _ultima_consulta["t"] > 3600:
+        try:
+            _ultima_consulta["datos"] = await asyncio.to_thread(_ultima_publicada)
+            _ultima_consulta["t"] = time.monotonic()
+        except Exception as e:
+            # Sin internet o GitHub caido: no es un error de la app. Se reintenta en la proxima consulta.
+            logger.warning("No se pudo consultar la ultima version publicada: %r", e)
+            return {"version_actual": VERSION, "hay_nueva": False, "error": "No se pudo consultar las versiones publicadas."}
+    d = _ultima_consulta["datos"]
+    return {"version_actual": VERSION, "version_nueva": d["tag"].lstrip("v"), "hay_nueva": _version_tupla(d["tag"]) > _version_tupla(VERSION),
+            "nombre": d["nombre"], "notas": d["notas"], "publicada": d["publicada"], "url": d["url"]}
 
 
 @router.post("/api/admin/{action}")

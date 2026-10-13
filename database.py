@@ -12,6 +12,9 @@ from jztech_core import sessions
 from jztech_core.passwords import hash_password, needs_rehash, verify_legacy_password, verify_password
 
 logger = logging.getLogger("jzpass")
+
+# Version instalada (una sola fuente). Se sube al publicar cada version en GitHub Releases (tag v<VERSION>).
+VERSION = "2.7.0"
 from slowapi import Limiter
 
 
