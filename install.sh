@@ -215,9 +215,11 @@ if compose ps --status running --services 2>/dev/null | grep -qx jzpass-db; then
 fi
 
 
-# 6. Construir y levantar (--remove-orphans saca el contenedor de Caddy de las instalaciones anteriores)
+# 6. Construir y levantar. Sin --remove-orphans: en un servidor compartido Docker puede contar como "huerfanos"
+#    del proyecto contenedores de otras aplicaciones y los borraria. El Caddy de las instalaciones anteriores se
+#    saca por su nombre.
 echo "Construyendo y levantando los contenedores (la primera vez tarda unos minutos)..."
-compose up -d --build --quiet-pull --remove-orphans
+compose up -d --build --quiet-pull
 if docker ps -a --format '{{.Names}}' | grep -qx jzpass_caddy; then
   docker rm -f jzpass_caddy > /dev/null
 fi

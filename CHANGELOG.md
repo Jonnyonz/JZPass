@@ -2,6 +2,14 @@
 
 Cambios de JZPass, del más nuevo al más viejo. Cada entrada corresponde a un push a `main`.
 
+## Sin versión todavía (2026-10-13)
+
+### Corregido (instalador con Docker)
+- `install.sh` ya no levanta los contenedores con `--remove-orphans`. En un servidor compartido, Docker puede
+  contar como "huérfanos" del proyecto contenedores de otras aplicaciones que quedaron con la misma etiqueta de
+  proyecto, y los borraba. El contenedor de Caddy de las instalaciones 2.6.0 se sigue sacando por su nombre
+  (`jzpass_caddy`).
+
 ## 2.7.0 — 2026-10-13
 
 Tag `v2.7.0`, publicado en GitHub Releases. Junta los cambios posteriores a 2.6.0.
@@ -38,7 +46,7 @@ Tag `v2.7.0`, publicado en GitHub Releases. Junta los cambios posteriores a 2.6.
 
 ### Cómo migra una instalación existente
 - Con Docker: volver a correr `sudo bash install.sh` en la carpeta de la instalación. Respalda la base, saca el
-  contenedor `jzpass_caddy` (`--remove-orphans` y `docker rm -f`), la carpeta `caddy/` y las claves que ya no se
+  contenedor `jzpass_caddy` (`docker rm -f`), la carpeta `caddy/` y las claves que ya no se
   usan del `.env` (`CADDY_*`, `JZPASS_HTTPS`, `JZPASS_IP`, `COMPOSE_PROFILES=https`), y la app pasa a escuchar en
   `0.0.0.0` (un `APP_BIND=127.0.0.1` puesto a mano sin Caddy se respeta). Los volúmenes de certificados de
   Caddy no se borran solos: el instalador muestra el `docker volume rm`. Una instalación anterior a Caddy
