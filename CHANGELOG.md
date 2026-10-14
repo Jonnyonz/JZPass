@@ -2,7 +2,14 @@
 
 Cambios de JZPass, del más nuevo al más viejo. Cada entrada corresponde a un push a `main`.
 
-## Sin versión todavía (2026-10-13)
+## 2.7.1 — 2026-10-14
+
+Tag `v2.7.1`, publicado en GitHub Releases. Junta los cambios posteriores a 2.7.0.
+
+### Cambiado (firma de anuncios)
+- Para firmar el recibido de un anuncio se escribe el DNI en vez de la contraseña (nadie la recordaba). Acepta
+  el DNI con o sin puntos; tiene que ser el del usuario que tiene la sesión abierta. Sigue el límite de 5
+  intentos por minuto.
 
 ### Corregido (instalador con Docker)
 - `install.sh` ya no levanta los contenedores con `--remove-orphans`. En un servidor compartido, Docker puede

@@ -279,13 +279,13 @@
         </div>
     </div>
 
-    <!-- Modal de firma de aviso (pide la contraseña) -->
+    <!-- Modal de firma de aviso (pide el DNI) -->
     <div id="m-firma" class="modal hidden">
         <div class="modal-content">
             <button class="close-x" onclick="cerrarModal('m-firma')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
             <h3 style="margin-top:0;">Firmar recibido</h3>
-            <p style="font-size:13px; color:var(--text-secondary);">Con tu contraseña confirmás que leíste y recibiste este aviso. Queda registrado con fecha y hora.</p>
-            <input type="password" id="fa-pass" placeholder="Tu contraseña" autocomplete="current-password" onkeydown="if(event.key==='Enter') confirmarFirma()">
+            <p style="font-size:13px; color:var(--text-secondary);">Con tu DNI confirmás que leíste y recibiste este aviso. Queda registrado con fecha y hora.</p>
+            <input type="text" inputmode="numeric" id="fa-dni" placeholder="Tu DNI" autocomplete="off" onkeydown="if(event.key==='Enter') confirmarFirma()">
             <button class="btn-green" id="btn-fa" onclick="confirmarFirma()">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
                 Firmar
@@ -591,25 +591,25 @@
             if(a && !a.visto_en) { a.visto_en = 'ahora'; req(`/api/anuncios/${id}/visto`); }
         }
 
-        // La firma pide la contraseña: deja constancia de que fue el titular y no un clic sin querer.
+        // La firma pide el DNI: deja constancia de que fue a propósito y no un clic sin querer.
         let anuncioAFirmar = null;
         function firmarAnuncio(id) {
             anuncioAFirmar = id;
-            document.getElementById('fa-pass').value = '';
+            document.getElementById('fa-dni').value = '';
             document.getElementById('fa-msg').innerText = '';
             document.getElementById('m-firma').classList.remove('hidden');
-            document.getElementById('fa-pass').focus();
+            document.getElementById('fa-dni').focus();
         }
 
         async function confirmarFirma() {
-            let pass = document.getElementById('fa-pass').value, msg = document.getElementById('fa-msg'), btn = document.getElementById('btn-fa');
-            if(!pass) { msg.innerText = 'Ingresá tu contraseña.'; return; }
+            let dni = document.getElementById('fa-dni').value.trim(), msg = document.getElementById('fa-msg'), btn = document.getElementById('btn-fa');
+            if(!dni) { msg.innerText = 'Ingresá tu DNI.'; return; }
             btn.disabled = true;
-            let r = await req(`/api/anuncios/${anuncioAFirmar}/firmar`, {password: pass});
+            let r = await req(`/api/anuncios/${anuncioAFirmar}/firmar`, {dni: dni});
             btn.disabled = false;
             if(!r.ok) {
                 msg.innerText = r.status === 429 ? 'Demasiados intentos. Esperá un minuto.' : (r.data.msg || 'No se pudo registrar.');
-                if(r.status !== 400 || !String(r.data.msg).startsWith('Contraseña')) cargarAnuncios();
+                if(r.status !== 400 || !String(r.data.msg).startsWith('DNI')) cargarAnuncios();
                 return;
             }
             cerrarModal('m-firma');
