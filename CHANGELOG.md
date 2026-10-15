@@ -2,6 +2,19 @@
 
 Cambios de JZPass, del más nuevo al más viejo. Cada entrada corresponde a un push a `main`.
 
+## 2.7.2 — 2026-10-15
+
+Tag `v2.7.2`.
+
+### Cambiado (dependencias alineadas en las cuatro apps)
+- Mismas versiones en Tracker360, JZPass, JZTravell y JZ Middle: FastAPI 0.143.1 (Starlette 1.8.0), Uvicorn
+  0.54.0, Pydantic 2.14.1, asyncpg 0.32.0, argon2-cffi 25.1.0, httpx 0.28.1, bcrypt 5.0.0 y `jztech-core` 0.1.6.
+  Las dependencias indirectas se actualizaron a su última versión compatible. Todas tienen binarios para
+  Python 3.11 a 3.13 (la instalación sin Docker sigue sin necesitar compilador).
+- FastAPI agrega desde la 0.142 la dependencia `opentelemetry-api` (paquete oficial de OpenTelemetry).
+- `jztech-core` 0.1.6: con bcrypt 5, una clave de más de 72 caracteres contra un hash bcrypt viejo ya no da error.
+- Se quita la clave `version:` del `docker-compose.yml` (Docker la ignora y avisa que es obsoleta).
+
 ## 2.7.1 — 2026-10-14
 
 Tag `v2.7.1`, publicado en GitHub Releases. Junta los cambios posteriores a 2.7.0.

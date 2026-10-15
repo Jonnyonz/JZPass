@@ -57,13 +57,13 @@ el empleado tiene que cambiar en su primer ingreso.
 | Componente | Versión |
 |---|---|
 | Python | 3.11 en la imagen (`python:3.11-slim`); también probado en 3.13 |
-| FastAPI / Starlette | 0.141.1 / 1.7.0 |
+| FastAPI / Starlette | 0.143.1 / 1.8.0 |
 | Uvicorn | 0.54.0 |
-| asyncpg | 0.31.0 (SQL directo, sin ORM) |
+| asyncpg | 0.32.0 (SQL directo, sin ORM) |
 | itsdangerous | 2.2.0 (tokens CSRF firmados) |
 | slowapi | 0.1.10 (rate limit) |
 | PostgreSQL | 15 (imagen `postgres:15-alpine`) |
-| [jztech-core](https://github.com/Jonnyonz/jztech-core) | 0.1.4 (librería de seguridad común de JZTech) |
+| [jztech-core](https://github.com/Jonnyonz/jztech-core) | 0.1.6 (librería de seguridad común de JZTech) |
 
 Dependencias fijadas con hash: `requirements.in` (directas) → `requirements.txt` (lockfile,
 se instala con `pip install --require-hashes`).
