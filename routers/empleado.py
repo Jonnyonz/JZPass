@@ -28,6 +28,8 @@ async def emp_datos(request: Request, user: dict = Depends(requiere_sesion)):
         cfg_row = await db.fetchrow("SELECT * FROM configuracion WHERE id=1")
         cfg = dict(cfg_row) if cfg_row else {}
         tipos = [dict(r) for r in await db.fetch("SELECT * FROM tipos_solicitud")]
+        fh = await db.fetchrow("SELECT fecha_hora, salida_manual FROM fichajes WHERE dni=$1 AND fecha_hora LIKE $2 ORDER BY id DESC LIMIT 1", user['dni'], f"{datetime.now().strftime('%Y-%m-%d')}%")
+        fichaje_hoy = {"entrada": fh['fecha_hora'][11:16], "salida": fh['salida_manual']} if fh else None
 
         mis_emp = []
         mis_conv = []
@@ -40,7 +42,7 @@ async def emp_datos(request: Request, user: dict = Depends(requiere_sesion)):
             mis_francos = [dict(r) for r in await db.fetch("SELECT m.fecha, m.turno, u.nombre FROM mediofrancos m JOIN usuarios u ON m.dni=u.dni WHERE u.sucursal=$1", u['sucursal'])]
             mis_solic = [dict(r) for r in await db.fetch("SELECT s.fecha_ausencia, s.fecha_fin, s.concepto, u.nombre FROM solicitudes s JOIN usuarios u ON s.dni=u.dni WHERE u.sucursal=$1 AND s.estado='APROBADA'", u['sucursal'])]
 
-        return {"nombre": u['nombre'], "rol": u['rol'], "sucursal": u['sucursal'], "dias_vacaciones": u['dias_vacaciones'], "solicitudes": sol, "feriados": fer, "francos": fran, "config": cfg, "tipos_solicitud": tipos, "mis_empleados": mis_emp, "mis_convocatorias": mis_conv, "loc_francos": mis_francos, "loc_solic": mis_solic}
+        return {"nombre": u['nombre'], "rol": u['rol'], "sucursal": u['sucursal'], "dias_vacaciones": u['dias_vacaciones'], "solicitudes": sol, "feriados": fer, "francos": fran, "config": cfg, "tipos_solicitud": tipos, "mis_empleados": mis_emp, "mis_convocatorias": mis_conv, "loc_francos": mis_francos, "loc_solic": mis_solic, "fichaje_hoy": fichaje_hoy}
 
 
 @router.post("/api/fichar")

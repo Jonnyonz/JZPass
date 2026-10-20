@@ -2,6 +2,24 @@
 
 Cambios de JZPass, del más nuevo al más viejo. Cada entrada corresponde a un push a `main`.
 
+## 2.7.3 — 2026-10-20
+
+Tag `v2.7.3`.
+
+### Agregado (fichaje más claro para el empleado)
+- Al fichar aparece un aviso grande en el centro de la pantalla: verde con tilde y "ENTRADA REGISTRADA" o
+  "SALIDA REGISTRADA" con la hora, o rojo con cruz y "NO SE REGISTRÓ" con el motivo (fuera de rango, anti-rebote,
+  jornada mínima, sin ubicación, etc.). Vibra en el celular. Se cierra con "Entendido", tocando afuera o con Esc.
+- Cartel arriba en la vista del empleado con lo que ya fichó hoy: "Ya marcaste tu ENTRADA hoy a las HH:MM" o
+  "Ya marcaste tu SALIDA hoy a las HH:MM (entrada HH:MM)".
+- El botón cambia según el día: "Registrar Fichaje" sin fichar, "Marcar Salida" en rojo después de la entrada y
+  "Jornada finalizada" (bloqueado) después de la salida.
+- `GET /api/empleado/datos` devuelve `fichaje_hoy` (`{entrada, salida}` o `null`).
+
+### Cambiado
+- Panel de solicitudes: las solicitudes culminadas ya no muestran "Revocar Aprobación" (ni en la tarjeta ni en
+  "ver más").
+
 ## 2.7.2 — 2026-10-15
 
 Tag `v2.7.2`.

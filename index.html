@@ -177,6 +177,8 @@
             <span id="d-vacaciones" class="badge badge-warning"></span>
         </div>
 
+        <div id="f-estado" class="hidden" style="text-align:center; padding:12px; border-radius:8px; margin-bottom:20px; font-size:15px; font-weight:600;"></div>
+
         <div id="anuncios-box" class="hidden" style="margin-bottom:20px;">
             <h3 style="display:flex; align-items:center; gap:8px; font-size:16px;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
@@ -260,6 +262,17 @@
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
             Cerrar Sesión
         </button>
+    </div>
+
+    <!-- Aviso de resultado del fichaje -->
+    <div id="m-fichaje" class="modal hidden" onclick="cerrarModal('m-fichaje')">
+        <div class="modal-content" style="text-align:center; max-width:360px;" role="alertdialog" aria-live="assertive">
+            <div id="fa-icono" style="width:84px; height:84px; border-radius:50%; margin:0 auto 15px; display:flex; align-items:center; justify-content:center; color:#fff;"></div>
+            <h2 id="fa-titulo" style="margin:0 0 8px;"></h2>
+            <div id="fa-hora" style="font-size:32px; font-weight:700; margin-bottom:8px;"></div>
+            <p id="fa-detalle" style="color:var(--text-secondary); margin:0 0 20px;"></p>
+            <button onclick="cerrarModal('m-fichaje')">Entendido</button>
+        </div>
     </div>
 
     <!-- Modal para Asignar Franco -->
@@ -528,6 +541,8 @@
             }
 
             tipos_sol = d.tipos_solicitud || [];
+            fichajeHoy = d.fichaje_hoy || null;
+            pintarFichaje();
             document.getElementById('d-nombre').innerText = d.nombre;
             document.getElementById('d-sucursal').innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-bottom:-2px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> Sede: ${d.sucursal}`;
             document.getElementById('d-vacaciones').innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-bottom:-2px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> Vacaciones: ${d.dias_vacaciones} días`;
@@ -673,6 +688,49 @@
             }
         }
 
+        let fichajeHoy = null;
+        const ICO_PIN = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>';
+        const ICO_SALIR = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>';
+
+        // Estado del dia: sin fichar -> Registrar Fichaje; con entrada -> Marcar Salida (rojo); con salida -> jornada cerrada
+        function pintarFichaje() {
+            let btn = document.getElementById('btn-fichar');
+            let est = document.getElementById('f-estado');
+            let f = fichajeHoy;
+            btn.classList.toggle('btn-red', !!(f && !f.salida));
+            btn.disabled = !!(f && f.salida);
+            if (!f) {
+                btn.innerHTML = ICO_PIN + ' Registrar Fichaje';
+                est.classList.add('hidden');
+                return;
+            }
+            est.classList.remove('hidden');
+            if (!f.salida) {
+                btn.innerHTML = ICO_SALIR + ' Marcar Salida';
+                est.className = 'badge-success';
+                est.innerText = `✔ Ya marcaste tu ENTRADA hoy a las ${f.entrada}`;
+            } else {
+                btn.innerHTML = ICO_PIN + ' Jornada finalizada';
+                est.className = 'badge-info';
+                est.innerText = `✔ Ya marcaste tu SALIDA hoy a las ${f.salida} (entrada ${f.entrada})`;
+            }
+        }
+
+        function avisoFichaje(ok, detalle) {
+            let ico = document.getElementById('fa-icono');
+            ico.style.background = ok ? 'var(--success)' : 'var(--danger)';
+            ico.innerHTML = ok
+                ? '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>'
+                : '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+            let titulo = !ok ? 'NO SE REGISTRÓ' : /^Salida/.test(detalle) ? 'SALIDA REGISTRADA' : 'ENTRADA REGISTRADA';
+            document.getElementById('fa-titulo').innerText = titulo;
+            document.getElementById('fa-titulo').style.color = ok ? 'var(--success)' : 'var(--danger)';
+            document.getElementById('fa-hora').innerText = ok ? new Date().toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit', hourCycle:'h23'}) : '';
+            document.getElementById('fa-detalle').innerText = ok ? 'Tu fichaje quedó guardado.' : detalle + ' Intentá de nuevo o avisá a tu encargado.';
+            document.getElementById('m-fichaje').classList.remove('hidden');
+            if (navigator.vibrate) navigator.vibrate(ok ? 200 : [150, 100, 150]);
+        }
+
         function ficharGPS() {
             let msg = document.getElementById('f-msg');
             let btn = document.getElementById('btn-fichar');
@@ -686,10 +744,16 @@
                 let r = await req('/api/fichar', {lat: pos.coords.latitude, lon: pos.coords.longitude});
                 msg.style.color = r.ok ? 'var(--success)' : 'var(--danger)';
                 msg.innerText = r.data.msg || "Operación fallida.";
-                setTimeout(() => { btn.disabled = false; }, 5000);
+                avisoFichaje(r.ok, msg.innerText);
+                if (r.ok) {
+                    let r2 = await fetch('/api/empleado/datos');
+                    if (r2.ok) cargarDatos(await r2.json());
+                }
+                setTimeout(() => { btn.disabled = !!(fichajeHoy && fichajeHoy.salida); }, 5000);
             }, (err) => {
                 msg.style.color = 'var(--danger)'; msg.innerText = "Acceso a la ubicación denegado.";
-                btn.disabled = false;
+                avisoFichaje(false, "No pudimos obtener tu ubicación.");
+                btn.disabled = !!(fichajeHoy && fichajeHoy.salida);
             }, {enableHighAccuracy: true, timeout: 15000});
         }
 
