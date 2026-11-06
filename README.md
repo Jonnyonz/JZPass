@@ -43,10 +43,15 @@ El ingreso es con **DNI (o legajo) y clave**. Hay tres roles (`usuarios.rol`):
 manual y corrección de entradas), Gestión de Solicitudes, Calendario General (feriados y
 convocatorias), Medios Francos, Estructura Organizacional (identidad, sucursales, personal) y
 Ajustes del Sistema (parámetros, conceptos, importación). Reporte consolidado en Excel por rango
-de fechas y sucursal.
+de fechas y sucursal, resumido o detallado; incluye a los empleados dados de baja cuyo último día
+cae dentro del período (hasta su fecha de baja).
 
 **Altas de personal:** al crear un usuario (a mano o por CSV) se genera una clave temporal que
 el empleado tiene que cambiar en su primer ingreso.
+
+**Bajas:** al pasar un empleado a Inactivo, el legajo muestra la **fecha de baja** (último día que se
+informa en el reporte); si se deja vacía toma la del día y se puede corregir después. Los inactivos no
+pueden ingresar y se ven en Personal con "Mostrar inactivos".
 
 ---
 
@@ -95,7 +100,7 @@ La app crea el esquema sola al arrancar (y agrega columnas nuevas si faltan):
 
 | Tabla | Contenido |
 |---|---|
-| `usuarios` | Personal (clave: `dni`): rol, sucursal, horario, saldo de vacaciones, hash de clave, bloqueo, datos de contacto |
+| `usuarios` | Personal (clave: `dni`): rol, sucursal, horario, saldo de vacaciones, hash de clave, bloqueo, datos de contacto, estado activo/inactivo y fecha de baja |
 | `sucursales` | Nombre, coordenadas (para el GPS) y horarios, incluidos los de feriado |
 | `fichajes` | Entradas y salidas con ubicación, distancia a la sucursal y llegada tarde |
 | `solicitudes`, `tipos_solicitud` | Solicitudes del personal y los conceptos que las definen |
