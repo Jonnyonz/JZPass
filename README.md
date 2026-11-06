@@ -30,8 +30,8 @@ El ingreso es con **DNI (o legajo) y clave**. Hay tres roles (`usuarios.rol`):
 | Empleado | `2` | Fichar, ver su historial y saldo de vacaciones, crear y cancelar solicitudes. |
 
 **Empleado y encargado** (`/`, app móvil instalable): pestañas Fichaje, Permisos y Legajo; el encargado suma
-**Aprobar** (solicitudes pendientes de su sucursal, si en Ajustes está activo "encargados aprueban"), **Agenda** y
-un acceso al panel. El administrador no administra desde la app: usa `/panel`. La campana muestra los anuncios con firma de recibido. En el celular se instala desde el menú
+**Aprobar** (solicitudes pendientes de su sucursal, si en Ajustes está activo "encargados aprueban") y un acceso
+al panel; el administrador suma **Agenda** y la pestaña **Admin**, que abre el panel `/panel`. La campana muestra los anuncios con firma de recibido. En el celular se instala desde el menú
 del navegador ("Agregar a la pantalla de inicio" / "Instalar app"): abre a pantalla completa y conserva el
 cascarón sin red, pero el fichaje y las solicitudes exigen conexión. Tema claro/oscuro.
 - **Fichaje con GPS:** el navegador toma la ubicación y el servidor calcula la distancia a la
@@ -42,7 +42,7 @@ cascarón sin red, pero el fichaje y las solicitudes exigen conexión. Tema clar
 - **Solicitudes** según los conceptos definidos por el admin (algunos exigen foto o documento
   adjunto, algunos descuentan días de vacaciones). Las vacaciones se piden con un aviso previo
   mínimo configurable.
-- **Agenda** (encargado y administrador): calendario con feriados, vacaciones aprobadas, medios francos y
+- **Agenda** (solo administrador): calendario con feriados, vacaciones aprobadas, medios francos y
   convocatorias, y la lista de medios francos propios.
 
 **Panel** (`/panel`, admin y encargado), en siete secciones: Inicio, Asistencias (con salida

@@ -2,6 +2,16 @@
 
 Cambios de JZPass, del más nuevo al más viejo. Cada entrada corresponde a un push a `main`.
 
+## 2.10.2 — 2026-11-06
+
+Tag `v2.10.2`.
+
+### Arreglado
+- **El administrador administra desde la app:** pestaña **Admin** en la barra inferior (abre el panel `/panel`) y
+  botón "Administrar el sistema" en Legajo. La 2.10.1 lo había quitado por una mala lectura del pedido.
+- **Agenda solo para el administrador:** el encargado tampoco la ve (en 2.10.1 la conservaba). El empleado sigue sin
+  verla. El encargado conserva su acceso al panel desde Legajo.
+
 ## 2.10.1 — 2026-11-06
 
 Tag `v2.10.1`.
