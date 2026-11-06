@@ -2,6 +2,7 @@ import os
 import asyncio
 import logging
 import secrets
+import hashlib
 import ipaddress
 import asyncpg
 from contextlib import asynccontextmanager
@@ -14,7 +15,7 @@ from jztech_core.passwords import hash_password, needs_rehash, verify_legacy_pas
 logger = logging.getLogger("jzpass")
 
 # Version instalada (una sola fuente). Se sube al publicar cada version en GitHub Releases (tag v<VERSION>).
-VERSION = "2.8.0"
+VERSION = "2.9.0"
 from slowapi import Limiter
 
 
@@ -151,6 +152,10 @@ async def init_db_schema():
         await conn.execute('''CREATE TABLE IF NOT EXISTS anuncio_lecturas (anuncio_id INTEGER REFERENCES anuncios(id) ON DELETE CASCADE, dni TEXT, visto_en TEXT, firmado_en TEXT, firma_ip TEXT, PRIMARY KEY(anuncio_id, dni))''')
         await conn.execute("CREATE INDEX IF NOT EXISTS anuncio_lecturas_dni ON anuncio_lecturas (dni)")
 
+        # Claves de API (Ajustes del Sistema > Integraciones): solo lectura, "Authorization: Bearer jzp_...",
+        # guardadas como SHA-256 (la clave entera se muestra una sola vez). Revocar = revocada_en.
+        await conn.execute('''CREATE TABLE IF NOT EXISTS claves_api (id SERIAL PRIMARY KEY, nombre TEXT NOT NULL, clave_hash TEXT NOT NULL UNIQUE, pista TEXT NOT NULL, creada_en TIMESTAMPTZ NOT NULL DEFAULT now(), creada_por TEXT, ultimo_uso TIMESTAMPTZ, revocada_en TIMESTAMPTZ)''')
+
     await conn.close()
 
     DB.pool = await asyncpg.create_pool(DATABASE_URL, min_size=5, max_size=25)
@@ -261,3 +266,24 @@ async def requiere_panel(user: dict = Depends(requiere_sesion)) -> dict:
         adm = await db.fetchrow("SELECT * FROM usuarios WHERE dni=$1", user['dni'])
     if not adm or adm['rol'] not in (0, 1): raise ErrorAuth(403, "Privilegios insuficientes")
     return dict(adm)
+
+
+def hash_clave_api(clave: str) -> str:
+    return hashlib.sha256(clave.encode()).hexdigest()
+
+
+async def requiere_clave_api(request: Request) -> dict:
+    """Rutas /api/v1: "Authorization: Bearer jzp_..." generada en Ajustes del Sistema > Integraciones. Solo
+    lectura, sin sesion ni CSRF. Rechaza con 401 + WWW-Authenticate y {"detail": ...}, como Flex y Tracker."""
+    auth = request.headers.get("authorization", "")
+    clave = auth[7:].strip() if auth[:7].lower() == "bearer " else ""
+    bearer = {"WWW-Authenticate": "Bearer"}
+    if not clave.startswith("jzp_"):
+        raise HTTPException(status_code=401, detail="Falta la clave de API (Authorization: Bearer jzp_...).", headers=bearer)
+    async with get_db() as db:
+        fila = await db.fetchrow(
+            "UPDATE claves_api SET ultimo_uso = now() WHERE clave_hash = $1 AND revocada_en IS NULL RETURNING id, nombre",
+            hash_clave_api(clave))
+    if fila is None:
+        raise HTTPException(status_code=401, detail="Clave de API inválida o revocada.", headers=bearer)
+    return {"id": fila["id"], "nombre": fila["nombre"]}

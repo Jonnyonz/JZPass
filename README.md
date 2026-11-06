@@ -83,6 +83,7 @@ JZPass/
 │   ├── auth.py          # login, logout, CSRF, cambio de clave, configuración inicial
 │   ├── empleado.py      # datos del empleado, fichaje, solicitudes
 │   ├── admin.py         # datos del panel, acciones de administración, reporte Excel
+│   ├── integraciones.py # claves de API (/api/claves) y API de solo lectura /api/v1
 │   └── archivos.py      # descarga de adjuntos
 ├── index.html           # login + vista de empleado
 ├── dashboard.html       # panel de admin/encargado
@@ -107,6 +108,7 @@ La app crea el esquema sola al arrancar (y agrega columnas nuevas si faltan):
 | `mediofrancos`, `feriados`, `feriados_convocados` | Medio francos, feriados (y qué sucursales abren) y personal convocado |
 | `configuracion` | Una sola fila (`id=1`) con los parámetros del sistema |
 | `jztech_sessions` | Sesiones abiertas: hash del token, DNI y vencimiento |
+| `claves_api` | Claves de API para integraciones: nombre, hash SHA-256, pista `jzp_ab12…`, último uso, revocada |
 
 ### Seguridad
 
@@ -294,6 +296,26 @@ Columnas: `dni` y `nombre` (obligatorias); `rol` (0/1/2, default 2), `sucursal`,
 es nuevo se genera una clave temporal y el resultado de la importación muestra las credenciales.
 
 ---
+
+## API para integraciones (n8n, planillas, WhatsApp)
+
+Desde **Ajustes del Sistema → Integraciones (API)** (administrador) se generan claves de API de solo lectura,
+`jzp_...`: se muestran una sola vez, se guardan como hash y se revocan desde la misma pantalla. Se mandan en cada
+pedido como `Authorization: Bearer jzp_...` (sin sesión ni CSRF). Los errores vienen como `{"detail": "..."}` y
+sin clave responde 401 con `WWW-Authenticate: Bearer`, igual que Flex y Tracker360.
+
+- `GET /api/v1/reportes/asistencia?desde=AAAA-MM-DD&hasta=AAAA-MM-DD&sucursal=&dni=&tipo=resumido|detallado&formato=json|csv`:
+  el mismo reporte del panel (incluye a los dados de baja cuyo último día cae en el rango; máximo un año).
+  `resumido` devuelve por empleado días trabajados, llegadas tarde, faltas con sus fechas, horas y vacaciones;
+  `detallado` devuelve las jornadas (fecha, día, estado, ingreso, salida, horas, tarde, medio franco, motivos).
+  `formato=csv` baja el mismo archivo `;` que el botón del panel.
+- `GET /api/v1/empleados?sucursal=&activos=true`: personal sin datos de contacto ni claves (`activos=false` suma
+  los dados de baja con su fecha).
+- `GET /api/v1/sucursales`: nombre y horarios de cierre.
+
+Con n8n: nodo *Schedule* al cierre del día, nodo *HTTP Request* al reporte con `desde` y `hasta` del día y la clave
+en una credencial *Header Auth* (`Authorization: Bearer jzp_...`), y de ahí el mensaje (WhatsApp, correo) o la
+planilla. No hace falta un usuario de solo lectura en Postgres.
 
 ## Operación
 

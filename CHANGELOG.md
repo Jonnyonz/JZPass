@@ -2,6 +2,30 @@
 
 Cambios de JZPass, del más nuevo al más viejo. Cada entrada corresponde a un push a `main`.
 
+## 2.9.0 — 2026-11-06
+
+Tag `v2.9.0`. Tabla nueva `claves_api` (se crea sola al arrancar).
+
+### Agregado (API para integraciones, como en Flex y Tracker360)
+- **Claves de API** en Ajustes del Sistema > Integraciones (API), solo administrador: se generan con un nombre, se
+  muestran una sola vez (`jzp_...`), se guardan como hash SHA-256, se ve el último uso y se revocan desde la misma
+  pantalla. Se mandan como `Authorization: Bearer jzp_...`, sin sesión ni CSRF. Solo lectura.
+- **API `/api/v1`** con esa clave: `GET /api/v1/reportes/asistencia?desde&hasta&sucursal&dni&tipo=resumido|detallado&formato=json|csv`
+  (el mismo reporte del panel, incluidos los dados de baja dentro del período; `csv` baja el mismo archivo),
+  `GET /api/v1/empleados?sucursal&activos` (sin contacto ni claves) y `GET /api/v1/sucursales`. Errores con
+  `{"detail": ...}` y 401 con `WWW-Authenticate: Bearer`, como las otras apps.
+- Sirve para armar un informe automático (n8n → WhatsApp, planilla) sin crear un usuario de solo lectura en la base.
+
+### Cambiado
+- El cálculo del reporte quedó en `calcular_asistencia` + `resumen_asistencia` + `csv_asistencia` (admin.py) y lo
+  comparten el CSV del panel y la API; el CSV no cambia.
+- `jztech-core` 0.1.7: el test de rutas protegidas vuelve a ver las rutas de los routers con FastAPI 0.143 (antes
+  pasaba en vacío) y ahora comprueba sesión en todo salvo `/api/v1`, y clave de API en `/api/v1`.
+
+### Por qué
+- Flex y Tracker ya tenían API con clave y JZPass no: para automatizar el reporte por WhatsApp hubo que crear un
+  usuario de solo lectura en Postgres. Ese usuario ya se puede dar de baja.
+
 ## 2.8.0 — 2026-11-06
 
 Tag `v2.8.0`.

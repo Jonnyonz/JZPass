@@ -387,6 +387,7 @@
                     <button id="btn-sub-parametros" onclick="switchAjustesTab('sub-parametros')" class="active-sub">Configuración General</button>
                     <button id="btn-sub-conceptos" onclick="switchAjustesTab('sub-conceptos')">Tipos de Solicitudes</button>
                     <button id="btn-sub-import" onclick="switchAjustesTab('sub-import')">Importación de Datos (CSV)</button>
+                    <button id="btn-sub-api" onclick="switchAjustesTab('sub-api')">Integraciones (API)</button>
                 </div>
                 
                 <div id="sub-parametros" class="subtab-content">
@@ -446,6 +447,17 @@
                         <button onclick="if(document.getElementById('csv_file').files[0]) accion('importar_csv', {archivo_csv: document.getElementById('csv_file').files[0]}); else alert('Archivo requerido.')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Ejecutar Importación</button>
                     </div>
                 </div>
+                <div id="sub-api" class="subtab-content hidden">
+                    <div class="settings-group">
+                        <h4>Claves de API</h4>
+                        <p style="color:var(--text-secondary); font-size:13px; max-width:900px;">Para que otra herramienta (n8n, una planilla, un informe por WhatsApp) lea los datos de JZPass sin usuario ni clave de ingreso. Solo lectura. Cada clave se muestra una sola vez al generarla y se manda en cada pedido como <span class="mono">Authorization: Bearer jzp_...</span>. Reporte de asistencia (el mismo del panel): <span class="mono">GET /api/v1/reportes/asistencia?desde=AAAA-MM-DD&amp;hasta=AAAA-MM-DD&amp;sucursal=&amp;dni=&amp;tipo=resumido|detallado&amp;formato=json|csv</span>. También <span class="mono">GET /api/v1/empleados</span> y <span class="mono">GET /api/v1/sucursales</span>.</p>
+                        <div class="form-grid">
+                            <div class="form-group"><label>Para qué es la clave</label><input type="text" id="k_nombre" maxlength="60" placeholder="n8n, informe del gerente"></div>
+                            <div class="form-group"><label>&nbsp;</label><button id="btn-generar-clave" onclick="generarClave()">Generar clave</button></div>
+                        </div>
+                        <div class="table-responsive"><table><thead><tr><th>Nombre</th><th>Clave</th><th>Creada</th><th>Último uso</th><th>Acción</th></tr></thead><tbody id="b-claves"></tbody></table></div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -463,6 +475,7 @@
 </div>
 
 <!-- MODAL VER MÁS -->
+<div id="m-clave" class="modal hidden"><div class="modal-content"><button class="close-x" onclick="cerrarM('m-clave')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button><h3 style="margin-top:0;">Clave de API</h3><p>Clave <b id="k-nombre"></b>. Copiala y guardala en la herramienta que la va a usar: no se vuelve a mostrar.</p><p class="mono" id="k-valor" style="word-break:break-all; background:var(--filter-bg); border:1px solid var(--border); padding:10px; border-radius:6px; user-select:all;"></p><button onclick="cerrarM('m-clave')" style="width:100%;">Listo</button></div></div>
 <div id="m-ver-mas" class="modal hidden">
     <div class="modal-content" style="max-width: 650px; width: 95%;">
         <button class="close-x" onclick="cerrarM('m-ver-mas')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
@@ -858,10 +871,39 @@
         document.getElementById('btn-' + id).classList.add('active-sub');
     }
     function switchAjustesTab(id) {
-        ['sub-parametros', 'sub-conceptos', 'sub-import'].forEach(t => document.getElementById(t).classList.add('hidden'));
-        ['btn-sub-parametros', 'btn-sub-conceptos', 'btn-sub-import'].forEach(b => document.getElementById(b).classList.remove('active-sub'));
+        ['sub-parametros', 'sub-conceptos', 'sub-import', 'sub-api'].forEach(t => document.getElementById(t).classList.add('hidden'));
+        ['btn-sub-parametros', 'btn-sub-conceptos', 'btn-sub-import', 'btn-sub-api'].forEach(b => document.getElementById(b).classList.remove('active-sub'));
         document.getElementById(id).classList.remove('hidden');
         document.getElementById('btn-' + id).classList.add('active-sub');
+        if(id === 'sub-api') cargarClaves();
+    }
+
+    // === INTEGRACIONES: claves de API (solo lectura, /api/v1) ===
+    async function cargarClaves() {
+        let r = await fetch('/api/claves'); if(!r.ok) return;
+        let claves = await r.json();
+        let f = s => s ? new Date(s).toLocaleString('es-AR', {dateStyle:'short', timeStyle:'short'}) : '-';
+        document.getElementById('b-claves').innerHTML = claves.length ? claves.map(c => `<tr><td><b style="color:var(--text-primary);">${esc(c.nombre)}</b></td><td><span class="mono">${esc(c.pista)}</span></td><td>${f(c.creada_en)}</td><td>${f(c.ultimo_uso)}</td><td><button class="btn-secondary" style="color:var(--danger); border-color:var(--danger); padding:6px 12px; font-size:12px;" onclick="revocarClave(${c.id})">Revocar</button></td></tr>`).join('') : '<tr><td colspan="5" style="color:var(--text-secondary);">No hay claves generadas.</td></tr>';
+    }
+    async function generarClave() {
+        let nombre = v('k_nombre').trim();
+        if(!nombre) { alert('Escribí para qué es la clave (Ej: n8n).'); return; }
+        let btn = document.getElementById('btn-generar-clave'); btn.disabled = true;
+        try {
+            let fd = new FormData(); fd.append('nombre', nombre);
+            let r = await fetch('/api/claves', {method:'POST', body:fd, headers:{'X-CSRF-Token': csrfToken}});
+            let resp = await r.json();
+            if(!r.ok) { alert(resp.msg || 'Fallo operacional.'); return; }
+            document.getElementById('k-nombre').textContent = resp.nombre;
+            document.getElementById('k-valor').textContent = resp.clave;
+            document.getElementById('k_nombre').value = '';
+            document.getElementById('m-clave').classList.remove('hidden');
+            cargarClaves();
+        } finally { btn.disabled = false; }
+    }
+    async function revocarClave(id) {
+        if(!confirm('¿Revocar la clave? La herramienta que la usa va a dejar de poder leer datos.')) return;
+        if(await postData('/api/claves/' + id + '/revocar', {})) cargarClaves();
     }
 
     function renderAsist() {

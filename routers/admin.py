@@ -352,13 +352,12 @@ async def admin_actions(request: Request, action: str, adm: dict = Depends(requi
     return {"msg": "ok"}
 
 
-@router.get("/api/reporte_excel")
-async def reporte_excel(request: Request, d_desde: str, d_hasta: str, suc: str="", dni: str="", tipo: str="resumido", adm: dict = Depends(requiere_panel)):
-    if tipo not in ("resumido", "detallado"):
-        return JSONResponse(status_code=400, content={"msg": "Tipo de reporte no válido."})
-    if adm['rol'] == 1:
-        suc = adm['sucursal']
+DIAS_SEMANA = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
 
+
+async def calcular_asistencia(d_desde: str, d_hasta: str, suc: str = "", dni: str = "") -> list[dict]:
+    """Empleados del rango con sus jornadas evaluadas con las reglas de la liquidacion. La usan el CSV del panel
+    y la API v1. Inactivos: solo si su fecha de baja cae en el rango, y hasta esa fecha."""
     desde = datetime.strptime(d_desde, "%Y-%m-%d")
     hasta = datetime.strptime(d_hasta, "%Y-%m-%d")
     async with get_db() as db:
@@ -392,10 +391,6 @@ async def reporte_excel(request: Request, d_desde: str, d_hasta: str, suc: str="
         fer_map = {r['fecha']: r['sucs_abren'] for r in await db.fetch("SELECT fecha, sucs_abren FROM feriados WHERE fecha BETWEEN $1 AND $2", d_desde, d_hasta)}
         convocados_set = {(r['dni'], r['fecha']) for r in await db.fetch("SELECT dni, fecha FROM feriados_convocados WHERE fecha BETWEEN $1 AND $2", d_desde, d_hasta)}
         multidias_db = [dict(r) for r in await db.fetch("SELECT s.dni, s.concepto, s.fecha_ausencia, s.fecha_fin, ts.descuenta_dias, ts.horas_por_dia FROM solicitudes s JOIN tipos_solicitud ts ON s.concepto=ts.nombre WHERE ts.tipo='DIAS' AND s.estado='APROBADA'")]
-
-    output = io.StringIO()
-    writer = csv.writer(output, delimiter=';', quotechar='"')
-    def scsv(v): return "'" + str(v) if str(v).startswith(('=','+','-','@')) else str(v)
 
     def evaluar_dia(e, curr):
         # Una jornada de un empleado, con las reglas de la liquidacion. None: dia posterior a la baja (no se informa).
@@ -456,32 +451,63 @@ async def reporte_excel(request: Request, d_desde: str, d_hasta: str, suc: str="
             if d is not None: yield d
             curr += timedelta(days=1)
 
+
+    return [{"dni": e['dni'], "nombre": e['nombre'], "sucursal": e['sucursal'], "jornadas": list(jornadas(e))} for e in empleados]
+
+
+def resumen_asistencia(emp: dict) -> dict:
+    """Totales de un empleado a partir de sus jornadas (la fila del reporte resumido)."""
+    r = {"dias_trabajados": 0, "llegadas_tarde": 0, "faltas": 0, "fechas_faltas": [], "horas": 0, "dias_vacaciones": 0}   # 0 entero: sin horas el CSV dice 0, no 0.0
+    for d in emp["jornadas"]:
+        r["horas"] += d["horas"]
+        if d["trabajado"]: r["dias_trabajados"] += 1
+        if d["tarde"]: r["llegadas_tarde"] += 1
+        if d["vacacion"]: r["dias_vacaciones"] += 1
+        if d["falta"]: r["faltas"] += 1; r["fechas_faltas"].append(d["fecha"])
+    r["horas"] = round(r["horas"], 2)
+    return r
+
+
+def csv_asistencia(empleados: list[dict], tipo: str) -> str:
+    """CSV (;) del reporte resumido o detallado, con las celdas protegidas contra formulas."""
+    output = io.StringIO()
+    writer = csv.writer(output, delimiter=';', quotechar='"')
+    def scsv(v): return "'" + str(v) if str(v).startswith(('=','+','-','@')) else str(v)
+
     if tipo == "detallado":
-        dias_semana = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
         writer.writerow(['DNI', 'Nombre', 'Sucursal', 'Fecha', 'Día', 'Estado', 'Ingreso', 'Salida', 'Salida estimada', 'Horas', 'Llegada Tarde', 'Medio Franco', 'Motivo Ingreso', 'Motivo Salida'])
         for e in empleados:
-            for d in jornadas(e):
-                dia = dias_semana[datetime.strptime(d["fecha"], "%Y-%m-%d").weekday()]
+            for d in e["jornadas"]:
+                dia = DIAS_SEMANA[datetime.strptime(d["fecha"], "%Y-%m-%d").weekday()]
                 writer.writerow([scsv(e['dni']), scsv(e['nombre']), scsv(e['sucursal']), d["fecha"], dia, scsv(d["estado"]), d["ingreso"], d["salida"],
                                  "Sí" if d["salida_estimada"] else "", round(d["horas"], 2) if d["horas"] else "", "Sí" if d["tarde"] else "", d["franco"],
                                  scsv(d["motivo_entrada"]), scsv(d["motivo_salida"])])
-        nombre = "Reporte_Detallado"
     else:
         writer.writerow(['DNI', 'Nombre', 'Sucursal', 'Días Trabajados', 'Llegadas Tarde', 'Cantidad Faltas Totales', 'Fechas de Faltas', 'Horas Totales', 'Días Vacaciones Tomados'])
         for e in empleados:
-            total_hs, tardes, faltas, dias_trabajados, dias_vacaciones = 0, 0, 0, 0, 0
-            fechas_faltas = []
-            for d in jornadas(e):
-                total_hs += d["horas"]
-                if d["trabajado"]: dias_trabajados += 1
-                if d["tarde"]: tardes += 1
-                if d["vacacion"]: dias_vacaciones += 1
-                if d["falta"]: faltas += 1; fechas_faltas.append(d["fecha"])
-            faltas_str = " | ".join(fechas_faltas) if fechas_faltas else "-"
-            writer.writerow([scsv(e['dni']), scsv(e['nombre']), scsv(e['sucursal']), dias_trabajados, tardes, faltas, scsv(faltas_str), round(total_hs, 2), dias_vacaciones])
-        nombre = "Reporte_Consolidated"
+            r = resumen_asistencia(e)
+            faltas_str = " | ".join(r["fechas_faltas"]) if r["fechas_faltas"] else "-"
+            writer.writerow([scsv(e['dni']), scsv(e['nombre']), scsv(e['sucursal']), r["dias_trabajados"], r["llegadas_tarde"], r["faltas"], scsv(faltas_str), r["horas"], r["dias_vacaciones"]])
+    return output.getvalue()
 
+
+def nombre_reporte(tipo: str, dni: str, empleados: list) -> str:
+    nombre = "Reporte_Detallado" if tipo == "detallado" else "Reporte_Consolidated"
     if dni and empleados: nombre += "_" + re.sub(r'[^0-9A-Za-z]', '', str(dni))
-    r = Response(content=output.getvalue().encode('utf-8-sig'), media_type="text/csv")
+    return nombre
+
+
+def respuesta_csv(contenido: str, nombre: str) -> Response:
+    r = Response(content=contenido.encode('utf-8-sig'), media_type="text/csv")
     r.headers["Content-Disposition"] = f'attachment; filename="{nombre}.csv"'
     return r
+
+
+@router.get("/api/reporte_excel")
+async def reporte_excel(request: Request, d_desde: str, d_hasta: str, suc: str="", dni: str="", tipo: str="resumido", adm: dict = Depends(requiere_panel)):
+    if tipo not in ("resumido", "detallado"):
+        return JSONResponse(status_code=400, content={"msg": "Tipo de reporte no válido."})
+    if adm['rol'] == 1:
+        suc = adm['sucursal']
+    empleados = await calcular_asistencia(d_desde, d_hasta, suc, dni)
+    return respuesta_csv(csv_asistencia(empleados, tipo), nombre_reporte(tipo, dni, empleados))

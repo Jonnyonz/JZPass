@@ -6,4 +6,4 @@ bcrypt==5.0.0
 slowapi==0.1.10
 itsdangerous==2.2.0
 python-multipart==0.0.32
-jztech-core @ https://github.com/Jonnyonz/jztech-core/releases/download/v0.1.6/jztech_core-0.1.6-py3-none-any.whl
+jztech-core @ https://github.com/Jonnyonz/jztech-core/releases/download/v0.1.7/jztech_core-0.1.7-py3-none-any.whl
