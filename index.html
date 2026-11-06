@@ -1,874 +1,660 @@
 <!DOCTYPE html>
-<html lang="es" data-theme="light">
+<html lang="es" data-tone="fiel">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="icon" type="image/png" href="/api/archivo/favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#2962ff">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="JZ PASS">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="icon" href="/icono.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/icono.svg">
     <title>JZPass - Acceso Personal</title>
     <style>
-        :root {
-            --bg-page: #f4f6f9;
-            --bg-surface: #ffffff;
-            --accent: #2962ff;
-            --accent-hover: #1f4fd1;
-            --success: #00c853;
-            --danger: #d50000;
-            --warning: #ffc107;
-            --text-primary: #212529;
-            --text-secondary: #666666;
-            --text-muted: #999999;
-            --border: #e0e0e0;
-            
-            --badge-success-bg: #e8f5e9; --badge-success-text: #1b5e20;
-            --badge-danger-bg: #ffebee; --badge-danger-text: #b71c1c;
-            --badge-warning-bg: #fff8e1; --badge-warning-text: #f57f17;
-            --badge-info-bg: #e3f2fd; --badge-info-text: #0d47a1;
-            --badge-neutral-bg: #f5f5f5; --badge-neutral-text: #616161;
-        }
-        [data-theme="dark"] {
-            --bg-page: #121212;
-            --bg-surface: #1e1e1e;
-            --accent: #4475ff;
-            --accent-hover: #5c8aff;
-            --success: #00e676;
-            --danger: #ff5252;
-            --warning: #ffd740;
-            --text-primary: #e0e0e0;
-            --text-secondary: #aaaaaa;
-            --text-muted: #777777;
-            --border: #333333;
-            
-            --badge-success-bg: rgba(0, 200, 83, 0.15); --badge-success-text: #69f0ae;
-            --badge-danger-bg: rgba(213, 0, 0, 0.15); --badge-danger-text: #ff8a80;
-            --badge-warning-bg: rgba(255, 193, 7, 0.15); --badge-warning-text: #ffe57f;
-            --badge-info-bg: rgba(41, 98, 255, 0.15); --badge-info-text: #82b1ff;
-            --badge-neutral-bg: rgba(255,255,255,0.1); --badge-neutral-text: #cccccc;
-        }
+        /* Diseño: design_handoff_jzpass_mobile (tono "fiel"; data-tone="expresivo" en <html> cambia a header y hero azules). */
+        :root{--bg:#f4f6f9;--sf:#ffffff;--sf2:#f8f9fa;--ac:#2962ff;--ach:#1f4fd1;--ok:#00c853;--dg:#d50000;--wn:#ffc107;--tp:#212529;--ts:#666666;--tm:#999999;--bd:#e0e0e0;
+        --bs:#e8f5e9;--ts_:#1b5e20;--bd_:#ffebee;--td:#b71c1c;--bw:#fff8e1;--tw:#f57f17;--bi:#e3f2fd;--ti:#0d47a1;--bn:#f5f5f5;--tn:#616161;
+        --r:10px;--rl:12px;--hdr:#ffffff;--hdrtx:#212529;--hdrbd:#e0e0e0;--hero:#ffffff;--herotx:#212529;--sh:0 2px 8px rgba(0,0,0,.04)}
+        [data-theme="dark"]{--bg:#121212;--sf:#1e1e1e;--sf2:#181818;--ac:#4475ff;--ach:#5c8aff;--ok:#00e676;--dg:#ff5252;--wn:#ffd740;--tp:#e0e0e0;--ts:#aaaaaa;--tm:#777777;--bd:#333333;
+        --bs:rgba(0,200,83,.15);--ts_:#69f0ae;--bd_:rgba(213,0,0,.15);--td:#ff8a80;--bw:rgba(255,193,7,.15);--tw:#ffe57f;--bi:rgba(41,98,255,.15);--ti:#82b1ff;--bn:rgba(255,255,255,.1);--tn:#cccccc;
+        --hdr:#1e1e1e;--hdrtx:#e0e0e0;--hdrbd:#333333;--hero:#1e1e1e;--herotx:#e0e0e0;--sh:0 2px 8px rgba(0,0,0,.35)}
+        [data-tone="expresivo"]{--r:18px;--rl:22px;--hdr:#2962ff;--hdrtx:#ffffff;--hdrbd:#2962ff;--hero:#2962ff;--herotx:#ffffff;--sh:0 6px 20px rgba(16,24,40,.08)}
+        [data-theme="dark"][data-tone="expresivo"]{--hdr:#1a1c22;--hdrtx:#e0e0e0;--hdrbd:#333;--hero:#1c2a5e;--herotx:#ffffff;--sh:0 6px 20px rgba(0,0,0,.5)}
 
-        body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg-page); color: var(--text-primary); margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; transition: background 0.3s, color 0.3s;}
-        .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-        
-        .top-bar { position: fixed; top: 0; left: 0; right: 0; height: 4px; background: var(--accent); z-index: 9999; }
-        
-        .header { width: 100%; padding: 40px 0 20px 0; text-align: center; }
-        .header h1 { margin: 0; font-size: 28px; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; justify-content: center; gap: 10px;}
-        .header span { font-size: 14px; color: var(--text-secondary); }
-        
-        .card { background: var(--bg-surface); padding: 35px 25px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); width: 85%; max-width: 400px; margin-top: 10px; box-sizing: border-box; border: 1px solid var(--border); }
-        h2, h3 { color: var(--text-primary); margin-top: 0; font-weight: 600; }
-        h2 { text-align: center; font-size: 20px; margin-bottom: 25px;}
-        
-        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid var(--border); border-radius: 8px; box-sizing: border-box; font-size: 15px; background: var(--bg-page); color: var(--text-primary); outline: none; transition: 0.2s;}
-        input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(41,98,255,0.15); }
-        
-        button { width: 100%; padding: 14px; background: var(--accent); color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 15px; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px;}
-        button:hover { background: var(--accent-hover); }
-        button:active { transform: scale(0.98); }
-        button:disabled { background: var(--text-muted); cursor: not-allowed; opacity: 0.8; }
-        
-        .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); }
-        .btn-secondary:hover { background: var(--bg-page); color: var(--text-primary); }
-        .btn-red { background: var(--danger); } .btn-red:hover { filter: brightness(1.1); background: var(--danger); }
-        .btn-green { background: var(--success); } .btn-green:hover { filter: brightness(1.1); background: var(--success); }
-        
-        .hidden { display: none !important; }
-        .error { color: var(--danger); font-size: 13px; text-align: center; margin-top: 15px; font-weight: 600; }
-        .success { color: var(--success); font-size: 13px; text-align: center; margin-top: 15px; font-weight: 600; }
-        
-        .badge { padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight:600; display: inline-flex; align-items: center; gap: 4px;}
-        .badge-info { background: var(--badge-info-bg); color: var(--badge-info-text); }
-        .badge-warning { background: var(--badge-warning-bg); color: var(--badge-warning-text); }
-        .badge-success { background: var(--badge-success-bg); color: var(--badge-success-text); }
-        .badge-danger { background: var(--badge-danger-bg); color: var(--badge-danger-text); }
-        .badge-neutral { background: var(--badge-neutral-bg); color: var(--badge-neutral-text); }
-        
-        .loader { border: 2px solid var(--bg-page); border-top: 2px solid white; border-radius: 50%; width: 16px; height: 16px; animation: spin 1s linear infinite; margin: 0 auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        *{box-sizing:border-box}
+        html,body{height:100%}
+        body{margin:0;background:var(--bg);color:var(--tp);font-family:system-ui,-apple-system,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased}
+        a{color:var(--ac);text-decoration:none}a:hover{color:var(--ach)}
+        button{font-family:inherit}
+        .mono{font-family:ui-monospace,Menlo,monospace}
+        .hidden{display:none !important}
+        .app{max-width:520px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;position:relative;background:var(--bg)}
 
-        .modal { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:flex; justify-content:center; align-items:center; z-index:999; backdrop-filter: blur(2px);}
-        .modal-content { background:var(--bg-surface); padding:25px; border-radius:10px; width:90%; max-width: 450px; max-height: 90vh; overflow-y: auto; position: relative; border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.1);}
-        .close-x { position: absolute; top: 15px; right: 15px; cursor: pointer; color: var(--text-muted); background: none; border: none; padding: 5px; transition: 0.2s; width: auto; margin:0;}
-        .close-x:hover { color: var(--danger); background: var(--bg-page); border-radius: 4px;}
-        
-        .cal-header { text-align: center; font-weight: 600; padding: 8px; background: var(--bg-page); color: var(--text-secondary); border-radius: 4px; font-size:12px; border: 1px solid var(--border);}
-        .cal-day { min-height: 70px; border: 1px solid var(--border); padding: 4px; background: var(--bg-surface); border-radius: 4px; display:flex; flex-direction:column; font-size:11px;}
-        .cal-num { font-weight: 600; font-size:13px; margin-bottom: 4px; color: var(--text-primary);}
-        .cal-badge { font-size: 9px; padding: 3px 4px; border-radius: 4px; margin-bottom: 2px; font-weight:600; word-wrap:break-word; line-height:1.2;}
+        /* Login, setup y cambio de clave */
+        .auth{flex:1;display:flex;flex-direction:column;justify-content:center;padding:0 30px;padding-top:env(safe-area-inset-top);position:relative}
+        .auth::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:var(--ac)}
+        .auth-logo{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:34px}
+        .auth-logo h1{margin:0;font:800 26px/1 system-ui,sans-serif;letter-spacing:-.02em}
+        .auth-logo p{margin:0;font:400 13px/1 system-ui,sans-serif;color:var(--ts)}
+        .card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);box-shadow:var(--sh);padding:15px}
+        .card-l{border-radius:var(--rl)}
+        .auth .card{padding:26px 22px;display:flex;flex-direction:column;gap:12px}
+        label.lbl{font:600 12px/1 system-ui,sans-serif;color:var(--ts)}
+        .field{display:flex;align-items:center;gap:10px;border:1px solid var(--bd);background:var(--bg);border-radius:8px;padding:0 14px}
+        .field svg{flex:none;stroke:var(--tm)}
+        .field input{flex:1;min-width:0;border:none;background:transparent;color:var(--tp);padding:13px 0;font:600 16px/1 system-ui,sans-serif;outline:none}
+        .field input.mono{font-family:ui-monospace,Menlo,monospace}
+        .btn{border:none;cursor:pointer;background:var(--ac);color:#fff;border-radius:8px;height:50px;font:600 15px/1 system-ui,sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;width:100%}
+        .btn:hover{background:var(--ach)}.btn:disabled{opacity:.6;cursor:default}
+        .btn-out{background:transparent;border:1px solid var(--dg);color:var(--dg);height:auto;padding:8px 13px;font:600 12px/1 system-ui,sans-serif;width:auto;border-radius:8px}
+        .btn-out:hover{background:var(--bd_)}
+        .msg{min-height:17px;font:600 12px/1.4 system-ui,sans-serif;color:var(--dg);text-align:center}
+        .msg.ok{color:var(--ok)}
+        .pie{text-align:center;margin-top:26px;font:400 11px/1.6 system-ui,sans-serif;color:var(--tm)}
+        .loader{width:18px;height:18px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:jzspin .8s linear infinite}
 
-        .footer { margin-top: auto; padding: 30px 10px; text-align: center; font-size: 12px; color: var(--text-muted); width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px;}
-        .footer a { color: var(--text-secondary); text-decoration: none; font-weight: 600; transition: 0.2s; }
-        .footer a:hover { color: var(--accent); }
-        .theme-toggle { position: absolute; top: 15px; right: 15px; background: transparent; border: 1px solid var(--border); color: var(--text-primary); width: 36px; height: 36px; padding: 0; border-radius: 8px;}
+        /* App */
+        .hdr{flex:none;background:var(--hdr);color:var(--hdrtx);border-bottom:1px solid var(--hdrbd);padding:12px 18px 14px;padding-top:calc(12px + env(safe-area-inset-top));display:flex;align-items:center;justify-content:space-between;gap:10px;position:sticky;top:0;z-index:5}
+        .hdr-l{display:flex;align-items:center;gap:10px;min-width:0}
+        .hdr-t{font:700 17px/1.2 system-ui,sans-serif;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .hdr-s{font:400 11px/1.3 system-ui,sans-serif;opacity:.7;margin-top:2px}
+        .bell{flex:none;position:relative;width:38px;height:38px;border-radius:10px;border:1px solid var(--hdrbd);background:transparent;color:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center}
+        .bell .badge-n{position:absolute;top:5px;right:5px;min-width:16px;height:16px;border-radius:8px;background:var(--dg);color:#fff;font:700 10px/16px system-ui,sans-serif;text-align:center;padding:0 3px}
+        .content{flex:1;overflow-y:auto;overflow-x:hidden;padding:16px 16px 24px;display:flex;flex-direction:column;gap:14px}
+        .tabbar{flex:none;background:var(--sf);border-top:1px solid var(--bd);padding:8px 6px 14px;padding-bottom:calc(14px + env(safe-area-inset-bottom));display:flex;position:sticky;bottom:0;z-index:5}
+        .tab{flex:1;cursor:pointer;background:transparent;border:none;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 2px;color:var(--tm)}
+        .tab .pill{width:34px;height:24px;border-radius:12px;background:transparent;display:flex;align-items:center;justify-content:center;position:relative}
+        .tab span.l{font:600 9.5px/1 system-ui,sans-serif}
+        .tab.on{color:var(--ac)}.tab.on .pill{background:var(--bi)}
+        .tab .dot{position:absolute;top:-2px;right:0;width:7px;height:7px;border-radius:4px;background:var(--dg)}
+        .sec{font:700 12px/1 system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--tm);padding:4px 2px}
+        .badge{flex:none;border-radius:6px;padding:5px 9px;font:700 11px/1 system-ui,sans-serif;text-transform:uppercase;white-space:nowrap}
+        .b-pend{background:var(--bw);color:var(--tw)}.b-ok{background:var(--bs);color:var(--ts_)}.b-no{background:var(--bd_);color:var(--td)}.b-info{background:var(--bi);color:var(--ti)}.b-neu{background:var(--bn);color:var(--tn)}
+        .vacio{text-align:center;font:400 13px/1.5 system-ui,sans-serif;color:var(--tm);padding:18px 0}
 
-        .req-list { background: var(--bg-surface); border: 1px solid var(--border); padding: 12px; border-radius: 8px; margin-bottom: 10px; font-size: 13px; text-align: left; }
-        .anuncio { border-left: 4px solid var(--accent); }
-        .anuncio-cuerpo { white-space: pre-wrap; word-wrap: break-word; color: var(--text-primary); line-height: 1.5; margin-top: 10px; padding: 10px; background: var(--bg-page); border-radius: 6px; }
+        /* Fichaje */
+        .hero{background:var(--hero);color:var(--herotx);border:1px solid var(--bd);border-radius:var(--rl);box-shadow:var(--sh);padding:20px 18px;display:flex;flex-direction:column;gap:16px}
+        .hero-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+        .hero-n{font:700 19px/1.2 system-ui,sans-serif}
+        .hero-sub{font:400 12px/1.3 system-ui,sans-serif;opacity:.75;margin-top:3px}
+        .hero-row{display:flex;align-items:center;gap:16px}
+        .ring{position:relative;width:96px;height:96px;flex:none}
+        .ring svg{transform:rotate(-90deg)}
+        .ring .c{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+        .ring .h{font:700 20px/1 ui-monospace,Menlo,monospace}
+        .ring .u{font:600 9px/1 system-ui,sans-serif;letter-spacing:.08em;opacity:.65}
+        .filas{flex:1;display:flex;flex-direction:column;gap:9px;min-width:0}
+        .fila{display:flex;align-items:center;gap:8px;font:400 13px/1.2 system-ui,sans-serif}
+        .fila span{opacity:.8}.fila b{margin-left:auto;font-family:ui-monospace,Menlo,monospace}
+        .fila svg{flex:none}
+        .btn-fichar{border:none;cursor:pointer;border-radius:var(--rl);height:88px;display:flex;align-items:center;justify-content:center;gap:12px;font:700 20px/1 system-ui,sans-serif;color:#fff;background:var(--ac);box-shadow:0 8px 24px rgba(16,24,40,.16);width:100%;animation:jzpulse 2.4s infinite}
+        .btn-fichar.salir{background:var(--dg);animation:none}
+        .btn-fichar:disabled{animation:none;opacity:.7;cursor:default}
+        .f-msg{text-align:center;font:600 12px/1.4 system-ui,sans-serif;color:var(--ts);min-height:17px}
+        .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+        .atajo{text-align:left;cursor:pointer;background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);box-shadow:var(--sh);padding:14px;display:flex;flex-direction:column;gap:8px;color:var(--tp)}
+        .atajo .top{display:flex;align-items:center;justify-content:space-between}
+        .atajo .chip{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font:700 13px/1 system-ui,sans-serif}
+        .atajo b{font:700 18px/1 system-ui,sans-serif}
+        .atajo .l{font:600 12px/1.3 system-ui,sans-serif;color:var(--ts)}
+
+        /* Solicitudes */
+        .aviso{display:flex;gap:10px;background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:12px 14px;align-items:center;font:400 13px/1.3 system-ui,sans-serif;color:var(--ts)}
+        .sol{display:flex;flex-direction:column;gap:9px}
+        .sol-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+        .sol-c{font:700 14px/1.2 system-ui,sans-serif}
+        .sol-f{font:400 12px/1.2 system-ui,sans-serif;color:var(--ts);margin-top:4px}
+        .sol-m{font:400 13px/1.45 system-ui,sans-serif;color:var(--ts)}
+        .sol-a{display:flex;align-items:center;gap:8px;font:600 11px/1 system-ui,sans-serif;color:var(--tm)}
+
+        /* Agenda */
+        .cal-nav{display:flex;align-items:center;justify-content:space-between}
+        .cal-nav button{width:34px;height:34px;border-radius:8px;border:1px solid var(--bd);background:transparent;color:var(--ts);cursor:pointer;display:flex;align-items:center;justify-content:center}
+        .cal-nav span{font:700 14px/1 system-ui,sans-serif;text-transform:uppercase;letter-spacing:.04em}
+        .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+        .cal .w{text-align:center;font:600 10px/1 system-ui,sans-serif;color:var(--tm);padding:4px 0}
+        .cal .d{min-height:42px;border-radius:6px;border:1px solid var(--bd);background:var(--bg);padding:4px 3px;display:flex;flex-direction:column;align-items:center;gap:3px}
+        .cal .d span{font:600 11px/1 system-ui,sans-serif}
+        .cal .d i{width:5px;height:5px;border-radius:3px;background:transparent}
+        .cal .d.hoy{border-color:var(--ac);background:var(--bi)}.cal .d.hoy span{color:var(--ti)}
+        .cal .d.vacio{border-color:transparent;background:transparent}
+        .leyenda{display:flex;flex-wrap:wrap;gap:12px;padding-top:4px}
+        .leyenda span{display:flex;align-items:center;gap:6px;font:600 10px/1 system-ui,sans-serif;color:var(--ts)}
+        .leyenda i{width:8px;height:8px;border-radius:4px}
+        .franco{display:flex;align-items:center;gap:12px;padding:14px}
+        .franco .ic{width:36px;height:36px;flex:none;border-radius:9px;background:var(--bs);color:var(--ts_);display:flex;align-items:center;justify-content:center}
+        .franco .f{font:600 14px/1.2 system-ui,sans-serif}
+
+        /* Aprobar */
+        .banner{background:var(--bw);border:1px solid var(--wn);border-radius:var(--r);padding:13px 14px;font:600 13px/1.4 system-ui,sans-serif;color:var(--tw)}
+        .apr{display:flex;flex-direction:column;gap:11px}
+        .apr-top{display:flex;align-items:center;gap:11px}
+        .avatar{flex:none;border-radius:50%;background:var(--bi);color:var(--ti);display:flex;align-items:center;justify-content:center;font:700 13px/1 system-ui,sans-serif;width:38px;height:38px}
+        .apr-box{background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:11px 12px;font:400 12px/1.5 system-ui,sans-serif;color:var(--ts)}
+        .apr-btns{display:flex;gap:9px}
+        .apr-btns .btn{height:42px;font-size:13px;border-radius:8px;flex:1}
+        .apr-btns .ok{background:var(--ok)}.apr-btns .ok:hover{filter:brightness(.95)}
+        .apr-btns .no{background:transparent;border:1px solid var(--dg);color:var(--dg)}
+
+        /* Avisos */
+        .notif{border-left:3px solid var(--ac);display:flex;flex-direction:column;gap:6px;padding:14px}
+        .notif .t{display:flex;align-items:baseline;justify-content:space-between;gap:10px;font:600 13px/1.3 system-ui,sans-serif}
+        .notif .c{flex:none;font:600 10px/1 ui-monospace,Menlo,monospace;color:var(--tm)}
+        .notif .x{font:400 12px/1.45 system-ui,sans-serif;color:var(--ts);white-space:pre-wrap}
+
+        /* Legajo */
+        .perfil{display:flex;flex-direction:column;align-items:center;gap:6px;padding:20px}
+        .perfil .avatar{width:64px;height:64px;font-size:22px}
+        .perfil .n{font:700 18px/1.2 system-ui,sans-serif;margin-top:6px}
+        .perfil .r{font:400 12px/1.3 system-ui,sans-serif;color:var(--ts)}
+        .kv{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 14px}
+        .kv span{font:400 13px/1.2 system-ui,sans-serif;color:var(--ts)}.kv b{font:600 13px/1.2 system-ui,sans-serif;text-align:right}
+        .btn-sf{cursor:pointer;background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:14px;display:flex;align-items:center;gap:10px;color:var(--tp);font:600 13px/1 system-ui,sans-serif;width:100%}
+        .btn-salir{cursor:pointer;background:transparent;border:1px solid var(--dg);color:var(--dg);border-radius:var(--r);padding:14px;display:flex;align-items:center;justify-content:center;gap:9px;font:600 13px/1 system-ui,sans-serif;width:100%}
+
+        /* Hojas (bottom sheet) y toast */
+        .sheet-wrap{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(2px);display:flex;flex-direction:column;justify-content:flex-end;z-index:20}
+        .sheet{background:var(--sf);border-radius:22px 22px 0 0;padding:20px 18px 26px;padding-bottom:calc(26px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px;max-height:85dvh;overflow-y:auto;animation:jzup .22s ease-out;max-width:520px;width:100%;margin:0 auto}
+        .handle{width:38px;height:4px;border-radius:2px;background:var(--bd);align-self:center;margin-bottom:6px}
+        .sheet-h{display:flex;align-items:center;justify-content:space-between;font:700 17px/1 system-ui,sans-serif}
+        .sheet-h button{width:32px;height:32px;border-radius:8px;border:none;background:var(--bg);color:var(--ts);cursor:pointer;display:flex;align-items:center;justify-content:center}
+        .chips{display:flex;flex-wrap:wrap;gap:8px}
+        .chip-c{cursor:pointer;border:1px solid var(--bd);background:var(--bg);color:var(--ts);border-radius:8px;padding:9px 13px;font:600 12px/1 system-ui,sans-serif}
+        .chip-c.on{border-color:var(--ac);background:var(--bi);color:var(--ti)}
+        .fg{display:flex;flex-direction:column;gap:6px;flex:1;min-width:0}
+        .fg input,.fg textarea{border:1px solid var(--bd);background:var(--bg);border-radius:8px;padding:12px;font:600 13px/1.3 system-ui,sans-serif;color:var(--tp);width:100%;outline:none}
+        .fg input[type=date],.fg input[type=time]{font-family:ui-monospace,Menlo,monospace}
+        .fg textarea{font-weight:400;min-height:56px;resize:vertical;line-height:1.5}
+        .row2{display:flex;gap:10px}
+        .cert{border:1px dashed var(--ac);background:var(--bi);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:10px;color:var(--ti);font:600 12px/1.4 system-ui,sans-serif}
+        .cert input{font:400 12px/1.3 system-ui,sans-serif;color:var(--ti)}
+        .legal{font:400 13px/1.6 system-ui,sans-serif;color:var(--ts)}.legal p{margin:0 0 10px}
+        .toast{position:fixed;left:16px;right:16px;bottom:90px;max-width:488px;margin:0 auto;background:var(--tp);color:var(--sf);border-radius:12px;padding:14px 16px;font:600 13px/1.4 system-ui,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.3);animation:jzup .2s ease-out;z-index:30}
+
+        @keyframes jzspin{to{transform:rotate(360deg)}}
+        @keyframes jzpulse{0%{box-shadow:0 0 0 0 rgba(41,98,255,.35)}70%{box-shadow:0 0 0 18px rgba(41,98,255,0)}100%{box-shadow:0 0 0 0 rgba(41,98,255,0)}}
+        @keyframes jzup{from{transform:translateY(14px);opacity:0}to{transform:translateY(0);opacity:1}}
+        @media (prefers-reduced-motion: reduce){.btn-fichar,.sheet,.toast{animation:none}}
     </style>
 </head>
 <body>
-    <div class="top-bar"></div>
-    <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn" title="Alternar tema">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-    </button>
+<div class="app">
 
-    <div class="header" id="h-container">
-        <h1>
-            <svg width="28" height="28" viewBox="0 0 203 281">
-                <path d="M 73.0,261.5 L 62.0,261.5 L 49.0,256.5 L 45.5,253.0 L 43.5,247.0 L 45.5,237.0 L 51.0,232.5 L 61.0,231.5 L 68.5,236.0 L 78.0,252.5 L 86.0,252.5 L 92.5,240.0 L 94.5,219.0 L 47.0,218.5 L 44.5,216.0 L 44.5,212.0 L 89.0,146.5 L 89.5,188.0 L 74.5,210.0 L 94.5,210.0 L 94.5,83.0 L 74.0,86.5 L 63.0,92.5 L 54.5,103.0 L 50.5,114.0 L 46.0,114.5 L 44.5,113.0 L 44.5,80.0 L 52.0,73.5 L 94.5,73.0 L 93.5,33.0 L 91.5,29.0 L 87.0,26.5 L 70.0,24.5 L 70.0,19.5 L 140.0,19.5 L 141.0,24.5 L 127.0,27.5 L 123.5,34.0 L 123.5,73.0 L 158.0,73.5 L 161.5,76.0 L 161.5,80.0 L 129.0,128.5 L 128.5,88.0 L 132.5,81.0 L 123.5,81.0 L 122.5,208.0 L 137.0,206.5 L 148.0,200.5 L 158.5,183.0 L 160.5,175.0 L 166.0,173.5 L 166.5,214.0 L 163.0,218.5 L 121.0,218.5 L 113.5,238.0 L 101.0,251.5 L 88.0,258.5 L 73.0,261.5 Z" fill="#ffffff" stroke="#000000" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
-            </svg>
-            JZPass
-        </h1>
-        <span id="h-title">Acceso Personal</span>
-    </div>
-
-    <div id="v-setup" class="card hidden">
-        <h2>Configuración Inicial</h2>
-        <p style="text-align:center; color:var(--text-secondary); font-size:13px; margin-top:-15px;">Es la primera vez que se usa el sistema. Creá el usuario administrador.</p>
-        <input type="text" id="su-token" placeholder="Token de instalación" autocomplete="off">
-        <input type="text" id="su-dni" class="mono" placeholder="DNI / Legajo" inputmode="numeric">
-        <input type="text" id="su-nombre" placeholder="Nombre completo">
-        <input type="password" id="su-pass" placeholder="Contraseña">
-        <input type="password" id="su-pass2" placeholder="Confirmar contraseña">
-        <ul style="font-size:12px; color:var(--text-secondary); text-align:left; background:var(--bg-page); padding:15px 15px 15px 30px; border-radius:8px; border:1px solid var(--border);">
-            <li>Mínimo 8 caracteres</li>
-            <li>Al menos 1 mayúscula</li>
-            <li>Al menos 2 números</li>
-            <li>Al menos 1 carácter especial (@, *, !, etc)</li>
-        </ul>
-        <button class="btn-green" id="btn-setup" onclick="hacerSetup()">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            Crear Administrador
-        </button>
-        <div id="su-msg" class="error"></div>
-    </div>
-
-    <div id="v-login" class="card">
-        <h2>Inicio de Sesión</h2>
-        <input type="text" id="l-dni" class="mono" placeholder="DNI / Legajo" inputmode="numeric">
-        <input type="password" id="l-pass" placeholder="Contraseña">
-        <button id="btn-login" onclick="hacerLogin()">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
-            Ingresar
-        </button>
-        <div id="l-msg" class="error"></div>
-    </div>
-
-    <div id="v-clave" class="card hidden">
-        <h2>Cambio de Clave Requerido</h2>
-        <p style="text-align:center; color:var(--text-secondary); font-size:13px; margin-top:-10px;">Establezca una nueva contraseña personal.</p>
-        <input type="password" id="c-nueva" placeholder="Nueva contraseña">
-        <ul style="font-size:12px; color:var(--text-secondary); text-align:left; background:var(--bg-page); padding:15px 15px 15px 30px; border-radius:8px; border:1px solid var(--border);">
-            <li>Mínimo 8 caracteres</li>
-            <li>Al menos 1 mayúscula</li>
-            <li>Al menos 2 números</li>
-            <li>Al menos 1 carácter especial (@, *, !, etc)</li>
-        </ul>
-        <button class="btn-green" onclick="cambiarClave()">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            Confirmar y Continuar
-        </button>
-        <div id="c-msg" class="error"></div>
-    </div>
-
-    <div id="v-dash" class="card hidden" style="width: 95%; max-width: 500px; margin-top: 10px;">
-        <h2 id="d-nombre" style="margin-top:0; text-align:center; color:var(--accent); font-size:22px;">Cargando datos...</h2>
-        <div style="text-align:center; margin-bottom: 25px; display:flex; justify-content:center; gap:10px;">
-            <span id="d-sucursal" class="badge badge-info"></span>
-            <span id="d-vacaciones" class="badge badge-warning"></span>
+    <!-- Configuración inicial (primer arranque, sin usuarios) -->
+    <div id="v-setup" class="auth hidden">
+        <div class="auth-logo"><svg width="46" height="64" viewBox="0 0 203 281"><path id="logo-path" d="M 73.0,261.5 L 62.0,261.5 L 49.0,256.5 L 45.5,253.0 L 43.5,247.0 L 45.5,237.0 L 51.0,232.5 L 61.0,231.5 L 68.5,236.0 L 78.0,252.5 L 86.0,252.5 L 92.5,240.0 L 94.5,219.0 L 47.0,218.5 L 44.5,216.0 L 44.5,212.0 L 89.0,146.5 L 89.5,188.0 L 74.5,210.0 L 94.5,210.0 L 94.5,83.0 L 74.0,86.5 L 63.0,92.5 L 54.5,103.0 L 50.5,114.0 L 46.0,114.5 L 44.5,113.0 L 44.5,80.0 L 52.0,73.5 L 94.5,73.0 L 93.5,33.0 L 91.5,29.0 L 87.0,26.5 L 70.0,24.5 L 70.0,19.5 L 140.0,19.5 L 141.0,24.5 L 127.0,27.5 L 123.5,34.0 L 123.5,73.0 L 158.0,73.5 L 161.5,76.0 L 161.5,80.0 L 129.0,128.5 L 128.5,88.0 L 132.5,81.0 L 123.5,81.0 L 122.5,208.0 L 137.0,206.5 L 148.0,200.5 L 158.5,183.0 L 160.5,175.0 L 166.0,173.5 L 166.5,214.0 L 163.0,218.5 L 121.0,218.5 L 113.5,238.0 L 101.0,251.5 L 88.0,258.5 L 73.0,261.5 Z" fill="var(--sf)" stroke="var(--tp)" stroke-width="9" stroke-linejoin="round" stroke-linecap="round"></path></svg><h1>JZPass</h1><p>Configuración inicial</p></div>
+        <div class="card card-l">
+            <label class="lbl">Token de instalación (SETUP_TOKEN)</label><div class="field"><input id="su-token" type="password" autocomplete="off"></div>
+            <label class="lbl">DNI del administrador</label><div class="field"><input id="su-dni" class="mono" inputmode="numeric" autocomplete="username"></div>
+            <label class="lbl">Nombre</label><div class="field"><input id="su-nombre" autocomplete="name"></div>
+            <label class="lbl">Contraseña</label><div class="field"><input id="su-pass" type="password" autocomplete="new-password"></div>
+            <label class="lbl">Repetir contraseña</label><div class="field"><input id="su-pass2" type="password" autocomplete="new-password"></div>
+            <div id="su-msg" class="msg"></div>
+            <button id="btn-setup" class="btn" onclick="hacerSetup()">Crear administrador</button>
         </div>
+        <div class="pie">Mínimo 8 caracteres, 1 mayúscula, 2 números y 1 carácter especial.</div>
+    </div>
 
-        <div id="f-estado" class="hidden" style="text-align:center; padding:12px; border-radius:8px; margin-bottom:20px; font-size:15px; font-weight:600;"></div>
+    <!-- Login -->
+    <div id="v-login" class="auth hidden">
+        <div class="auth-logo"><svg width="46" height="64" viewBox="0 0 203 281"><use href="#logo-path"></use></svg><h1>JZPass</h1><p>Acceso Personal</p></div>
+        <form class="card card-l" onsubmit="hacerLogin(); return false;">
+            <label class="lbl">DNI / Legajo</label>
+            <div class="field"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"></rect><circle cx="9" cy="11" r="2.5"></circle><path d="M14 10h5M14 14h5M5 17c1-2 6-2 7 0"></path></svg><input id="l-dni" class="mono" inputmode="numeric" autocomplete="username" required></div>
+            <label class="lbl" style="margin-top:4px">Contraseña</label>
+            <div class="field"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg><input id="l-pass" type="password" autocomplete="current-password" required></div>
+            <div id="l-msg" class="msg"></div>
+            <button id="btn-login" class="btn" type="submit" style="margin-top:2px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg> Ingresar</button>
+        </form>
+        <div class="pie">Powered by JZ Tech Solutions<br><a href="#" onclick="abrirHoja('h-privacidad'); return false;">Privacidad</a> · <a href="#" onclick="abrirHoja('h-terminos'); return false;">Términos de Uso</a></div>
+    </div>
 
-        <div id="anuncios-box" class="hidden" style="margin-bottom:20px;">
-            <h3 style="display:flex; align-items:center; gap:8px; font-size:16px;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-                Avisos de la empresa
-            </h3>
-            <div id="lista-anuncios"></div>
-        </div>
+    <!-- Cambio de clave provisoria -->
+    <div id="v-clave" class="auth hidden">
+        <div class="auth-logo"><svg width="46" height="64" viewBox="0 0 203 281"><use href="#logo-path"></use></svg><h1>JZPass</h1><p>Primer ingreso: elegí tu clave</p></div>
+        <form class="card card-l" onsubmit="cambiarClave(); return false;">
+            <label class="lbl">Nueva contraseña</label>
+            <div class="field"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg><input id="c-nueva" type="password" autocomplete="new-password" required></div>
+            <div id="c-msg" class="msg"></div>
+            <button class="btn" type="submit">Guardar clave</button>
+        </form>
+        <div class="pie">Mínimo 8 caracteres, 1 mayúscula, 2 números y 1 carácter especial.</div>
+    </div>
 
-        <button id="btn-fichar" onclick="ficharGPS()" style="height:60px; font-size:18px;">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-            Registrar Fichaje
-        </button>
-        <div id="f-msg" style="text-align:center; margin-top:15px; font-size:14px; font-weight:600;"></div>
-
-        <hr style="border: 0; border-top: 1px solid var(--border); margin: 30px 0;">
-
-        <h3 style="text-align:center; display:flex; align-items:center; justify-content:center; gap:8px;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-            Solicitar Permiso
-        </h3>
-        <select id="s-concepto"></select>
-        <label id="lbl-s-fecha" style="font-size:12px; color:var(--text-secondary); font-weight:600; margin-left:5px;">Fecha:</label>
-        <input type="date" id="s-fecha">
-        
-        <div id="s-fechafin-box" class="hidden">
-            <label style="font-size:12px; color:var(--text-secondary); font-weight:600; margin-left:5px;">Fecha Hasta:</label>
-            <input type="date" id="s-fechafin">
-        </div>
-        
-        <div id="s-horas-box" style="display:flex; gap:10px;">
-            <div style="flex:1;">
-                <label style="font-size:12px; color:var(--text-secondary); font-weight:600; margin-left:5px;">Hora Salida:</label>
-                <input type="time" id="s-hin">
+    <!-- App -->
+    <div id="v-app" class="hidden" style="display:contents">
+        <div class="hdr">
+            <div class="hdr-l">
+                <svg width="18" height="25" viewBox="0 0 203 281" style="flex:none;fill:currentColor;opacity:.95"><use href="#logo-path" fill="currentColor" stroke="none"></use></svg>
+                <div style="min-width:0"><div class="hdr-t" id="hdr-t"></div><div class="hdr-s" id="hdr-s"></div></div>
             </div>
-            <div style="flex:1;">
-                <label style="font-size:12px; color:var(--text-secondary); font-weight:600; margin-left:5px;">Hora Regreso:</label>
-                <input type="time" id="s-hout">
+            <button class="bell" onclick="go('notifs')" title="Avisos"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg><span id="bell-n" class="badge-n hidden"></span></button>
+        </div>
+
+        <div class="content">
+            <div id="p-inicio"></div>
+            <div id="p-solicitudes" class="hidden"></div>
+            <div id="p-calendario" class="hidden"></div>
+            <div id="p-aprobaciones" class="hidden"></div>
+            <div id="p-notifs" class="hidden"></div>
+            <div id="p-perfil" class="hidden"></div>
+        </div>
+
+        <div class="tabbar" id="tabbar"></div>
+    </div>
+
+    <!-- Hoja: nueva solicitud -->
+    <div id="h-solicitud" class="sheet-wrap hidden" onclick="if(event.target===this) cerrarHoja('h-solicitud')">
+        <div class="sheet">
+            <div class="handle"></div>
+            <div class="sheet-h"><span>Nueva solicitud</span><button onclick="cerrarHoja('h-solicitud')" aria-label="Cerrar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div>
+            <label class="lbl" style="margin-top:4px">Clasificación</label>
+            <div class="chips" id="s-chips"></div>
+            <div class="row2" id="s-fechas">
+                <div class="fg"><label class="lbl" id="lbl-desde">Fecha desde</label><input type="date" id="s-fecha"></div>
+                <div class="fg" id="s-hasta-box"><label class="lbl">Fecha hasta</label><input type="date" id="s-fechafin"></div>
             </div>
-        </div>
-        
-        <input type="text" id="s-motivo" placeholder="Motivo detallado">
-        
-        <div id="s-foto-box" class="hidden" style="background:var(--bg-page); padding:12px; border-radius:8px; border:1px solid var(--border); margin-top:10px;">
-            <label style="font-size:12px; color:var(--text-secondary); font-weight:600; display:flex; align-items:center; gap:5px;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
-                Adjuntar Documento/Certificado:
-            </label>
-            <input type="file" id="s-foto" accept=".pdf, .jpg, .jpeg, .png" style="background:var(--bg-surface); border:none; padding:5px; margin-top:5px;">
-        </div>
-        
-        <button id="btn-enviar-solicitud" onclick="enviarSolicitud()" class="btn-secondary" style="background:var(--bg-page);">
-            Enviar Solicitud
-        </button>
-        <div id="s-msg" class="error"></div>
-
-        <hr style="border: 0; border-top: 1px solid var(--border); margin: 30px 0;">
-
-        <h3 style="text-align:center;">Historial de Solicitudes</h3>
-        <div id="lista-solicitudes"></div>
-
-        <div id="panel-encargado" class="hidden" style="margin-top:30px; background:var(--bg-page); padding:20px; border-radius:10px; border:1px solid var(--border);">
-            <h3 style="margin-top:0; margin-bottom:5px; color:var(--text-primary); text-align:center; font-size:16px;">Gestión de Sucursal</h3>
-            <div style="display:flex; gap:10px; margin-top:15px;">
-                <button onclick="document.getElementById('m-e-franco').classList.remove('hidden')" style="margin-top:0; font-size:13px; background:var(--warning); color:#000;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                    Asignar Franco
-                </button>
-                <button onclick="abrirCalendarioLocal()" style="margin-top:0; font-size:13px; background:var(--bg-surface); color:var(--text-primary); border:1px solid var(--border);">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                    Calendario
-                </button>
+            <div class="row2 hidden" id="s-horas-box">
+                <div class="fg"><label class="lbl">Hora salida</label><input type="time" id="s-hin"></div>
+                <div class="fg"><label class="lbl">Hora regreso</label><input type="time" id="s-hout"></div>
             </div>
-        </div>
-
-        <button id="btn-ir-panel" class="hidden btn-secondary" onclick="window.location.href='/panel'">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-            Panel de Administración
-        </button>
-
-        <button onclick="cerrarSesion()" class="btn-secondary" style="color:var(--danger); border-color:var(--danger); background:transparent;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-            Cerrar Sesión
-        </button>
-    </div>
-
-    <!-- Aviso de resultado del fichaje -->
-    <div id="m-fichaje" class="modal hidden" onclick="cerrarModal('m-fichaje')">
-        <div class="modal-content" style="text-align:center; max-width:360px;" role="alertdialog" aria-live="assertive">
-            <div id="fa-icono" style="width:84px; height:84px; border-radius:50%; margin:0 auto 15px; display:flex; align-items:center; justify-content:center; color:#fff;"></div>
-            <h2 id="fa-titulo" style="margin:0 0 8px;"></h2>
-            <div id="fa-hora" style="font-size:32px; font-weight:700; margin-bottom:8px;"></div>
-            <p id="fa-detalle" style="color:var(--text-secondary); margin:0 0 20px;"></p>
-            <button onclick="cerrarModal('m-fichaje')">Entendido</button>
-        </div>
-    </div>
-
-    <!-- Modal para Asignar Franco -->
-    <div id="m-e-franco" class="modal hidden">
-        <div class="modal-content">
-            <button class="close-x" onclick="cerrarModal('m-e-franco')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-            <h3 style="margin-top:0;">Asignar Medio Franco</h3>
-            <input type="text" id="ef-dni" class="mono" list="ef-dniList" placeholder="Búsqueda de empleado..." autocomplete="off">
-            <datalist id="ef-dniList"></datalist>
-            <input type="date" id="ef-fecha">
-            <select id="ef-turno">
-                <option value="MAÑANA">MAÑANA</option>
-                <option value="TARDE">TARDE</option>
-            </select>
-            <button class="btn-green" id="btn-ef-guardar" onclick="asignarFrancoLocal()">Confirmar Asignación</button>
-            <div id="ef-msg" class="error"></div>
-        </div>
-    </div>
-
-    <!-- Modal de firma de aviso (pide el DNI) -->
-    <div id="m-firma" class="modal hidden">
-        <div class="modal-content">
-            <button class="close-x" onclick="cerrarModal('m-firma')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-            <h3 style="margin-top:0;">Firmar recibido</h3>
-            <p style="font-size:13px; color:var(--text-secondary);">Con tu DNI confirmás que leíste y recibiste este aviso. Queda registrado con fecha y hora.</p>
-            <input type="text" inputmode="numeric" id="fa-dni" placeholder="Tu DNI" autocomplete="off" onkeydown="if(event.key==='Enter') confirmarFirma()">
-            <button class="btn-green" id="btn-fa" onclick="confirmarFirma()">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                Firmar
-            </button>
-            <div id="fa-msg" class="error"></div>
-        </div>
-    </div>
-
-    <!-- Modal para Calendario -->
-    <div id="m-e-cal" class="modal hidden">
-        <div class="modal-content" style="max-width: 800px; width: 95%;">
-            <button class="close-x" onclick="cerrarModal('m-e-cal')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; margin-top:5px;">
-                <button onclick="cambiarMesLocal(-1)" class="btn-secondary" style="width:auto; padding:8px 12px; margin:0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
-                <h3 id="ecal-month-year" style="margin:0; font-size:16px; color:var(--text-primary);"></h3>
-                <button onclick="cambiarMesLocal(1)" class="btn-secondary" style="width:auto; padding:8px 12px; margin:0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+            <div class="fg"><label class="lbl">Motivo detallado</label><textarea id="s-motivo" maxlength="500" placeholder="Contá brevemente el motivo"></textarea></div>
+            <div class="cert hidden" id="s-foto-box">
+                <span style="display:flex;align-items:center;gap:10px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>Certificado obligatorio · adjuntar PDF o foto</span>
+                <input type="file" id="s-foto" accept="image/*,application/pdf">
             </div>
-            <div style="width: 100%; overflow-x: auto;">
-                <div id="ecal-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; min-width: 500px;"></div>
+            <div id="s-msg" class="msg"></div>
+            <button id="btn-enviar" class="btn" style="margin-top:4px;border-radius:10px" onclick="enviarSolicitud()">Enviar solicitud</button>
+        </div>
+    </div>
+
+    <!-- Hoja: firma de recibido (pide el DNI a propósito) -->
+    <div id="h-firma" class="sheet-wrap hidden" onclick="if(event.target===this) cerrarHoja('h-firma')">
+        <div class="sheet">
+            <div class="handle"></div>
+            <div class="sheet-h"><span>Firmar recibido</span><button onclick="cerrarHoja('h-firma')" aria-label="Cerrar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div>
+            <p class="legal" style="margin:0" id="fa-titulo"></p>
+            <div class="fg"><label class="lbl">Tu DNI, para dejar constancia</label><input id="fa-dni" class="mono" inputmode="numeric" autocomplete="off"></div>
+            <div id="fa-msg" class="msg"></div>
+            <button id="btn-fa" class="btn" onclick="confirmarFirma()">Confirmar recibido</button>
+        </div>
+    </div>
+
+    <!-- Hojas legales -->
+    <div id="h-privacidad" class="sheet-wrap hidden" onclick="if(event.target===this) cerrarHoja('h-privacidad')">
+        <div class="sheet">
+            <div class="handle"></div>
+            <div class="sheet-h"><span>Política de Privacidad</span><button onclick="cerrarHoja('h-privacidad')" aria-label="Cerrar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div>
+            <div class="legal">
+                <p><strong>1. Captura de Datos Personales</strong><br>El Portal de Empleados gestiona datos de identificación laboral (DNI, Nombre, Contacto) con el único fin de administrar la relación laboral y el control de asistencia.</p>
+                <p><strong>2. Tratamiento de Geolocalización (GPS)</strong><br>El sistema solicita acceso a la ubicación del dispositivo exclusivamente en el momento en que se activa la acción de fichaje. No se realiza seguimiento satelital constante ni fuera del horario de registro.</p>
+                <p><strong>3. Privacidad de Documentos Médicos y Licencias</strong><br>Los archivos digitales adjuntados en las solicitudes de permisos son resguardados bajo estándares de confidencialidad y solo se encuentran disponibles para el área de Administración y Recursos Humanos.</p>
+                <p><strong>4. Seguridad del Almacenamiento</strong><br>Toda la información transaccional se almacena de forma cifrada y auditada, sin comunicación con agentes externos u organizaciones de terceros.</p>
             </div>
+            <button class="btn" onclick="cerrarHoja('h-privacidad')">Entendido</button>
         </div>
     </div>
-
-    <!-- Modal Historial Completo -->
-    <div id="m-emp-historial" class="modal hidden">
-        <div class="modal-content" style="max-width: 500px; width: 95%;">
-            <button class="close-x" onclick="cerrarModal('m-emp-historial')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-            <h3 style="margin-top:0; border-bottom:1px solid var(--border); padding-bottom:10px;">Historial Completo</h3>
-            <div id="m-emp-historial-lista" style="max-height: 60vh; overflow-y: auto; padding-right:5px;"></div>
-            <button onclick="cerrarModal('m-emp-historial')" class="btn-secondary" style="width:100%; margin-top:15px;">Cerrar</button>
-        </div>
-    </div>
-
-    <!-- Modal Política de Privacidad -->
-    <div id="m-privacidad" class="modal hidden">
-        <div class="modal-content" style="max-width: 550px; width: 90%;">
-            <button class="close-x" onclick="cerrarModal('m-privacidad')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-            <h3 style="margin-top:0; border-bottom:1px solid var(--border); padding-bottom:10px;">Política de Privacidad</h3>
-            <div style="max-height: 60vh; overflow-y: auto; padding-right:10px; font-size: 13px; color: var(--text-secondary); line-height: 1.6; text-align: left;">
-                <p><strong>1. Captura de Datos Personales</strong><br>
-                El Portal de Empleados gestiona datos de identificación laboral (DNI, Nombre, Contacto) con el único fin de administrar la relación laboral y el control de asistencia.</p>
-                <p><strong>2. Tratamiento de Geolocalización (GPS)</strong><br>
-                El sistema solicita acceso a la ubicación del dispositivo exclusivamente en el momento en que se activa la acción de fichaje. No se realiza seguimiento satelital constante ni fuera del horario de registro.</p>
-                <p><strong>3. Privacidad de Documentos Médicos y Licencias</strong><br>
-                Los archivos digitales adjuntados en las solicitudes de permisos son resguardados bajo estándares de confidencialidad y solo se encuentran disponibles para el área de Administración y Recursos Humanos.</p>
-                <p><strong>4. Seguridad del Almacenamiento</strong><br>
-                Toda la información transaccional se almacena de forma cifrada y auditada, sin comunicación con agentes externos u organizaciones de terceros.</p>
+    <div id="h-terminos" class="sheet-wrap hidden" onclick="if(event.target===this) cerrarHoja('h-terminos')">
+        <div class="sheet">
+            <div class="handle"></div>
+            <div class="sheet-h"><span>Términos de Uso</span><button onclick="cerrarHoja('h-terminos')" aria-label="Cerrar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div>
+            <div class="legal">
+                <p><strong>1. Carácter del Acceso</strong><br>El uso de este portal es un recurso operativo proporcionado por la empresa para sus empleados activos. Las credenciales de acceso son estrictamente personales e intransferibles.</p>
+                <p><strong>2. Integridad de las Declaraciones</strong><br>El empleado declara que los registros de entrada y salida representan fidedignamente su horario y ubicación laboral. La evasión, simulación GPS o falsificación de comprobantes es causal de sanciones administrativas disciplinarias.</p>
+                <p><strong>3. Responsabilidad de la Credencial</strong><br>Toda acción registrada en el sistema bajo el DNI y clave de un usuario se presumirá ejecutada por el titular de la cuenta.</p>
             </div>
-            <button onclick="cerrarModal('m-privacidad')" class="btn-secondary" style="width:100%; margin-top:15px;">Entendido</button>
+            <button class="btn" onclick="cerrarHoja('h-terminos')">Entendido</button>
         </div>
     </div>
 
-    <!-- Modal Términos de Uso -->
-    <div id="m-terminos" class="modal hidden">
-        <div class="modal-content" style="max-width: 550px; width: 90%;">
-            <button class="close-x" onclick="cerrarModal('m-terminos')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-            <h3 style="margin-top:0; border-bottom:1px solid var(--border); padding-bottom:10px;">Términos de Uso</h3>
-            <div style="max-height: 60vh; overflow-y: auto; padding-right:10px; font-size: 13px; color: var(--text-secondary); line-height: 1.6; text-align: left;">
-                <p><strong>1. Carácter del Acceso</strong><br>
-                El uso de este portal es un recurso operativo proporcionado por la empresa para sus empleados activos. Las credenciales de acceso son estrictamente personales e intransferibles.</p>
-                <p><strong>2. Integridad de las Declaraciones</strong><br>
-                El empleado declara que los registros de entrada y salida representan fidedignamente su horario y ubicación laboral. La evasión, simulación GPS o falsificación de comprobantes es causal de sanciones administrativas disciplinarias.</p>
-                <p><strong>3. Responsabilidad de la Credencial</strong><br>
-                Toda acción registrada en el sistema bajo el DNI y clave de un usuario se presumirá ejecutada por el titular de la cuenta.</p>
-            </div>
-            <button onclick="cerrarModal('m-terminos')" class="btn-secondary" style="width:100%; margin-top:15px;">Entendido</button>
-        </div>
-    </div>
+    <div id="toast" class="toast hidden"></div>
+</div>
 
-    <div class="footer">
-        <svg width="24" height="24" viewBox="0 0 203 281" style="opacity:0.3; margin-bottom:5px;">
-            <path d="M 73.0,261.5 L 62.0,261.5 L 49.0,256.5 L 45.5,253.0 L 43.5,247.0 L 45.5,237.0 L 51.0,232.5 L 61.0,231.5 L 68.5,236.0 L 78.0,252.5 L 86.0,252.5 L 92.5,240.0 L 94.5,219.0 L 47.0,218.5 L 44.5,216.0 L 44.5,212.0 L 89.0,146.5 L 89.5,188.0 L 74.5,210.0 L 94.5,210.0 L 94.5,83.0 L 74.0,86.5 L 63.0,92.5 L 54.5,103.0 L 50.5,114.0 L 46.0,114.5 L 44.5,113.0 L 44.5,80.0 L 52.0,73.5 L 94.5,73.0 L 93.5,33.0 L 91.5,29.0 L 87.0,26.5 L 70.0,24.5 L 70.0,19.5 L 140.0,19.5 L 141.0,24.5 L 127.0,27.5 L 123.5,34.0 L 123.5,73.0 L 158.0,73.5 L 161.5,76.0 L 161.5,80.0 L 129.0,128.5 L 128.5,88.0 L 132.5,81.0 L 123.5,81.0 L 122.5,208.0 L 137.0,206.5 L 148.0,200.5 L 158.5,183.0 L 160.5,175.0 L 166.0,173.5 L 166.5,214.0 L 163.0,218.5 L 121.0,218.5 L 113.5,238.0 L 101.0,251.5 L 88.0,258.5 L 73.0,261.5 Z" fill="#ffffff" stroke="#000000" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
-        </svg>
-        <div>Powered by <a href="https://jz-tech.mywire.org" target="_blank">JZ Tech Solutions</a></div>
-        <div>
-            <a href="#" onclick="document.getElementById('m-privacidad').classList.remove('hidden'); return false;">Privacidad</a> &nbsp;|&nbsp; 
-            <a href="#" onclick="document.getElementById('m-terminos').classList.remove('hidden'); return false;">Términos de Uso</a>
-        </div>
-    </div>
+<script>
+    // Estado: todo sale de los endpoints actuales (/api/empleado/datos, /api/fichar, /api/solicitud/*, /api/anuncios/*,
+    // y para el encargado /api/datos_panel + /api/admin/estado_solicitud). Nada se asume: lo que la API no devuelve no se muestra.
+    let csrf = "", D = null, tab = 'inicio', calDate = new Date(), anuncios = [], pendientes = [], conceptoSel = null, anuncioAFirmar = null;
+    let gpsTexto = '—', fMsg = '', fMsgColor = 'var(--ts)', ficharEnCurso = false;
+    let dniLocal = localStorage.getItem('jzpass_dni') || '';
+    const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    const MES3 = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+    const ICO = {
+        inicio: '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle>',
+        solicitudes: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line>',
+        calendario: '<rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>',
+        aprobaciones: '<path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>',
+        perfil: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>',
+        check: '<polyline points="20 6 9 17 4 12"></polyline>',
+        reloj: '<circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>',
+        clip: '<path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>',
+        taza: '<path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line>',
+        luna: '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>',
+        salir: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line>',
+        x: '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>',
+        cal: '<rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>'
+    };
+    const svg = (n, s = 18, extra = '') => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ${extra}>${ICO[n]}</svg>`;
 
-    <script>
-        let csrf = "", tipos_sol = [];
-        let locFeriados = [], locFrancos = [], locSolic = [];
-        let ecalDate = new Date();
-        let solicitudesGlobales = []; 
+    // --- utilidades ---
+    function esc(s) { return String(s ?? "").replace(/[&<>'"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m])); }
+    function hoyISO() { return new Date().toLocaleDateString('en-CA'); }
+    function fecha(iso) { if (!iso) return ''; const [y, m, d] = iso.slice(0, 10).split('-').map(Number); return `${String(d).padStart(2, '0')} ${MES3[m - 1]} ${y}`; }
+    function fechaLarga(iso) { const [y, m, d] = iso.slice(0, 10).split('-').map(Number); const dt = new Date(y, m - 1, d); return `${DIAS[dt.getDay()]} ${d} de ${MESES[m - 1]}`; }
+    function iniciales(n) { return String(n || '').split(/\s+/).filter(Boolean).slice(0, 2).map(p => p[0].toUpperCase()).join('') || '?'; }
+    function tipoDe(concepto) { return (D && D.tipos_solicitud || []).find(t => t.nombre === concepto) || {}; }
+    function initTheme() { let t = localStorage.getItem('theme'); if (!t) t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; document.documentElement.setAttribute('data-theme', t); }
+    function toggleTheme() { let t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'; document.documentElement.setAttribute('data-theme', t); localStorage.setItem('theme', t); if (D) renderPerfil(); }
+    initTheme();
+    let toastT = null;
+    function toast(t) { const el = document.getElementById('toast'); el.textContent = t; el.classList.remove('hidden'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.add('hidden'), 2600); }
+    function abrirHoja(id) { document.getElementById(id).classList.remove('hidden'); }
+    function cerrarHoja(id) { document.getElementById(id).classList.add('hidden'); }
+    window.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.sheet-wrap').forEach(h => h.classList.add('hidden')); });
 
-        function initTheme() {
-            let t = localStorage.getItem('theme');
-            if(!t) t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-            document.documentElement.setAttribute('data-theme', t);
-        }
-        function toggleTheme() {
-            let t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-theme', t);
-            localStorage.setItem('theme', t);
-        }
-        initTheme();
+    async function req(url, data = {}) {
+        let fd = data instanceof FormData ? data : Object.entries(data).reduce((f, [k, v]) => (f.append(k, v), f), new FormData());
+        try {
+            let r = await fetch(url, {method: 'POST', body: fd, headers: {'X-CSRF-Token': csrf}});
+            let d = {}; try { d = await r.json(); } catch (e) {}
+            return {ok: r.ok, status: r.status, data: d};
+        } catch (e) { return {ok: false, status: 0, data: {msg: "Sin conexión. El fichaje y las solicitudes necesitan red."}}; }
+    }
+    async function cargarCsrf() { try { let r = await fetch('/api/csrf-token'); if (r.ok) csrf = (await r.json()).token; } catch (e) {} }
+    async function recargar() { try { let r = await fetch('/api/empleado/datos'); if (r.ok) { cargarDatos(await r.json()); return true; } if (r.status === 401) vista('v-login'); } catch (e) {} return false; }
 
-        window.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                document.querySelectorAll('.modal').forEach(m => m.classList.add('hidden'));
-            }
-        });
+    // --- arranque, setup, login, clave ---
+    function vista(id) { ['v-setup', 'v-login', 'v-clave', 'v-app'].forEach(v => document.getElementById(v).classList.toggle('hidden', v !== id)); }
+    async function init() {
+        try { let rs = await fetch('/api/setup/status'); if (rs.ok && (await rs.json()).needs_setup) { vista('v-setup'); return; } } catch (e) {}
+        await cargarCsrf();
+        if (!(await recargar())) vista('v-login');
+    }
+    async function hacerSetup() {
+        const v = id => document.getElementById(id).value.trim();
+        const msg = document.getElementById('su-msg'), btn = document.getElementById('btn-setup');
+        if (!v('su-token') || !v('su-dni') || !v('su-nombre') || !document.getElementById('su-pass').value) { msg.textContent = "Complete todos los campos."; return; }
+        if (document.getElementById('su-pass').value !== document.getElementById('su-pass2').value) { msg.textContent = "Las contraseñas no coinciden."; return; }
+        btn.disabled = true; msg.textContent = "";
+        let r = await req('/api/setup/admin', {token: v('su-token'), dni: v('su-dni'), nombre: v('su-nombre'), password: document.getElementById('su-pass').value});
+        btn.disabled = false;
+        if (!r.ok) { msg.textContent = r.data.msg || "Error al crear el administrador."; return; }
+        localStorage.setItem('jzpass_dni', dniLocal = v('su-dni'));
+        await cargarCsrf(); await recargar();
+    }
+    async function hacerLogin() {
+        const d = document.getElementById('l-dni').value.trim(), p = document.getElementById('l-pass').value;
+        if (!d || !p) return;
+        const btn = document.getElementById('btn-login'), msg = document.getElementById('l-msg'), orig = btn.innerHTML;
+        btn.disabled = true; btn.innerHTML = '<div class="loader"></div>'; msg.textContent = "";
+        let r = await req('/api/login', {dni: d, password: p});
+        btn.disabled = false; btn.innerHTML = orig;
+        if (!r.ok) { msg.textContent = r.data.msg || "Error de credenciales."; return; }
+        localStorage.setItem('jzpass_dni', dniLocal = d);
+        document.getElementById('l-pass').value = '';
+        await cargarCsrf();
+        if (r.data.req_cambio === 1) vista('v-clave'); else await recargar();
+    }
+    async function cambiarClave() {
+        const msg = document.getElementById('c-msg');
+        msg.className = 'msg'; msg.textContent = "Procesando...";
+        let r = await req('/api/cambiar_clave', {nueva: document.getElementById('c-nueva').value});
+        if (!r.ok) { msg.textContent = r.data.msg || "Operación denegada."; return; }
+        msg.className = 'msg ok'; msg.textContent = "Clave configurada exitosamente.";
+        document.getElementById('c-nueva').value = '';
+        setTimeout(recargar, 1200);
+    }
+    async function logout() { await req('/api/logout'); D = null; anuncios = []; pendientes = []; gpsTexto = '—'; fMsg = ''; vista('v-login'); }
 
-        function cerrarModal(id) { document.getElementById(id).classList.add('hidden'); }
-        function esc(s) { return String(s??"").replace(/[&<>'"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m])); }
+    // --- datos y navegación ---
+    function puedeAprobar() { return D && D.rol === 1 && D.config && Number(D.config.encargados_aprueban) === 1; }
+    function cargarDatos(d) {
+        if (!d || !d.nombre) { vista('v-login'); return; }
+        D = d;
+        if (d.config && d.config.empresa_nombre) document.title = "JZPass - " + d.config.empresa_nombre;
+        if (tab === 'aprobaciones' && !puedeAprobar()) tab = 'inicio';
+        vista('v-app');
+        renderTodo();
+        cargarAnuncios();
+        if (puedeAprobar()) cargarPendientes();
+    }
+    function go(t) { tab = t; document.querySelectorAll('.sheet-wrap').forEach(h => h.classList.add('hidden')); renderTodo(); document.querySelector('.content').scrollTo(0, 0); if (t === 'notifs') marcarVistos(); }
+    function renderTodo() {
+        const t = {
+            inicio: ['Hola, ' + esc(String(D.nombre).split(' ')[0]), esc(D.sucursal || '')],
+            solicitudes: ['Solicitudes', 'Permisos y licencias'],
+            calendario: ['Agenda', 'Feriados, francos y convocatorias'],
+            aprobaciones: ['Aprobaciones', esc(D.sucursal || '')],
+            notifs: ['Avisos', 'Anuncios con firma de recibido'],
+            perfil: ['Mi legajo', 'Datos y sesión']
+        }[tab];
+        document.getElementById('hdr-t').innerHTML = t[0]; document.getElementById('hdr-s').innerHTML = t[1];
+        ['inicio', 'solicitudes', 'calendario', 'aprobaciones', 'notifs', 'perfil'].forEach(p => document.getElementById('p-' + p).classList.toggle('hidden', p !== tab));
+        renderTabs(); renderBell();
+        ({inicio: renderInicio, solicitudes: renderSolicitudes, calendario: renderCalendario, aprobaciones: renderAprobaciones, notifs: renderNotifs, perfil: renderPerfil})[tab]();
+    }
+    function renderTabs() {
+        const defs = [['inicio', 'Fichaje'], ['solicitudes', 'Permisos'], ...(puedeAprobar() ? [['aprobaciones', 'Aprobar']] : []), ['calendario', 'Agenda'], ['perfil', 'Legajo']];
+        document.getElementById('tabbar').innerHTML = defs.map(([id, l]) => `<button class="tab${tab === id ? ' on' : ''}" onclick="go('${id}')"><span class="pill">${svg(id)}${id === 'aprobaciones' && pendientes.length ? '<span class="dot"></span>' : ''}</span><span class="l">${l}</span></button>`).join('');
+    }
+    function renderBell() { const n = anuncios.length, el = document.getElementById('bell-n'); el.textContent = n; el.classList.toggle('hidden', n === 0); }
 
-        async function req(url, data={}) {
-            let fd = new FormData(); for(let k in data) fd.append(k, data[k]);
-            try {
-                let r = await fetch(url, {method:'POST', body:fd, headers:{'X-CSRF-Token': csrf}});
-                let d = await r.json(); 
-                return {ok: r.ok, status: r.status, data: d};
-            } catch(e) {
-                return {ok: false, status: 500, data: {msg: "Error de conexión."}};
-            }
-        }
-
-        async function init() {
-            try {
-                let rs = await fetch('/api/setup/status');
-                if(rs.ok) {
-                    let ds = await rs.json();
-                    if(ds.needs_setup) { vista('v-setup'); return; }
-                }
-            } catch(e) {}
-            try {
-                let r = await fetch('/api/csrf-token');
-                if(r.ok) { let d = await r.json(); csrf = d.token; }
-                let r2 = await fetch('/api/empleado/datos');
-                if(r2.ok) { let d2 = await r2.json(); if(d2.nombre) cargarDatos(d2); }
-            } catch(e) {}
-        }
-
-        function vista(id) {
-            document.getElementById('v-setup').classList.add('hidden');
-            document.getElementById('v-login').classList.add('hidden');
-            document.getElementById('v-clave').classList.add('hidden');
-            document.getElementById('v-dash').classList.add('hidden');
-            document.getElementById(id).classList.remove('hidden');
-        }
-
-        async function hacerSetup() {
-            let token = document.getElementById('su-token').value.trim();
-            let dni = document.getElementById('su-dni').value.trim();
-            let nombre = document.getElementById('su-nombre').value.trim();
-            let p1 = document.getElementById('su-pass').value;
-            let p2 = document.getElementById('su-pass2').value;
-            let msg = document.getElementById('su-msg');
-            let btn = document.getElementById('btn-setup');
-
-            if(!token || !dni || !nombre || !p1) { msg.innerText = "Complete todos los campos."; return; }
-            if(p1 !== p2) { msg.innerText = "Las contraseñas no coinciden."; return; }
-
-            let original = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<div class="loader"></div>';
-            msg.innerText = "";
-
-            let r = await req('/api/setup/admin', {token: token, dni: dni, nombre: nombre, password: p1});
-            if(r.ok) {
-                let r_token = await fetch('/api/csrf-token');
-                if(r_token.ok) { let d_token = await r_token.json(); csrf = d_token.token; }
-                let r2 = await fetch('/api/empleado/datos');
-                if(r2.ok) { let d2 = await r2.json(); cargarDatos(d2); }
-            } else {
-                msg.innerText = r.data.msg || "Error al crear el administrador.";
-                btn.disabled = false;
-                btn.innerHTML = original;
-            }
-        }
-
-        async function hacerLogin() {
-            let d = document.getElementById('l-dni').value.trim();
-            let p = document.getElementById('l-pass').value.trim();
-            if(!d || !p) return;
-            
-            let btn = document.getElementById('btn-login');
-            let msg = document.getElementById('l-msg');
-            btn.innerHTML = '<div class="loader"></div>';
-            msg.innerText = "";
-            
-            let r = await req('/api/login', {dni: d, password: p});
-            if(r.ok) {
-                try {
-                    let r_token = await fetch('/api/csrf-token');
-                    if(r_token.ok) { let d_token = await r_token.json(); csrf = d_token.token; }
-                } catch(e) {}
-
-                if(r.data.req_cambio === 1) {
-                    vista('v-clave');
-                } else {
-                    let r2 = await fetch('/api/empleado/datos');
-                    if(r2.ok) { let d2 = await r2.json(); cargarDatos(d2); }
-                }
-            } else {
-                msg.innerText = r.data.msg || "Error de credenciales.";
-            }
-            btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg> Ingresar';
-        }
-
-        async function cambiarClave() {
-            let n = document.getElementById('c-nueva').value;
-            let msg = document.getElementById('c-msg');
-            msg.className = 'error'; msg.innerText = "Procesando...";
-            
-            let r = await req('/api/cambiar_clave', {nueva: n});
-            if(r.ok) {
-                msg.className = 'success'; msg.innerText = "Clave configurada exitosamente.";
-                setTimeout(async () => {
-                    let r2 = await fetch('/api/empleado/datos');
-                    if(r2.ok) { let d2 = await r2.json(); cargarDatos(d2); }
-                }, 1500);
-            } else {
-                msg.innerText = r.data.msg || "Operación denegada.";
-            }
-        }
-
-        function cargarDatos(d) {
-            if(!d || !d.nombre) { vista('v-login'); return; }
-            
-            if(d.config) {
-                if(d.config.empresa_nombre) {
-                    document.title = "JZPass - " + d.config.empresa_nombre;
-                }
-            }
-            
-            let btnPanel = document.getElementById('btn-ir-panel');
-            if(btnPanel) btnPanel.classList.toggle('hidden', d.rol !== 0);
-
-            let panelEncargado = document.getElementById('panel-encargado');
-            if(d.rol === 1) {
-                panelEncargado.classList.remove('hidden');
-                document.getElementById('ef-dniList').innerHTML = (d.mis_empleados||[]).map(u => `<option value="${esc(u.nombre)} - ${esc(u.dni)}">`).join('');
-                locFeriados = d.feriados || [];
-                locFrancos = d.loc_francos || [];
-                locSolic = d.loc_solic || [];
-            } else {
-                panelEncargado.classList.add('hidden');
-            }
-
-            tipos_sol = d.tipos_solicitud || [];
-            fichajeHoy = d.fichaje_hoy || null;
-            pintarFichaje();
-            document.getElementById('d-nombre').innerText = d.nombre;
-            document.getElementById('d-sucursal').innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-bottom:-2px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> Sede: ${d.sucursal}`;
-            document.getElementById('d-vacaciones').innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-bottom:-2px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> Vacaciones: ${d.dias_vacaciones} días`;
-            
-            document.getElementById('s-concepto').innerHTML = `<option value="">Seleccionar Clasificación...</option>` + 
-                tipos_sol.map(t => `<option value="${t.nombre}">${t.nombre}</option>`).join('');
-                
-            document.getElementById('s-concepto').onchange = () => {
-                let t = tipos_sol.find(x => x.nombre === document.getElementById('s-concepto').value);
-                if(!t) return;
-                let esMultidia = (t.tipo === 'DIAS');
-                
-                document.getElementById('s-fechafin-box').classList.toggle('hidden', !esMultidia);
-                document.getElementById('s-horas-box').classList.toggle('hidden', esMultidia);
-                document.getElementById('s-foto-box').classList.toggle('hidden', t.requiere_foto !== 1);
-                
-                document.getElementById('lbl-s-fecha').innerText = esMultidia ? "Fecha Desde:" : "Fecha:";
-            };
-
-            solicitudesGlobales = d.solicitudes || [];
-            renderSolicitudes();
-            vista('v-dash');
-            cargarAnuncios();
-        }
-
-        // Anuncios generales: "Ver más" despliega el texto y registra el visto (la primera vez);
-        // "Aceptado / Recibido" es la firma de recibido y saca el aviso de la lista.
-        let anunciosPend = [], anunciosTodos = false;
-        async function cargarAnuncios() {
-            try {
-                let r = await fetch('/api/anuncios/pendientes');
-                if(!r.ok) return;
-                anunciosPend = (await r.json()).anuncios || [];
-            } catch(e) { return; }
-            renderAnuncios();
-        }
-
-        function renderAnuncios() {
-            document.getElementById('anuncios-box').classList.toggle('hidden', anunciosPend.length === 0);
-            // Los 3 mas nuevos; el resto detras de "Ver todos" para no tapar el boton de fichaje.
-            let lista = anunciosTodos ? anunciosPend : anunciosPend.slice(0, 3);
-            let resto = anunciosPend.length - lista.length;
-            document.getElementById('lista-anuncios').innerHTML = lista.map(a => `<div class="req-list anuncio">
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
-                    <div><strong style="font-size:14px;">${esc(a.titulo)}</strong><br><span class="mono" style="color:var(--text-secondary); font-size:12px;">${esc((a.creado_en||'').slice(0,16))}</span></div>
-                    ${a.visto_en ? '' : '<span class="badge badge-info">Nuevo</span>'}
-                </div>
-                <div id="anuncio-det-${a.id}" class="hidden">
-                    <div class="anuncio-cuerpo">${esc(a.cuerpo)}</div>
-                    <button class="btn-green" onclick="firmarAnuncio(${a.id})" style="padding:10px; font-size:14px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Aceptado / Recibido</button>
-                </div>
-                <button id="anuncio-vm-${a.id}" class="btn-secondary" onclick="verAnuncio(${a.id})" style="padding:8px; font-size:13px; margin-top:10px;">Ver más</button>
-            </div>`).join('')
-                + (resto > 0 ? `<button class="btn-secondary" onclick="anunciosTodos=true; renderAnuncios();" style="margin-top:0; font-size:13px;">Ver todos los avisos (${resto} más)</button>` : '');
-        }
-
-        function verAnuncio(id) {
-            document.getElementById('anuncio-det-' + id).classList.remove('hidden');
-            document.getElementById('anuncio-vm-' + id).classList.add('hidden');
-            let a = anunciosPend.find(x => x.id === id);
-            if(a && !a.visto_en) { a.visto_en = 'ahora'; req(`/api/anuncios/${id}/visto`); }
-        }
-
-        // La firma pide el DNI: deja constancia de que fue a propósito y no un clic sin querer.
-        let anuncioAFirmar = null;
-        function firmarAnuncio(id) {
-            anuncioAFirmar = id;
-            document.getElementById('fa-dni').value = '';
-            document.getElementById('fa-msg').innerText = '';
-            document.getElementById('m-firma').classList.remove('hidden');
-            document.getElementById('fa-dni').focus();
-        }
-
-        async function confirmarFirma() {
-            let dni = document.getElementById('fa-dni').value.trim(), msg = document.getElementById('fa-msg'), btn = document.getElementById('btn-fa');
-            if(!dni) { msg.innerText = 'Ingresá tu DNI.'; return; }
-            btn.disabled = true;
-            let r = await req(`/api/anuncios/${anuncioAFirmar}/firmar`, {dni: dni});
-            btn.disabled = false;
-            if(!r.ok) {
-                msg.innerText = r.status === 429 ? 'Demasiados intentos. Esperá un minuto.' : (r.data.msg || 'No se pudo registrar.');
-                if(r.status !== 400 || !String(r.data.msg).startsWith('DNI')) cargarAnuncios();
-                return;
-            }
-            cerrarModal('m-firma');
-            anunciosPend = anunciosPend.filter(x => x.id !== anuncioAFirmar);
-            renderAnuncios();
-        }
-
-        function generarHTMLSolicitudes(lista) {
-            return lista.map(s => {
-                let badgeClass = 'badge-neutral';
-                let svgIcon = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>';
-                if (s.estado === 'APROBADA') { badgeClass = 'badge-success'; svgIcon = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>'; }
-                if (s.estado === 'RECHAZADA') { badgeClass = 'badge-danger'; svgIcon = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'; }
-                
-                let btnCancelar = s.estado === 'PENDIENTE' 
-                    ? `<button onclick="cancelarSolicitud(${s.id})" class="btn-secondary" style="padding:6px 12px; font-size:12px; width:auto; margin-top:8px; border-color:var(--danger); color:var(--danger);"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> Cancelar Solicitud</button>` 
-                    : '';
-                
-                return `<div class="req-list">
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                        <div>
-                            <strong style="color:var(--text-primary); font-size:14px;">${esc(s.concepto)}</strong><br>
-                            <span style="color:var(--text-secondary); font-size:12px;">${esc(s.fecha_ausencia)}</span>
-                        </div>
-                        <span class="badge ${badgeClass}">${svgIcon} ${s.estado}</span>
+    // --- Fichaje ---
+    function minutosHoy(f) {
+        if (!f || !f.entrada) return 0;
+        const [h, m] = f.entrada.split(':').map(Number); let fin;
+        if (f.salida) { const [h2, m2] = f.salida.split(':').map(Number); fin = h2 * 60 + m2; } else { const n = new Date(); fin = n.getHours() * 60 + n.getMinutes(); }
+        return Math.max(0, fin - (h * 60 + m));
+    }
+    function renderInicio() {
+        const f = D.fichaje_hoy, dentro = !!(f && !f.salida), cerrado = !!(f && f.salida);
+        const mins = minutosHoy(f), horas = `${Math.floor(mins / 60)}:${String(mins % 60).padStart(2, '0')}`;
+        const offset = 270 - 270 * Math.min(mins / 480, 1);   // anillo de referencia a 8 h: la API no informa el horario del empleado
+        const pend = (D.solicitudes || []).filter(s => s.estado === 'PENDIENTE').length;
+        const hoy = hoyISO(), prox = (D.francos || []).map(x => x.fecha).filter(x => x >= hoy).sort()[0];
+        document.getElementById('p-inicio').innerHTML = `
+            <div style="display:flex;flex-direction:column;gap:14px">
+            <div class="hero">
+                <div class="hero-top"><div><div class="hero-n">${esc(D.nombre)}</div><div class="hero-sub">Legajo <span class="mono">${esc(dniLocal || '—')}</span> · ${esc(D.sucursal || '')}</div></div>
+                    <span class="badge b-info">${cerrado ? 'Jornada cerrada' : dentro ? 'En jornada' : 'Sin ingreso'}</span></div>
+                <div class="hero-row">
+                    <div class="ring"><svg width="96" height="96" viewBox="0 0 100 100"><circle cx="50" cy="50" r="43" fill="none" stroke="var(--bd)" stroke-width="9" opacity=".55"></circle><circle cx="50" cy="50" r="43" fill="none" stroke="${dentro || cerrado ? 'var(--ok)' : 'var(--ac)'}" stroke-width="9" stroke-linecap="round" stroke-dasharray="270" stroke-dashoffset="${offset}"></circle></svg>
+                        <div class="c"><span class="h">${horas}</span><span class="u">HOY</span></div></div>
+                    <div class="filas">
+                        <div class="fila">${f ? svg('check', 15, 'style="stroke:var(--ok);stroke-width:2.4"') : svg('reloj', 15, 'style="opacity:.5"')}<span>Ingreso</span><b>${f ? esc(f.entrada) : '—'}</b></div>
+                        <div class="fila">${svg('reloj', 15, 'style="opacity:.5"')}<span>Salida</span><b>${cerrado ? esc(f.salida) : '—'}</b></div>
+                        <div class="fila">${svg('inicio', 15, 'style="opacity:.5"')}<span>GPS</span><b>${esc(gpsTexto)}</b></div>
                     </div>
-                    <div style="color:var(--text-secondary); margin-top:8px;">${esc(s.motivo)}</div>
-                    ${btnCancelar}
-                </div>`;
-            }).join('');
-        }
-
-        function renderSolicitudes() {
-            let contenedor = document.getElementById('lista-solicitudes');
-            if (solicitudesGlobales.length === 0) {
-                contenedor.innerHTML = '<p style="text-align:center; color:var(--text-muted); font-size:13px;">No existen registros previos.</p>';
-                return;
-            }
-            let limite = 5;
-            let htmlResumido = generarHTMLSolicitudes(solicitudesGlobales.slice(0, limite));
-            if (solicitudesGlobales.length > limite) {
-                htmlResumido += `<button onclick="abrirHistorialCompleto()" class="btn-secondary" style="width:100%; margin-top:5px; font-size:13px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg> Ver historial completo (${solicitudesGlobales.length})</button>`;
-            }
-            contenedor.innerHTML = htmlResumido;
-        }
-
-        function abrirHistorialCompleto() {
-            document.getElementById('m-emp-historial-lista').innerHTML = generarHTMLSolicitudes(solicitudesGlobales);
-            document.getElementById('m-emp-historial').classList.remove('hidden');
-        }
-
-        async function cancelarSolicitud(id) {
-            if (!confirm('Confirme la cancelación de esta solicitud.')) return;
-            let r = await req('/api/solicitud/cancelar', {solicitud_id: id});
+                </div>
+            </div>
+            <button id="btn-fichar" class="btn-fichar${dentro ? ' salir' : ''}" onclick="ficharGPS()" ${cerrado || ficharEnCurso ? 'disabled' : ''}>${svg('inicio', 26, 'style="stroke-width:2.2"')} ${cerrado ? 'Jornada finalizada' : dentro ? 'Registrar Salida' : 'Registrar Ingreso'}</button>
+            <div class="f-msg" style="color:${fMsgColor}">${esc(fMsg)}</div>
+            <div class="grid2">
+                <button class="atajo" onclick="go('solicitudes')"><span class="top"><span class="chip" style="background:var(--bw);color:var(--tw)">${svg('cal', 15)}</span><b>${esc(D.dias_vacaciones ?? 0)} días</b></span><span class="l">Vacaciones disponibles</span></button>
+                <button class="atajo" onclick="go('solicitudes')"><span class="top"><span class="chip" style="background:var(--bi);color:var(--ti)">${svg('solicitudes', 15)}</span><b>${pend} pend.</b></span><span class="l">Solicitudes en curso</span></button>
+                <button class="atajo" onclick="go('calendario')"><span class="top"><span class="chip" style="background:var(--bs);color:var(--ts_)">${svg('taza', 15)}</span><b>${prox ? fecha(prox).slice(0, 6) : '—'}</b></span><span class="l">Próximo medio franco</span></button>
+                <button class="atajo" onclick="go('notifs')"><span class="top"><span class="chip" style="background:var(--bn);color:var(--tn)">${svg('check', 15)}</span><b>${anuncios.length}</b></span><span class="l">Avisos sin firmar</span></button>
+            </div></div>`;
+    }
+    function ficharGPS() {
+        if (ficharEnCurso) return;
+        const fin = (ok, texto) => { ficharEnCurso = false; fMsg = texto; fMsgColor = ok ? 'var(--ok)' : 'var(--dg)'; if (navigator.vibrate) navigator.vibrate(ok ? 200 : [150, 100, 150]); renderInicio(); };
+        if (!navigator.geolocation) { fin(false, "Este dispositivo no tiene geolocalización."); return; }
+        ficharEnCurso = true; fMsg = "Obteniendo ubicación..."; fMsgColor = 'var(--ac)'; renderInicio();
+        navigator.geolocation.getCurrentPosition(async pos => {
+            let r = await req('/api/fichar', {lat: pos.coords.latitude, lon: pos.coords.longitude});
+            const m = /\((\d+)m\)/.exec(r.data.msg || '');
             if (r.ok) {
-                cerrarModal('m-emp-historial');
-                let r2 = await fetch('/api/empleado/datos');
-                if (r2.ok) { let d2 = await r2.json(); cargarDatos(d2); }
-            } else {
-                alert(r.data.msg || "Fallo en la cancelación del registro.");
+                if (m) gpsTexto = `${m[1]} m · ${D.sucursal || ''}`;
+                await recargar();   // nunca optimista: el estado sale de la respuesta de la API
+                toast(r.data.msg || 'Fichaje registrado.');
             }
+            fin(r.ok, r.data.msg || "Operación fallida.");
+        }, () => fin(false, "Acceso a la ubicación denegado. Activá el GPS y volvé a intentar."), {enableHighAccuracy: true, timeout: 15000});
+    }
+
+    // --- Solicitudes ---
+    function textoFechas(s) {
+        const t = tipoDe(s.concepto);
+        if (t.tipo === 'DIAS' && s.fecha_fin) {
+            const n = Math.round((new Date(s.fecha_fin) - new Date(s.fecha_ausencia)) / 864e5) + 1;
+            return `${fecha(s.fecha_ausencia)} → ${fecha(s.fecha_fin)} · ${n} día${n === 1 ? '' : 's'}`;
         }
+        return s.hora_inicio ? `${fecha(s.fecha_ausencia)} · ${esc(s.hora_inicio)} a ${esc(s.hora_fin)}` : fecha(s.fecha_ausencia);
+    }
+    function renderSolicitudes() {
+        const lista = D.solicitudes || [];
+        document.getElementById('p-solicitudes').innerHTML = `<div style="display:flex;flex-direction:column;gap:14px">
+            <button class="btn" style="border-radius:var(--r)" onclick="abrirSolicitud()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Nueva solicitud</button>
+            <div class="aviso">${svg('cal', 17, 'style="stroke:var(--tw)"')}<span>Te quedan <b style="color:var(--tp)">${esc(D.dias_vacaciones ?? 0)} días</b> de vacaciones este período</span></div>
+            ${lista.length ? lista.map(s => {
+                const t = tipoDe(s.concepto), cls = s.estado === 'APROBADA' ? 'b-ok' : s.estado === 'RECHAZADA' ? 'b-no' : 'b-pend';
+                const adj = s.archivo && s.archivo !== 'null' ? `<a href="/api/archivo/${encodeURIComponent(s.archivo)}" target="_blank" rel="noopener">Ver adjunto</a>` : (t.requiere_foto === 1 ? 'Certificado pendiente' : 'Sin certificado requerido');
+                return `<div class="card sol"><div class="sol-top"><div style="min-width:0"><div class="sol-c">${esc(s.concepto)}</div><div class="sol-f">${textoFechas(s)}</div></div><span class="badge ${cls}">${esc(s.estado)}</span></div>
+                    <div class="sol-m">${esc(s.motivo)}</div><div class="sol-a">${svg('clip', 13)}${adj}</div>
+                    ${s.estado === 'PENDIENTE' ? `<button class="btn btn-out" style="align-self:flex-start" onclick="cancelarSolicitud(${Number(s.id)})">Cancelar solicitud</button>` : ''}</div>`;
+            }).join('') : '<div class="vacio">Todavía no cargaste solicitudes.</div>'}</div>`;
+    }
+    function abrirSolicitud() {
+        const tipos = D.tipos_solicitud || [];
+        conceptoSel = tipos.length ? (tipos.find(t => t.nombre === conceptoSel) || tipos[0]).nombre : null;
+        ['s-fecha', 's-fechafin', 's-hin', 's-hout', 's-motivo', 's-foto'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('s-msg').textContent = '';
+        pintarChips(); abrirHoja('h-solicitud');
+    }
+    function pintarChips() {
+        const tipos = D.tipos_solicitud || [], t = tipoDe(conceptoSel), porDias = t.tipo === 'DIAS';
+        document.getElementById('s-chips').innerHTML = tipos.length ? tipos.map(x => `<button class="chip-c${x.nombre === conceptoSel ? ' on' : ''}" onclick="conceptoSel='${esc(x.nombre)}'; pintarChips();">${esc(x.nombre)}</button>`).join('') : '<span class="vacio" style="padding:0">No hay conceptos cargados: avisá al administrador.</span>';
+        document.getElementById('lbl-desde').textContent = porDias ? 'Fecha desde' : 'Fecha';
+        document.getElementById('s-hasta-box').classList.toggle('hidden', !porDias);
+        document.getElementById('s-horas-box').classList.toggle('hidden', porDias);
+        document.getElementById('s-foto-box').classList.toggle('hidden', t.requiere_foto !== 1);
+    }
+    async function enviarSolicitud() {
+        const v = id => document.getElementById(id).value, t = tipoDe(conceptoSel), msg = document.getElementById('s-msg'), btn = document.getElementById('btn-enviar');
+        if (!conceptoSel) { msg.textContent = 'Elegí una clasificación.'; return; }
+        if (!v('s-fecha') || !v('s-motivo').trim()) { msg.textContent = 'Completá la fecha y el motivo.'; return; }
+        if (t.tipo === 'DIAS' && !v('s-fechafin')) { msg.textContent = 'Completá la fecha hasta.'; return; }
+        if (t.tipo !== 'DIAS' && (!v('s-hin') || !v('s-hout'))) { msg.textContent = 'Completá las horas de salida y regreso.'; return; }
+        const fd = new FormData();
+        fd.append('concepto', conceptoSel); fd.append('fecha_ausencia', v('s-fecha')); fd.append('fecha_fin', t.tipo === 'DIAS' ? v('s-fechafin') : '');
+        fd.append('hora_inicio', t.tipo === 'DIAS' ? '' : v('s-hin')); fd.append('hora_fin', t.tipo === 'DIAS' ? '' : v('s-hout')); fd.append('motivo', v('s-motivo').trim());
+        const file = document.getElementById('s-foto').files[0]; if (file) fd.append('comprobante', file);
+        btn.disabled = true; msg.textContent = '';
+        let r = await req('/api/solicitud/crear', fd);
+        btn.disabled = false;
+        if (!r.ok) { msg.textContent = r.data.msg || 'No se pudo enviar.'; return; }
+        cerrarHoja('h-solicitud'); toast('Solicitud enviada · queda PENDIENTE de aprobación'); await recargar();
+    }
+    async function cancelarSolicitud(id) {
+        if (!confirm('¿Cancelar esta solicitud?')) return;
+        let r = await req('/api/solicitud/cancelar', {solicitud_id: id});
+        toast(r.data.msg || (r.ok ? 'Solicitud cancelada.' : 'No se pudo cancelar.'));
+        if (r.ok) await recargar();
+    }
 
-        let fichajeHoy = null;
-        const ICO_PIN = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>';
-        const ICO_SALIR = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>';
-
-        // Estado del dia: sin fichar -> Registrar Fichaje; con entrada -> Marcar Salida (rojo); con salida -> jornada cerrada
-        function pintarFichaje() {
-            let btn = document.getElementById('btn-fichar');
-            let est = document.getElementById('f-estado');
-            let f = fichajeHoy;
-            btn.classList.toggle('btn-red', !!(f && !f.salida));
-            btn.disabled = !!(f && f.salida);
-            if (!f) {
-                btn.innerHTML = ICO_PIN + ' Registrar Fichaje';
-                est.classList.add('hidden');
-                return;
-            }
-            est.classList.remove('hidden');
-            if (!f.salida) {
-                btn.innerHTML = ICO_SALIR + ' Marcar Salida';
-                est.className = 'badge-success';
-                est.innerText = `✔ Ya marcaste tu ENTRADA hoy a las ${f.entrada}`;
-            } else {
-                btn.innerHTML = ICO_PIN + ' Jornada finalizada';
-                est.className = 'badge-info';
-                est.innerText = `✔ Ya marcaste tu SALIDA hoy a las ${f.salida} (entrada ${f.entrada})`;
-            }
+    // --- Agenda ---
+    function marcasDelMes(y, m) {
+        const marcas = {}, pon = (iso, c) => { if (iso && iso.startsWith(`${y}-${String(m + 1).padStart(2, '0')}`)) marcas[Number(iso.slice(8, 10))] = marcas[Number(iso.slice(8, 10))] || c; };
+        (D.feriados || []).forEach(f => pon(f.fecha, 'var(--dg)'));
+        (D.solicitudes || []).filter(s => s.estado === 'APROBADA' && tipoDe(s.concepto).tipo === 'DIAS' && s.fecha_fin).forEach(s => { for (let d = new Date(s.fecha_ausencia + 'T00:00'); d <= new Date(s.fecha_fin + 'T00:00'); d.setDate(d.getDate() + 1)) pon(d.toLocaleDateString('en-CA'), 'var(--ok)'); });
+        (D.francos || []).forEach(f => pon(f.fecha, 'var(--ac)'));
+        // Convocatorias a feriados: la API solo las devuelve para el encargado (su sucursal); se filtran las propias.
+        (D.mis_convocatorias || []).filter(c => String(c.dni) === String(dniLocal)).forEach(c => pon(c.fecha, 'var(--wn)'));
+        return marcas;
+    }
+    function renderCalendario() {
+        const y = calDate.getFullYear(), m = calDate.getMonth(), hoy = new Date(), marcas = marcasDelMes(y, m);
+        const primero = new Date(y, m, 1).getDay(), dias = new Date(y, m + 1, 0).getDate();
+        let celdas = '';
+        for (let i = 0; i < primero; i++) celdas += '<div class="d vacio"></div>';
+        for (let d = 1; d <= dias; d++) {
+            const esHoy = d === hoy.getDate() && m === hoy.getMonth() && y === hoy.getFullYear();
+            celdas += `<div class="d${esHoy ? ' hoy' : ''}"><span>${d}</span><i style="background:${marcas[d] || 'transparent'}"></i></div>`;
         }
+        const hoyIso = hoyISO(), francos = (D.francos || []).slice().sort((a, b) => (a.fecha >= hoyIso) === (b.fecha >= hoyIso) ? a.fecha.localeCompare(b.fecha) : (a.fecha >= hoyIso ? -1 : 1));
+        document.getElementById('p-calendario').innerHTML = `<div style="display:flex;flex-direction:column;gap:14px">
+            <div class="card card-l" style="padding:16px 14px;display:flex;flex-direction:column;gap:12px">
+                <div class="cal-nav"><button onclick="calDate.setMonth(calDate.getMonth()-1); renderCalendario();" aria-label="Mes anterior"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                    <span>${MESES[m]} ${y}</span>
+                    <button onclick="calDate.setMonth(calDate.getMonth()+1); renderCalendario();" aria-label="Mes siguiente"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg></button></div>
+                <div class="cal">${['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(w => `<div class="w">${w}</div>`).join('')}${celdas}</div>
+                <div class="leyenda"><span><i style="background:var(--dg)"></i>Feriado</span><span><i style="background:var(--ok)"></i>Vacaciones</span><span><i style="background:var(--ac)"></i>Medio franco</span><span><i style="background:var(--wn)"></i>Convocatoria</span></div>
+            </div>
+            <div class="sec">Mis medios francos</div>
+            ${francos.length ? francos.map(f => `<div class="card franco"><span class="ic">${svg('taza')}</span><div style="flex:1;min-width:0"><div class="f">${fechaLarga(f.fecha)}</div></div><span class="badge b-info">${esc(f.turno)}</span></div>`).join('') : '<div class="vacio">No tenés medios francos asignados.</div>'}</div>`;
+    }
 
-        function avisoFichaje(ok, detalle) {
-            let ico = document.getElementById('fa-icono');
-            ico.style.background = ok ? 'var(--success)' : 'var(--danger)';
-            ico.innerHTML = ok
-                ? '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>'
-                : '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
-            let titulo = !ok ? 'NO SE REGISTRÓ' : /^Salida/.test(detalle) ? 'SALIDA REGISTRADA' : 'ENTRADA REGISTRADA';
-            document.getElementById('fa-titulo').innerText = titulo;
-            document.getElementById('fa-titulo').style.color = ok ? 'var(--success)' : 'var(--danger)';
-            document.getElementById('fa-hora').innerText = ok ? new Date().toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit', hourCycle:'h23'}) : '';
-            document.getElementById('fa-detalle').innerText = ok ? 'Tu fichaje quedó guardado.' : detalle + ' Intentá de nuevo o avisá a tu encargado.';
-            document.getElementById('m-fichaje').classList.remove('hidden');
-            if (navigator.vibrate) navigator.vibrate(ok ? 200 : [150, 100, 150]);
-        }
+    // --- Aprobar (encargado) ---
+    async function cargarPendientes() {
+        try { let r = await fetch('/api/datos_panel'); if (!r.ok) return; pendientes = ((await r.json()).solicitudes || []).filter(s => s.estado === 'PENDIENTE'); } catch (e) { return; }
+        renderTabs(); if (tab === 'aprobaciones') renderAprobaciones();
+    }
+    function renderAprobaciones() {
+        const n = pendientes.length;
+        document.getElementById('p-aprobaciones').innerHTML = `<div style="display:flex;flex-direction:column;gap:14px">
+            <div class="banner">${n ? `${n} solicitud${n === 1 ? ' espera' : 'es esperan'} tu decisión` : 'No quedan solicitudes pendientes en tu sucursal'}</div>
+            ${pendientes.map(s => `<div class="card apr"><div class="apr-top"><span class="avatar">${esc(iniciales(s.nombre))}</span><div style="flex:1;min-width:0"><div style="font:600 14px/1.2 system-ui,sans-serif">${esc(s.nombre)}</div><div style="font:400 11px/1.3 system-ui,sans-serif;color:var(--ts);margin-top:3px">Legajo <span class="mono">${esc(s.dni)}</span></div></div><span class="badge b-neu">${esc(s.concepto)}</span></div>
+                <div class="apr-box"><b style="color:var(--tp)">${textoFechas(s)}</b><br>${esc(s.motivo)}${s.archivo && s.archivo !== 'null' ? ` · <a href="/api/archivo/${encodeURIComponent(s.archivo)}" target="_blank" rel="noopener">Ver adjunto</a>` : ''}</div>
+                <div class="apr-btns"><button class="btn ok" onclick="resolver(${Number(s.id)}, 'APROBADA')">${svg('check', 15, 'style="stroke-width:2.6"')}Aprobar</button><button class="btn no" onclick="resolver(${Number(s.id)}, 'RECHAZADA')">${svg('x', 15, 'style="stroke-width:2.4"')}Rechazar</button></div></div>`).join('')}</div>`;
+    }
+    async function resolver(id, estado) {
+        const s = pendientes.find(x => x.id === id); if (!s) return;
+        if (!confirm(`¿${estado === 'APROBADA' ? 'Aprobar' : 'Rechazar'} la solicitud de ${s.nombre}?`)) return;
+        let r = await req('/api/admin/estado_solicitud', {d1: id, d2: estado, d3: '', d4: ''});
+        if (!r.ok) { toast(r.data.msg || 'No se pudo registrar.'); return; }
+        pendientes = pendientes.filter(x => x.id !== id);
+        toast(`${s.nombre} · solicitud ${estado.toLowerCase()}`); renderTabs(); renderAprobaciones();
+    }
 
-        function ficharGPS() {
-            let msg = document.getElementById('f-msg');
-            let btn = document.getElementById('btn-fichar');
-            msg.style.color = 'var(--accent)'; msg.innerText = "Obteniendo ubicación...";
-            btn.disabled = true;
-            
-            if(!navigator.geolocation) {
-                msg.style.color = 'var(--danger)'; msg.innerText = "Error: Geolocalización no disponible."; btn.disabled = false; return;
-            }
-            navigator.geolocation.getCurrentPosition(async (pos) => {
-                let r = await req('/api/fichar', {lat: pos.coords.latitude, lon: pos.coords.longitude});
-                msg.style.color = r.ok ? 'var(--success)' : 'var(--danger)';
-                msg.innerText = r.data.msg || "Operación fallida.";
-                avisoFichaje(r.ok, msg.innerText);
-                if (r.ok) {
-                    let r2 = await fetch('/api/empleado/datos');
-                    if (r2.ok) cargarDatos(await r2.json());
-                }
-                setTimeout(() => { btn.disabled = !!(fichajeHoy && fichajeHoy.salida); }, 5000);
-            }, (err) => {
-                msg.style.color = 'var(--danger)'; msg.innerText = "Acceso a la ubicación denegado.";
-                avisoFichaje(false, "No pudimos obtener tu ubicación.");
-                btn.disabled = !!(fichajeHoy && fichajeHoy.salida);
-            }, {enableHighAccuracy: true, timeout: 15000});
-        }
+    // --- Avisos (anuncios con firma de recibido) ---
+    async function cargarAnuncios() {
+        try { let r = await fetch('/api/anuncios/pendientes'); if (!r.ok) return; anuncios = (await r.json()).anuncios || []; } catch (e) { return; }
+        renderBell(); if (tab === 'inicio') renderInicio(); if (tab === 'notifs') renderNotifs();
+    }
+    function marcarVistos() { anuncios.filter(a => !a.visto_en).forEach(a => { a.visto_en = 'ahora'; req(`/api/anuncios/${a.id}/visto`); }); renderNotifs(); }
+    function renderNotifs() {
+        document.getElementById('p-notifs').innerHTML = `<div style="display:flex;flex-direction:column;gap:14px">${anuncios.length ? anuncios.map(a => `<div class="card notif"><div class="t"><span>${esc(a.titulo)}</span><span class="c">${esc((a.creado_en || '').slice(0, 16))}</span></div><div class="x">${esc(a.cuerpo)}</div>
+            <button class="btn" style="height:42px;font-size:13px;margin-top:4px;background:var(--ok)" onclick="firmarAnuncio(${Number(a.id)})">${svg('check', 15, 'style="stroke-width:2.6"')} Firmar recibido</button></div>`).join('') : '<div class="vacio">No hay avisos pendientes de firma.</div>'}</div>`;
+    }
+    function firmarAnuncio(id) {
+        const a = anuncios.find(x => x.id === id); anuncioAFirmar = id;
+        document.getElementById('fa-titulo').innerHTML = `Vas a firmar el recibido de <b>${esc(a ? a.titulo : '')}</b>. Queda registrado con fecha y hora.`;
+        document.getElementById('fa-dni').value = ''; document.getElementById('fa-msg').textContent = '';
+        abrirHoja('h-firma'); document.getElementById('fa-dni').focus();
+    }
+    async function confirmarFirma() {
+        const dni = document.getElementById('fa-dni').value.trim(), msg = document.getElementById('fa-msg'), btn = document.getElementById('btn-fa');
+        if (!dni) { msg.textContent = 'Ingresá tu DNI.'; return; }
+        btn.disabled = true;
+        let r = await req(`/api/anuncios/${anuncioAFirmar}/firmar`, {dni});
+        btn.disabled = false;
+        if (!r.ok) { msg.textContent = r.status === 429 ? 'Demasiados intentos. Esperá un minuto.' : (r.data.msg || 'No se pudo registrar.'); if (r.status !== 400 || !String(r.data.msg).startsWith('DNI')) cargarAnuncios(); return; }
+        cerrarHoja('h-firma'); anuncios = anuncios.filter(x => x.id !== anuncioAFirmar); toast('Recibido registrado.'); renderBell(); renderNotifs();
+    }
 
-        async function enviarSolicitud() {
-            let btn = document.getElementById('btn-enviar-solicitud');
-            let msg = document.getElementById('s-msg');
-            
-            let p = {
-                concepto: document.getElementById('s-concepto').value,
-                fecha_ausencia: document.getElementById('s-fecha').value,
-                motivo: document.getElementById('s-motivo').value
-            };
-            
-            if(!p.concepto || !p.fecha_ausencia || !p.motivo) {
-                msg.className = 'error'; msg.innerText = "Complete los campos requeridos."; return;
-            }
-            
-            let t = tipos_sol.find(x => x.nombre === p.concepto);
-            if(t && t.tipo === 'DIAS') p.fecha_fin = document.getElementById('s-fechafin').value;
-            else {
-                p.hora_inicio = document.getElementById('s-hin').value;
-                p.hora_fin = document.getElementById('s-hout').value;
-            }
-            
-            let fileInput = document.getElementById('s-foto');
-            if(!fileInput.parentElement.classList.contains('hidden') && fileInput.files.length > 0) {
-                p.comprobante = fileInput.files[0];
-            }
-            
-            btn.disabled = true;
-            btn.innerHTML = '<div class="loader"></div>';
-            msg.className = 'error'; msg.style.color = 'var(--accent)'; msg.innerText = "";
-            
-            let r = await req('/api/solicitud/crear', p);
-            
-            if(r.ok) {
-                msg.className = 'success'; msg.innerText = r.data.msg;
-                setTimeout(async () => { 
-                    msg.innerText = ""; 
-                    document.getElementById('s-motivo').value = ""; 
-                    btn.disabled = false;
-                    btn.innerText = "Enviar Solicitud";
-                    let r2 = await fetch('/api/empleado/datos');
-                    if(r2.ok) { let d2 = await r2.json(); cargarDatos(d2); }
-                }, 2000);
-            } else {
-                msg.className = 'error'; msg.innerText = r.data.msg || "Error de validación.";
-                btn.disabled = false;
-                btn.innerText = "Enviar Solicitud";
-            }
-        }
+    // --- Legajo ---
+    function renderPerfil() {
+        const rol = {0: 'Administrador', 1: 'Encargado de sucursal', 2: 'Empleado'}[D.rol] || 'Empleado';
+        const oscuro = document.documentElement.getAttribute('data-theme') === 'dark';
+        document.getElementById('p-perfil').innerHTML = `<div style="display:flex;flex-direction:column;gap:14px">
+            <div class="card card-l perfil"><span class="avatar">${esc(iniciales(D.nombre))}</span><div class="n">${esc(D.nombre)}</div><div class="r">${rol} · ${esc(D.sucursal || '')}</div>
+                <div style="display:flex;gap:8px;margin-top:8px"><span class="badge b-info">Legajo ${esc(dniLocal || '—')}</span><span class="badge b-pend">${esc(D.dias_vacaciones ?? 0)} días vac.</span></div></div>
+            <div class="card kv"><span>DNI / Legajo</span><b class="mono">${esc(dniLocal || '—')}</b></div>
+            <div class="card kv"><span>Sucursal</span><b>${esc(D.sucursal || '—')}</b></div>
+            <div class="card kv"><span>Rol</span><b>${rol}</b></div>
+            <button class="btn-sf" onclick="toggleTheme()">${svg('luna', 17)}${oscuro ? 'Tema oscuro activado' : 'Tema claro activado'}</button>
+            ${D.rol <= 1 ? `<button class="btn-sf" onclick="location.href='/panel'">${svg('solicitudes', 17)}Ir al panel de administración</button>` : ''}
+            <button class="btn-salir" onclick="logout()">${svg('salir', 16)}Cerrar sesión</button>
+            <div class="pie" style="margin-top:0">JZ PASS · Powered by JZ Tech Solutions<br><a href="#" onclick="abrirHoja('h-privacidad'); return false;">Privacidad</a> · <a href="#" onclick="abrirHoja('h-terminos'); return false;">Términos de Uso</a></div></div>`;
+    }
 
-        async function asignarFrancoLocal() {
-            let d1 = document.getElementById('ef-dni').value;
-            let d2 = document.getElementById('ef-fecha').value;
-            let d3 = document.getElementById('ef-turno').value;
-            let msg = document.getElementById('ef-msg');
-            let btn = document.getElementById('btn-ef-guardar');
-            
-            if(!d1 || !d2) { msg.innerText = "Datos incompletos."; return; }
-            let dniLimpio = d1.includes(' - ') ? d1.split(' - ').pop().trim() : d1.trim();
-            
-            btn.disabled = true; msg.style.color = 'var(--accent)'; msg.innerText = "Procesando...";
-            let r = await req('/api/admin/asignar_franco', {d1: dniLimpio, d2: d2, d3: d3});
-            
-            if(r.ok) {
-                msg.className = 'success'; msg.innerText = "Registro completo.";
-                setTimeout(async () => { 
-                    cerrarModal('m-e-franco'); 
-                    msg.innerText = ""; document.getElementById('ef-dni').value = ""; document.getElementById('ef-fecha').value = "";
-                    btn.disabled = false;
-                    let r2 = await fetch('/api/empleado/datos');
-                    if(r2.ok) { let d2 = await r2.json(); cargarDatos(d2); } 
-                }, 1500);
-            } else {
-                msg.className = 'error'; msg.innerText = r.data.msg || "Fallo en la operación.";
-                btn.disabled = false;
-            }
-        }
-
-        function abrirCalendarioLocal() {
-            document.getElementById('m-e-cal').classList.remove('hidden');
-            renderCalendarioLocal();
-        }
-
-        function cambiarMesLocal(dir) {
-            ecalDate.setMonth(ecalDate.getMonth() + dir);
-            renderCalendarioLocal();
-        }
-
-        function renderCalendarioLocal() {
-            let y = ecalDate.getFullYear(), m = ecalDate.getMonth();
-            document.getElementById('ecal-month-year').innerText = new Date(y, m).toLocaleString('es-ES', {month:'long', year:'numeric'});
-            let html = `<div>Dom</div><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div>`.replace(/div/g, 'div class="cal-header"');
-            
-            for(let i=0; i<new Date(y, m, 1).getDay(); i++) html += `<div class="cal-day" style="border:none; background:transparent;"></div>`;
-            
-            for(let d=1; d<=new Date(y, m + 1, 0).getDate(); d++) {
-                let f_str = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-                let badges = '';
-                
-                locFeriados.filter(x => x.fecha === f_str).forEach(f => badges += `<div class="cal-badge badge-danger">${esc(f.nombre)}</div>`);
-                locFrancos.filter(x => x.fecha === f_str).forEach(fr => badges += `<div class="cal-badge badge-info">${esc(fr.nombre.split(' ')[0])} (${esc(fr.turno[0])})</div>`);
-                locSolic.filter(s => f_str >= s.fecha_ausencia && (s.fecha_fin === '' ? f_str === s.fecha_ausencia : f_str <= s.fecha_fin)).forEach(s => {
-                    let lbl = s.concepto === 'VACACIONES' ? 'Vac' : 'Lic';
-                    badges += `<div class="cal-badge badge-success">${lbl}: ${esc(s.nombre.split(' ')[0])}</div>`;
-                });
-                
-                html += `<div class="cal-day"><div class="cal-num">${d}</div>${badges}</div>`;
-            }
-            document.getElementById('ecal-grid').innerHTML = html;
-        }
-
-        async function cerrarSesion() { await req('/api/logout'); location.reload(); }
-        init();
-    </script>
+    // Reloj del anillo: mientras la jornada esta abierta, las horas de hoy avanzan solas.
+    setInterval(() => { if (D && tab === 'inicio' && D.fichaje_hoy && !D.fichaje_hoy.salida && !ficharEnCurso) renderInicio(); }, 60000);
+    if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+    init();
+</script>
 </body>
 </html>

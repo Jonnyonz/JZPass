@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from jztech_core import sessions
@@ -13,7 +13,7 @@ from jztech_core.security_headers import SecurityHeadersMiddleware
 configure_logging()
 
 from database import (
-    DB, ORIGINES_PERMITIDOS, csrf_signer, limiter,
+    DB, ORIGINES_PERMITIDOS, VERSION, csrf_signer, limiter,
     init_db_schema, close_db_pool, ErrorAuth,
 )
 from routers import auth, empleado, admin, archivos, anuncios, integraciones
@@ -102,3 +102,21 @@ async def home():
 @app.get("/panel", response_class=HTMLResponse)
 async def panel():
     with open("dashboard.html", "r", encoding="utf-8") as f: return f.read()
+
+
+# PWA (2.10.0): la app del personal se instala en el celular. El manifest y el icono son estaticos; el service
+# worker lleva la version para renovar su cache en cada release (no-cache: el navegador lo relee en cada visita).
+@app.get("/manifest.webmanifest")
+async def manifest():
+    return FileResponse("manifest.webmanifest", media_type="application/manifest+json")
+
+
+@app.get("/icono.svg")
+async def icono():
+    return FileResponse("icono.svg", media_type="image/svg+xml")
+
+
+@app.get("/sw.js")
+async def service_worker():
+    with open("sw.js", "r", encoding="utf-8") as f: js = f.read().replace("__VERSION__", VERSION)
+    return Response(js, media_type="application/javascript", headers={"Cache-Control": "no-cache"})

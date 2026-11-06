@@ -1,0 +1,16 @@
+{
+  "name": "JZ PASS",
+  "short_name": "JZPass",
+  "description": "Fichaje con GPS, solicitudes y agenda del personal.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "lang": "es-AR",
+  "theme_color": "#2962ff",
+  "background_color": "#f4f6f9",
+  "icons": [
+    { "src": "/icono.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icono.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

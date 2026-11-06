@@ -2,6 +2,29 @@
 
 Cambios de JZPass, del más nuevo al más viejo. Cada entrada corresponde a un push a `main`.
 
+## 2.10.0 — 2026-11-06
+
+Tag `v2.10.0`. Solo frontend: no cambia la API ni la base.
+
+### Cambiado (app móvil nueva para empleados y encargados)
+- `index.html` rehecho según el diseño `design_handoff_jzpass_mobile` (tono "fiel"): header con campana, contenido por
+  pestañas y barra inferior. **Fichaje** (tarjeta con horas de hoy, ingreso, salida y GPS; botón único que pulsa hasta
+  el ingreso y pasa a rojo para la salida; accesos a vacaciones, solicitudes en curso, próximo medio franco y avisos),
+  **Permisos** (solicitudes con estado, adjunto y cancelar; hoja inferior para la nueva solicitud con chips de
+  concepto, fechas u horas según el tipo y certificado cuando el concepto lo exige), **Agenda** (calendario con
+  feriados, vacaciones, medios francos y convocatorias; lista de medios francos), **Legajo** (datos, tema, panel
+  para admin y encargado, cerrar sesión, privacidad y términos). Los **avisos** (anuncios con firma de recibido)
+  salen de la campana. Login, configuración inicial y cambio de clave provisoria con el mismo estilo.
+- **Encargado:** pestaña **Aprobar** con las solicitudes pendientes de su sucursal (aprobar o rechazar), visible solo
+  si "encargados aprueban" está activo. Asignar medios francos y convocatorias quedan en el panel (`/panel`).
+- Lo que la API del empleado no devuelve no se muestra (sin historial de fichajes ni horas del mes, horario, correo
+  o teléfono): decisión de no agregar endpoints para la app.
+
+### Agregado
+- **Instalable en el celular (PWA):** `manifest.webmanifest`, `icono.svg` y `sw.js` (servido por `main.py` con la
+  versión para renovar la caché en cada release). Guarda solo el cascarón; `/api` nunca se cachea y sin red el
+  fichaje avisa el error.
+
 ## 2.9.0 — 2026-11-06
 
 Tag `v2.9.0`. Tabla nueva `claves_api` (se crea sola al arrancar).
