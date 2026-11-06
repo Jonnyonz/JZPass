@@ -2,6 +2,20 @@
 
 Cambios de JZPass, del más nuevo al más viejo. Cada entrada corresponde a un push a `main`.
 
+## 2.8.0 — 2026-11-06
+
+Tag `v2.8.0`.
+
+### Agregado (fecha de baja visible y editable)
+- El legajo muestra el campo "Fecha de baja" cuando el estado es Inactivo. Si se deja vacío al desactivar, se
+  completa con la fecha del día (como hasta ahora). Se puede corregir después: sirve para poner el último día
+  real de trabajo y para completar las bajas viejas que quedaron sin fecha.
+- La lista de usuarios, con "Mostrar Inactivos", muestra la fecha de baja al lado del estado.
+
+### Por qué
+- El reporte de asistencia ya incluía a los dados de baja hasta su fecha de baja, pero los desactivados antes
+  de que existiera ese campo quedaron sin fecha y no aparecían, y no había forma de verla ni cambiarla.
+
 ## 2.7.3 — 2026-10-20
 
 Tag `v2.7.3`.

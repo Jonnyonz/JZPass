@@ -220,11 +220,16 @@ async def admin_actions(request: Request, action: str, adm: dict = Depends(requi
             curr_u = await db.fetchrow("SELECT activo, fecha_baja FROM usuarios WHERE dni=$1", str(d1))
             f_baja = curr_u['fecha_baja'] if curr_u else None
 
-            # Lógica transaccional de estado (Asignación de Fecha de Baja)
-            if curr_u and curr_u['activo'] == 1 and d8 == 0:
-                f_baja = datetime.now().strftime("%Y-%m-%d")
-            elif d8 == 1:
+            # Fecha de baja: la del formulario si viene (permite corregirla), si no la del dia al desactivar.
+            f_baja_form = (form.get('fecha_baja') or '').strip()
+            if d8 == 1:
                 f_baja = None
+            elif f_baja_form:
+                try: datetime.strptime(f_baja_form, "%Y-%m-%d")
+                except ValueError: return JSONResponse(status_code=400, content={"msg": "Fecha de baja inválida."})
+                f_baja = f_baja_form
+            elif not f_baja:
+                f_baja = datetime.now().strftime("%Y-%m-%d")
 
             if mapa_file and hasattr(mapa_file, 'filename') and mapa_file.filename:
                 raw = await mapa_file.read(5 * 1024 * 1024 + 1)
