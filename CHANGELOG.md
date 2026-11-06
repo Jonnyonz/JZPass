@@ -2,6 +2,19 @@
 
 Cambios de JZPass, del más nuevo al más viejo. Cada entrada corresponde a un push a `main`.
 
+## 2.10.1 — 2026-11-06
+
+Tag `v2.10.1`.
+
+### Cambiado
+- **Agenda solo para encargado y administrador:** el empleado ya no ve la pestaña Agenda ni el acceso "Próximo medio
+  franco" (veía únicamente lo propio: feriados, sus medios francos y sus vacaciones aprobadas; nunca datos de otros).
+- **El administrador no administra desde la app:** se quita el acceso al panel desde Legajo para el rol 0; el panel
+  sigue en `/panel`. El encargado conserva su acceso (medios francos y convocatorias se asignan ahí).
+- **Ícono de la app instalada:** el glifo JZ queda centrado y más grande sobre azul con degradé, dentro de la zona
+  segura del recorte de Android; se suman `icono-192.png`, `icono-512.png` (manifest) e `icono-180.png`
+  (`apple-touch-icon`, iPhone no acepta SVG). El `icono.svg` queda como alternativa.
+
 ## 2.10.0 — 2026-11-06
 
 Tag `v2.10.0`. Solo frontend: no cambia la API ni la base.

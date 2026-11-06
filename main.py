@@ -116,6 +116,14 @@ async def icono():
     return FileResponse("icono.svg", media_type="image/svg+xml")
 
 
+# PNG del icono (Android toma 192/512 del manifest; iPhone solo acepta PNG como apple-touch-icon, 180).
+@app.get("/icono-{tam}.png")
+async def icono_png(tam: int):
+    if tam not in (180, 192, 512):
+        return JSONResponse(status_code=404, content={"detail": "No existe."})
+    return FileResponse(f"icono-{tam}.png", media_type="image/png")
+
+
 @app.get("/sw.js")
 async def service_worker():
     with open("sw.js", "r", encoding="utf-8") as f: js = f.read().replace("__VERSION__", VERSION)

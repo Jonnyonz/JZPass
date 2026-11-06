@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-title" content="JZ PASS">
     <link rel="manifest" href="/manifest.webmanifest">
     <link rel="icon" href="/icono.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/icono.svg">
+    <link rel="apple-touch-icon" href="/icono-180.png">
     <title>JZPass - Acceso Personal</title>
     <style>
         /* Diseño: design_handoff_jzpass_mobile (tono "fiel"; data-tone="expresivo" en <html> cambia a header y hero azules). */
@@ -410,17 +410,19 @@
 
     // --- datos y navegación ---
     function puedeAprobar() { return D && D.rol === 1 && D.config && Number(D.config.encargados_aprueban) === 1; }
+    // Agenda solo para encargado y admin (2.10.1): el empleado no ve calendario ni medios francos en la app.
+    function veAgenda() { return D && D.rol !== 2; }
     function cargarDatos(d) {
         if (!d || !d.nombre) { vista('v-login'); return; }
         D = d;
         if (d.config && d.config.empresa_nombre) document.title = "JZPass - " + d.config.empresa_nombre;
-        if (tab === 'aprobaciones' && !puedeAprobar()) tab = 'inicio';
+        if ((tab === 'aprobaciones' && !puedeAprobar()) || (tab === 'calendario' && !veAgenda())) tab = 'inicio';
         vista('v-app');
         renderTodo();
         cargarAnuncios();
         if (puedeAprobar()) cargarPendientes();
     }
-    function go(t) { tab = t; document.querySelectorAll('.sheet-wrap').forEach(h => h.classList.add('hidden')); renderTodo(); document.querySelector('.content').scrollTo(0, 0); if (t === 'notifs') marcarVistos(); }
+    function go(t) { if (t === 'calendario' && !veAgenda()) return; tab = t; document.querySelectorAll('.sheet-wrap').forEach(h => h.classList.add('hidden')); renderTodo(); document.querySelector('.content').scrollTo(0, 0); if (t === 'notifs') marcarVistos(); }
     function renderTodo() {
         const t = {
             inicio: ['Hola, ' + esc(String(D.nombre).split(' ')[0]), esc(D.sucursal || '')],
@@ -436,7 +438,7 @@
         ({inicio: renderInicio, solicitudes: renderSolicitudes, calendario: renderCalendario, aprobaciones: renderAprobaciones, notifs: renderNotifs, perfil: renderPerfil})[tab]();
     }
     function renderTabs() {
-        const defs = [['inicio', 'Fichaje'], ['solicitudes', 'Permisos'], ...(puedeAprobar() ? [['aprobaciones', 'Aprobar']] : []), ['calendario', 'Agenda'], ['perfil', 'Legajo']];
+        const defs = [['inicio', 'Fichaje'], ['solicitudes', 'Permisos'], ...(puedeAprobar() ? [['aprobaciones', 'Aprobar']] : []), ...(veAgenda() ? [['calendario', 'Agenda']] : []), ['perfil', 'Legajo']];
         document.getElementById('tabbar').innerHTML = defs.map(([id, l]) => `<button class="tab${tab === id ? ' on' : ''}" onclick="go('${id}')"><span class="pill">${svg(id)}${id === 'aprobaciones' && pendientes.length ? '<span class="dot"></span>' : ''}</span><span class="l">${l}</span></button>`).join('');
     }
     function renderBell() { const n = anuncios.length, el = document.getElementById('bell-n'); el.textContent = n; el.classList.toggle('hidden', n === 0); }
@@ -474,8 +476,8 @@
             <div class="grid2">
                 <button class="atajo" onclick="go('solicitudes')"><span class="top"><span class="chip" style="background:var(--bw);color:var(--tw)">${svg('cal', 15)}</span><b>${esc(D.dias_vacaciones ?? 0)} días</b></span><span class="l">Vacaciones disponibles</span></button>
                 <button class="atajo" onclick="go('solicitudes')"><span class="top"><span class="chip" style="background:var(--bi);color:var(--ti)">${svg('solicitudes', 15)}</span><b>${pend} pend.</b></span><span class="l">Solicitudes en curso</span></button>
-                <button class="atajo" onclick="go('calendario')"><span class="top"><span class="chip" style="background:var(--bs);color:var(--ts_)">${svg('taza', 15)}</span><b>${prox ? fecha(prox).slice(0, 6) : '—'}</b></span><span class="l">Próximo medio franco</span></button>
-                <button class="atajo" onclick="go('notifs')"><span class="top"><span class="chip" style="background:var(--bn);color:var(--tn)">${svg('check', 15)}</span><b>${anuncios.length}</b></span><span class="l">Avisos sin firmar</span></button>
+                ${veAgenda() ? `<button class="atajo" onclick="go('calendario')"><span class="top"><span class="chip" style="background:var(--bs);color:var(--ts_)">${svg('taza', 15)}</span><b>${prox ? fecha(prox).slice(0, 6) : '—'}</b></span><span class="l">Próximo medio franco</span></button>` : ''}
+                <button class="atajo" ${veAgenda() ? '' : 'style="grid-column:span 2"'} onclick="go('notifs')"><span class="top"><span class="chip" style="background:var(--bn);color:var(--tn)">${svg('check', 15)}</span><b>${anuncios.length}</b></span><span class="l">Avisos sin firmar</span></button>
             </div></div>`;
     }
     function ficharGPS() {
@@ -640,13 +642,13 @@
         const rol = {0: 'Administrador', 1: 'Encargado de sucursal', 2: 'Empleado'}[D.rol] || 'Empleado';
         const oscuro = document.documentElement.getAttribute('data-theme') === 'dark';
         document.getElementById('p-perfil').innerHTML = `<div style="display:flex;flex-direction:column;gap:14px">
-            <div class="card card-l perfil"><span class="avatar">${esc(iniciales(D.nombre))}</span><div class="n">${esc(D.nombre)}</div><div class="r">${rol} · ${esc(D.sucursal || '')}</div>
+            <div class="card card-l perfil"><span class="avatar">${esc(iniciales(D.nombre))}</span><div class="n">${esc(D.nombre)}</div><div class="r">${rol}${D.sucursal ? ' · ' + esc(D.sucursal) : ''}</div>
                 <div style="display:flex;gap:8px;margin-top:8px"><span class="badge b-info">Legajo ${esc(dniLocal || '—')}</span><span class="badge b-pend">${esc(D.dias_vacaciones ?? 0)} días vac.</span></div></div>
             <div class="card kv"><span>DNI / Legajo</span><b class="mono">${esc(dniLocal || '—')}</b></div>
             <div class="card kv"><span>Sucursal</span><b>${esc(D.sucursal || '—')}</b></div>
             <div class="card kv"><span>Rol</span><b>${rol}</b></div>
             <button class="btn-sf" onclick="toggleTheme()">${svg('luna', 17)}${oscuro ? 'Tema oscuro activado' : 'Tema claro activado'}</button>
-            ${D.rol <= 1 ? `<button class="btn-sf" onclick="location.href='/panel'">${svg('solicitudes', 17)}Ir al panel de administración</button>` : ''}
+            ${D.rol === 1 ? `<button class="btn-sf" onclick="location.href='/panel'">${svg('solicitudes', 17)}Ir al panel (francos y convocatorias)</button>` : ''}
             <button class="btn-salir" onclick="logout()">${svg('salir', 16)}Cerrar sesión</button>
             <div class="pie" style="margin-top:0">JZ PASS · Powered by JZ Tech Solutions<br><a href="#" onclick="abrirHoja('h-privacidad'); return false;">Privacidad</a> · <a href="#" onclick="abrirHoja('h-terminos'); return false;">Términos de Uso</a></div></div>`;
     }

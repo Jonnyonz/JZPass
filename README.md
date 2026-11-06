@@ -29,9 +29,9 @@ El ingreso es con **DNI (o legajo) y clave**. Hay tres roles (`usuarios.rol`):
 | Encargado | `1` | Lo mismo pero limitado a **su sucursal**: fichajes, correcciones, medio francos, convocatorias. Puede aprobar solicitudes solo si la configuración lo habilita. |
 | Empleado | `2` | Fichar, ver su historial y saldo de vacaciones, crear y cancelar solicitudes. |
 
-**Empleado y encargado** (`/`, app móvil instalable): pestañas Fichaje, Permisos, Agenda y Legajo; el encargado
-suma **Aprobar** (solicitudes pendientes de su sucursal, si en Ajustes está activo "encargados aprueban") y un
-acceso al panel. La campana muestra los anuncios con firma de recibido. En el celular se instala desde el menú
+**Empleado y encargado** (`/`, app móvil instalable): pestañas Fichaje, Permisos y Legajo; el encargado suma
+**Aprobar** (solicitudes pendientes de su sucursal, si en Ajustes está activo "encargados aprueban"), **Agenda** y
+un acceso al panel. El administrador no administra desde la app: usa `/panel`. La campana muestra los anuncios con firma de recibido. En el celular se instala desde el menú
 del navegador ("Agregar a la pantalla de inicio" / "Instalar app"): abre a pantalla completa y conserva el
 cascarón sin red, pero el fichaje y las solicitudes exigen conexión. Tema claro/oscuro.
 - **Fichaje con GPS:** el navegador toma la ubicación y el servidor calcula la distancia a la
@@ -42,8 +42,8 @@ cascarón sin red, pero el fichaje y las solicitudes exigen conexión. Tema clar
 - **Solicitudes** según los conceptos definidos por el admin (algunos exigen foto o documento
   adjunto, algunos descuentan días de vacaciones). Las vacaciones se piden con un aviso previo
   mínimo configurable.
-- **Agenda:** calendario con feriados, vacaciones aprobadas, medios francos y convocatorias, y la lista de
-  medios francos propios.
+- **Agenda** (encargado y administrador): calendario con feriados, vacaciones aprobadas, medios francos y
+  convocatorias, y la lista de medios francos propios.
 
 **Panel** (`/panel`, admin y encargado), en siete secciones: Inicio, Asistencias (con salida
 manual y corrección de entradas), Gestión de Solicitudes, Calendario General (feriados y
@@ -92,7 +92,7 @@ JZPass/
 │   ├── integraciones.py # claves de API (/api/claves) y API de solo lectura /api/v1
 │   └── archivos.py      # descarga de adjuntos
 ├── index.html           # login + app móvil del personal (PWA)
-├── manifest.webmanifest # instalación en el celular; sw.js guarda el cascarón; icono.svg
+├── manifest.webmanifest # instalación en el celular; sw.js guarda el cascarón; icono.svg + icono-{180,192,512}.png
 ├── dashboard.html       # panel de admin/encargado
 ├── uploads/             # adjuntos y logo (volumen en Docker)
 ├── install.sh           # instalador con Docker
