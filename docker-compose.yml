@@ -15,7 +15,7 @@ services:
       - /etc/timezone:/etc/timezone:ro
     environment:
       - JWT_SECRET=${JWT_SECRET}
-      - SETUP_TOKEN=${SETUP_TOKEN}
+      - SETUP_TOKEN=${SETUP_TOKEN:-}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
       # 172.16.0.0/12: redes de Docker (un proxy en un contenedor de este mismo servidor). Proxy en otro equipo:
       # su IP se agrega con JZPASS_PROXY_IP=<IP> bash install.sh.
