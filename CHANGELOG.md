@@ -2,6 +2,43 @@
 
 Cambios de JZPass, del más nuevo al más viejo. Cada entrada corresponde a un push a `main`.
 
+## 2.11.0 — 2026-11-07
+
+Tag `v2.11.0`.
+
+### Nuevo
+- **Panel de administración rediseñado** (`dashboard.html`) según el handoff `design_handoff_jzpass_admin`:
+  navegación lateral oscura por grupos (Operación, Comunicación, Administración) con contador de solicitudes
+  pendientes, buscador **Ctrl+K** (módulos, acciones y empleados), formularios en panel lateral derecho
+  (clic afuera o Esc cierran), avisos en toast y modo claro/oscuro con la misma clave de `localStorage`.
+- **Inicio como tablero en vivo:** KPIs (presentes, llegadas tarde, pendientes, alertas de fichaje),
+  presentismo por sucursal con barra apilada, histograma de llegadas cada 15 minutos con la línea de
+  tolerancia, lista "Requiere tu atención" (fuera de radio, sin fichar, pendientes, caducadas, anuncios con
+  firmas pendientes) y "Próximos 30 días".
+- **Asistencias** con dos modos: *En vivo* (una tarjeta por sucursal con el estado de cada persona) y
+  *Registros* (tabla con total de horas y badge de GPS, ausentes incluidos a pedido, reporte Excel).
+- **Solicitudes como bandeja:** pestañas Pendientes / Aprobadas / En curso / Culminadas / Rechazadas /
+  Caducadas, lista a la izquierda y detalle a la derecha con datos, adjunto, impacto (vacaciones, cobertura
+  de la sucursal ese día, solicitudes del año) e historial; aprobar, rechazar, revocar o archivar desde el
+  detalle (con edición de fechas en las de varios días).
+- **Empleados con ficha:** lista con buscador y "Mostrar Inactivos", ficha con horas del mes, llegadas
+  tarde, fichajes fuera de radio, datos del legajo, documento adjunto, historial y últimos fichajes;
+  acciones Editar, Restablecer clave, Dar de baja / Reactivar y Desbloquear.
+- **Sucursales** en tarjetas (coordenadas, radio GPS, personas, horarios) con Editar y "Ver personal";
+  **Personalización** con muestras de color y vista previa del portal; **Ajustes** por grupos con
+  interruptores para los sí/no, tipos de solicitud en tarjetas (editar o borrar) e importación CSV con
+  zona para soltar el archivo, plantilla descargable y las claves provisorias de los nuevos mostradas al
+  terminar (antes se descartaban).
+- Calendario con celdas por día, eventos coloreados por tipo y lista "Este mes"; al tocar un día se
+  gestionan feriado (con quitar), convocatoria y medio franco desde el mismo panel.
+
+### Notas
+- Solo frontend: no cambian endpoints ni base de datos. Lo que el diseño pedía y la API no expone
+  (fichaje manual de un empleado sin registro, comentario al rechazar, ausencias históricas, fecha de
+  ingreso a la empresa, borradores de anuncios) se omitió en vez de inventarlo.
+- Las fuentes del diseño (Instrument Sans, JetBrains Mono) se usan si están instaladas; el CSP no permite
+  Google Fonts, así que de lo contrario se usa la fuente del sistema.
+
 ## 2.10.2 — 2026-11-06
 
 Tag `v2.10.2`.

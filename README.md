@@ -45,12 +45,19 @@ cascarón sin red, pero el fichaje y las solicitudes exigen conexión. Tema clar
 - **Agenda** (solo administrador): calendario con feriados, vacaciones aprobadas, medios francos y
   convocatorias, y la lista de medios francos propios.
 
-**Panel** (`/panel`, admin y encargado), en siete secciones: Inicio, Asistencias (con salida
-manual y corrección de entradas), Gestión de Solicitudes, Calendario General (feriados y
-convocatorias), Medios Francos, Estructura Organizacional (identidad, sucursales, personal) y
-Ajustes del Sistema (parámetros, conceptos, importación). Reporte consolidado en Excel por rango
-de fechas y sucursal, resumido o detallado; incluye a los empleados dados de baja cuyo último día
-cae dentro del período (hasta su fecha de baja).
+**Panel** (`/panel`, admin y encargado), rediseñado en 2.11.0 según `design_handoff_jzpass_admin`:
+navegación lateral por secciones (Operación, Comunicación, Administración), buscador Ctrl+K,
+formularios en panel lateral y modo claro/oscuro. Secciones: Inicio (tablero en vivo: presentes,
+tardanzas, pendientes, alertas de fichaje, presentismo por sucursal, histograma de llegadas, lo que
+requiere atención y los próximos 30 días), Asistencias (En vivo por sucursal y Registros con salida
+manual, corrección de entradas y reporte Excel), Solicitudes (bandejas con lista y detalle, aprobar o
+rechazar desde el detalle), Calendario (feriados, convocatorias, francos y licencias), Medios Francos,
+Notificaciones, Empleados (lista con ficha: horas y tardanzas del mes, legajo, últimos fichajes),
+Sucursales, Personalización y Ajustes del Sistema (parámetros, conceptos, importación CSV, API).
+Todo se calcula en el cliente con los datos de `/api/datos_panel`: el rediseño no agregó endpoints.
+El encargado ve solo Inicio, Asistencias, Solicitudes, Calendario, Medios Francos y Empleados de su
+sucursal. Reporte consolidado en Excel por rango de fechas y sucursal, resumido o detallado; incluye
+a los empleados dados de baja cuyo último día cae dentro del período (hasta su fecha de baja).
 
 **Altas de personal:** al crear un usuario (a mano o por CSV) se genera una clave temporal que
 el empleado tiene que cambiar en su primer ingreso.
