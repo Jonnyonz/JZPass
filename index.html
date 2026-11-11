@@ -101,6 +101,7 @@
         .atajo .l{font:600 12px/1.3 system-ui,sans-serif;color:var(--ts)}
 
         /* Solicitudes */
+        .lnkb{background:none;border:0;padding:0;color:var(--ac);font:inherit;text-decoration:underline;cursor:pointer;text-align:left}
         .aviso{display:flex;gap:10px;background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:12px 14px;align-items:center;font:400 13px/1.3 system-ui,sans-serif;color:var(--ts)}
         .sol{display:flex;flex-direction:column;gap:9px}
         .sol-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
@@ -261,9 +262,9 @@
                 <div class="fg"><label class="lbl">Hora regreso</label><input type="time" id="s-hout"></div>
             </div>
             <div class="fg"><label class="lbl">Motivo detallado</label><textarea id="s-motivo" maxlength="500" placeholder="Contá brevemente el motivo"></textarea></div>
-            <div class="cert hidden" id="s-foto-box">
-                <span style="display:flex;align-items:center;gap:10px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>Certificado obligatorio · adjuntar PDF o foto</span>
-                <input type="file" id="s-foto" accept="image/*,application/pdf">
+            <div class="cert" id="s-foto-box">
+                <span style="display:flex;align-items:center;gap:10px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg><span id="s-foto-lbl">Documento opcional · PDF o foto</span></span>
+                <input type="file" id="s-foto" accept=".pdf,.jpg,.jpeg,.png,image/jpeg,image/png,application/pdf">
             </div>
             <div id="s-msg" class="msg"></div>
             <button id="btn-enviar" class="btn" style="margin-top:4px;border-radius:10px" onclick="enviarSolicitud()">Enviar solicitud</button>
@@ -310,6 +311,7 @@
     </div>
 
     <div id="toast" class="toast hidden"></div>
+    <input type="file" id="s-adj" class="hidden" accept=".pdf,.jpg,.jpeg,.png,image/jpeg,image/png,application/pdf" onchange="docElegido(this)">
 </div>
 
 <script>
@@ -346,6 +348,20 @@
     function fechaLarga(iso) { const [y, m, d] = iso.slice(0, 10).split('-').map(Number); const dt = new Date(y, m - 1, d); return `${DIAS[dt.getDay()]} ${d} de ${MESES[m - 1]}`; }
     function iniciales(n) { return String(n || '').split(/\s+/).filter(Boolean).slice(0, 2).map(p => p[0].toUpperCase()).join('') || '?'; }
     function tipoDe(concepto) { return (D && D.tipos_solicitud || []).find(t => t.nombre === concepto) || {}; }
+    function tieneA(a) { return !!a && a !== 'null' && String(a).trim() !== ''; }
+    // Misma regla que solicitud_terminada() en el servidor: paso la fecha hasta, o la fecha mas la hora de regreso.
+    function terminada(s) { const hoy = hoyISO(), hm = new Date().toTimeString().slice(0, 5); return s.hora_fin ? (s.fecha_ausencia + ' ' + s.hora_fin) < (hoy + ' ' + hm) : (s.fecha_fin || s.fecha_ausencia) < hoy; }
+    function faltaCierre(s) { return tipoDe(s.concepto).requiere_cierre === 1 && s.estado === 'APROBADA' && !tieneA(s.archivo_cierre) && terminada(s); }
+    function docsPendientes() { return (D && D.solicitudes || []).filter(faltaCierre); }
+    let docDestino = null;
+    function subirDoc(id, cual) { docDestino = {id, cual}; const i = document.getElementById('s-adj'); i.value = ''; i.click(); }
+    async function docElegido(i) {
+        if (!i.files[0] || !docDestino) return;
+        const fd = new FormData(); fd.append('solicitud_id', docDestino.id); fd.append('cual', docDestino.cual); fd.append('comprobante', i.files[0]);
+        const r = await req('/api/solicitud/adjuntar', fd);
+        toast(r.ok ? 'Documento guardado.' : (r.data.msg || 'No se pudo subir el documento.'));
+        if (r.ok) await recargar();
+    }
     function initTheme() { let t = localStorage.getItem('theme'); if (!t) t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; document.documentElement.setAttribute('data-theme', t); }
     function toggleTheme() { let t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'; document.documentElement.setAttribute('data-theme', t); localStorage.setItem('theme', t); if (D) renderPerfil(); }
     initTheme();
@@ -442,7 +458,7 @@
         const defs = [['inicio', 'Fichaje'], ['solicitudes', 'Permisos'], ...(puedeAprobar() ? [['aprobaciones', 'Aprobar']] : []), ...(veAgenda() ? [['calendario', 'Agenda']] : []), ['perfil', 'Legajo'], ...(D.rol === 0 ? [['admin', 'Admin']] : [])];
         document.getElementById('tabbar').innerHTML = defs.map(([id, l]) => `<button class="tab${tab === id ? ' on' : ''}" onclick="go('${id}')"><span class="pill">${svg(id)}${id === 'aprobaciones' && pendientes.length ? '<span class="dot"></span>' : ''}</span><span class="l">${l}</span></button>`).join('');
     }
-    function renderBell() { const n = anuncios.length, el = document.getElementById('bell-n'); el.textContent = n; el.classList.toggle('hidden', n === 0); }
+    function renderBell() { const n = anuncios.length + docsPendientes().length, el = document.getElementById('bell-n'); el.textContent = n; el.classList.toggle('hidden', n === 0); }
 
     // --- Fichaje ---
     function minutosHoy(f) {
@@ -455,7 +471,7 @@
         const f = D.fichaje_hoy, dentro = !!(f && !f.salida), cerrado = !!(f && f.salida);
         const mins = minutosHoy(f), horas = `${Math.floor(mins / 60)}:${String(mins % 60).padStart(2, '0')}`;
         const offset = 270 - 270 * Math.min(mins / 480, 1);   // anillo de referencia a 8 h: la API no informa el horario del empleado
-        const pend = (D.solicitudes || []).filter(s => s.estado === 'PENDIENTE').length;
+        const pend = (D.solicitudes || []).filter(s => s.estado === 'PENDIENTE').length, nDocs = docsPendientes().length;
         const hoy = hoyISO(), prox = (D.francos || []).map(x => x.fecha).filter(x => x >= hoy).sort()[0];
         document.getElementById('p-inicio').innerHTML = `
             <div style="display:flex;flex-direction:column;gap:14px">
@@ -474,11 +490,12 @@
             </div>
             <button id="btn-fichar" class="btn-fichar${dentro ? ' salir' : ''}" onclick="ficharGPS()" ${cerrado || ficharEnCurso ? 'disabled' : ''}>${svg('inicio', 26, 'style="stroke-width:2.2"')} ${cerrado ? 'Jornada finalizada' : dentro ? 'Registrar Salida' : 'Registrar Ingreso'}</button>
             <div class="f-msg" style="color:${fMsgColor}">${esc(fMsg)}</div>
+            ${nDocs ? `<button class="aviso" style="width:100%;text-align:left;cursor:pointer;border-color:var(--dg)" onclick="go('notifs')">${svg('clip', 17, 'style="stroke:var(--dg)"')}<span><b style="color:var(--tp)">Falta documentación:</b> ${nDocs} permiso${nDocs === 1 ? '' : 's'} sin la constancia de cierre. Tocá para subirla.</span></button>` : ''}
             <div class="grid2">
                 <button class="atajo" onclick="go('solicitudes')"><span class="top"><span class="chip" style="background:var(--bw);color:var(--tw)">${svg('cal', 15)}</span><b>${esc(D.dias_vacaciones ?? 0)} días</b></span><span class="l">Vacaciones disponibles</span></button>
                 <button class="atajo" onclick="go('solicitudes')"><span class="top"><span class="chip" style="background:var(--bi);color:var(--ti)">${svg('solicitudes', 15)}</span><b>${pend} pend.</b></span><span class="l">Solicitudes en curso</span></button>
                 ${veAgenda() ? `<button class="atajo" onclick="go('calendario')"><span class="top"><span class="chip" style="background:var(--bs);color:var(--ts_)">${svg('taza', 15)}</span><b>${prox ? fecha(prox).slice(0, 6) : '—'}</b></span><span class="l">Próximo medio franco</span></button>` : ''}
-                <button class="atajo" ${veAgenda() ? '' : 'style="grid-column:span 2"'} onclick="go('notifs')"><span class="top"><span class="chip" style="background:var(--bn);color:var(--tn)">${svg('check', 15)}</span><b>${anuncios.length}</b></span><span class="l">Avisos sin firmar</span></button>
+                <button class="atajo" ${veAgenda() ? '' : 'style="grid-column:span 2"'} onclick="go('notifs')"><span class="top"><span class="chip" style="background:var(--bn);color:var(--tn)">${svg('check', 15)}</span><b>${anuncios.length + nDocs}</b></span><span class="l">Avisos pendientes</span></button>
             </div></div>`;
     }
     function ficharGPS() {
@@ -514,9 +531,11 @@
             <div class="aviso">${svg('cal', 17, 'style="stroke:var(--tw)"')}<span>Te quedan <b style="color:var(--tp)">${esc(D.dias_vacaciones ?? 0)} días</b> de vacaciones este período</span></div>
             ${lista.length ? lista.map(s => {
                 const t = tipoDe(s.concepto), cls = s.estado === 'APROBADA' ? 'b-ok' : s.estado === 'RECHAZADA' ? 'b-no' : 'b-pend';
-                const adj = s.archivo && s.archivo !== 'null' ? `<a href="/api/archivo/${encodeURIComponent(s.archivo)}" target="_blank" rel="noopener">Ver adjunto</a>` : (t.requiere_foto === 1 ? 'Certificado pendiente' : 'Sin certificado requerido');
+                const id = Number(s.id), lnk = (a, txt) => `<a href="/api/archivo/${encodeURIComponent(a)}" target="_blank" rel="noopener">${txt}</a>`;
+                const docs = [tieneA(s.archivo) ? lnk(s.archivo, 'Ver documento') : s.estado === 'PENDIENTE' ? `<button class="lnkb" onclick="subirDoc(${id}, 'inicio')">${t.requiere_foto === 1 ? 'Falta el certificado · Adjuntar' : 'Adjuntar documento'}</button>` : (t.requiere_foto === 1 ? 'Sin certificado' : 'Sin documento')];
+                if (t.requiere_cierre === 1) docs.push(tieneA(s.archivo_cierre) ? lnk(s.archivo_cierre, 'Ver constancia de cierre') : faltaCierre(s) ? `<button class="lnkb" style="color:var(--dg)" onclick="subirDoc(${id}, 'cierre')">Falta la constancia de cierre · Subir</button>` : 'Constancia de cierre: se pide al terminar');
                 return `<div class="card sol"><div class="sol-top"><div style="min-width:0"><div class="sol-c">${esc(s.concepto)}</div><div class="sol-f">${textoFechas(s)}</div></div><span class="badge ${cls}">${esc(s.estado)}</span></div>
-                    <div class="sol-m">${esc(s.motivo)}</div><div class="sol-a">${svg('clip', 13)}${adj}</div>
+                    <div class="sol-m">${esc(s.motivo)}</div>${docs.map(d => `<div class="sol-a">${svg('clip', 13)}${d}</div>`).join('')}
                     ${s.estado === 'PENDIENTE' ? `<button class="btn btn-out" style="align-self:flex-start" onclick="cancelarSolicitud(${Number(s.id)})">Cancelar solicitud</button>` : ''}</div>`;
             }).join('') : '<div class="vacio">Todavía no cargaste solicitudes.</div>'}</div>`;
     }
@@ -533,7 +552,7 @@
         document.getElementById('lbl-desde').textContent = porDias ? 'Fecha desde' : 'Fecha';
         document.getElementById('s-hasta-box').classList.toggle('hidden', !porDias);
         document.getElementById('s-horas-box').classList.toggle('hidden', porDias);
-        document.getElementById('s-foto-box').classList.toggle('hidden', t.requiere_foto !== 1);
+        document.getElementById('s-foto-lbl').textContent = (t.requiere_foto === 1 ? 'Certificado obligatorio · PDF o foto' : 'Documento opcional · PDF o foto') + (t.requiere_cierre === 1 ? ' · al volver vas a subir la constancia' : '');
     }
     async function enviarSolicitud() {
         const v = id => document.getElementById(id).value, t = tipoDe(conceptoSel), msg = document.getElementById('s-msg'), btn = document.getElementById('btn-enviar');
@@ -541,6 +560,7 @@
         if (!v('s-fecha') || !v('s-motivo').trim()) { msg.textContent = 'Completá la fecha y el motivo.'; return; }
         if (t.tipo === 'DIAS' && !v('s-fechafin')) { msg.textContent = 'Completá la fecha hasta.'; return; }
         if (t.tipo !== 'DIAS' && (!v('s-hin') || !v('s-hout'))) { msg.textContent = 'Completá las horas de salida y regreso.'; return; }
+        if (t.requiere_foto === 1 && !document.getElementById('s-foto').files[0]) { msg.textContent = 'Este concepto exige adjuntar el certificado.'; return; }
         const fd = new FormData();
         fd.append('concepto', conceptoSel); fd.append('fecha_ausencia', v('s-fecha')); fd.append('fecha_fin', t.tipo === 'DIAS' ? v('s-fechafin') : '');
         fd.append('hora_inicio', t.tipo === 'DIAS' ? '' : v('s-hin')); fd.append('hora_fin', t.tipo === 'DIAS' ? '' : v('s-hout')); fd.append('motivo', v('s-motivo').trim());
@@ -619,8 +639,10 @@
     }
     function marcarVistos() { anuncios.filter(a => !a.visto_en).forEach(a => { a.visto_en = 'ahora'; req(`/api/anuncios/${a.id}/visto`); }); renderNotifs(); }
     function renderNotifs() {
-        document.getElementById('p-notifs').innerHTML = `<div style="display:flex;flex-direction:column;gap:14px">${anuncios.length ? anuncios.map(a => `<div class="card notif"><div class="t"><span>${esc(a.titulo)}</span><span class="c">${esc((a.creado_en || '').slice(0, 16))}</span></div><div class="x">${esc(a.cuerpo)}</div>
-            <button class="btn" style="height:42px;font-size:13px;margin-top:4px;background:var(--ok)" onclick="firmarAnuncio(${Number(a.id)})">${svg('check', 15, 'style="stroke-width:2.6"')} Firmar recibido</button></div>`).join('') : '<div class="vacio">No hay avisos pendientes de firma.</div>'}</div>`;
+        const docs = docsPendientes().map(s => `<div class="card notif" style="border-left-color:var(--dg)"><div class="t"><span>Falta la constancia de cierre</span><span class="c">${esc(s.concepto)}</span></div><div class="x">${textoFechas(s)}\nEl permiso ya terminó: subí el documento que te dieron (PDF o foto).</div>
+            <button class="btn" style="height:42px;font-size:13px;margin-top:4px" onclick="subirDoc(${Number(s.id)}, 'cierre')">${svg('clip', 15)} Subir constancia</button></div>`).join('');
+        document.getElementById('p-notifs').innerHTML = `<div style="display:flex;flex-direction:column;gap:14px">${docs}${anuncios.length ? anuncios.map(a => `<div class="card notif"><div class="t"><span>${esc(a.titulo)}</span><span class="c">${esc((a.creado_en || '').slice(0, 16))}</span></div><div class="x">${esc(a.cuerpo)}</div>
+            <button class="btn" style="height:42px;font-size:13px;margin-top:4px;background:var(--ok)" onclick="firmarAnuncio(${Number(a.id)})">${svg('check', 15, 'style="stroke-width:2.6"')} Firmar recibido</button></div>`).join('') : docs ? '' : '<div class="vacio">No hay avisos pendientes.</div>'}</div>`;
     }
     function firmarAnuncio(id) {
         const a = anuncios.find(x => x.id === id); anuncioAFirmar = id;

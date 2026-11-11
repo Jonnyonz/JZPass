@@ -15,7 +15,7 @@ from jztech_core.passwords import hash_password, needs_rehash, verify_legacy_pas
 logger = logging.getLogger("jzpass")
 
 # Version instalada (una sola fuente). Se sube al publicar cada version en GitHub Releases (tag v<VERSION>).
-VERSION = "2.11.0"
+VERSION = "2.12.0"
 from slowapi import Limiter
 
 
@@ -79,6 +79,22 @@ def check_magic_bytes(raw_bytes: bytes):
     if raw_bytes.startswith(b'\xff\xd8'): return 'jpg'
     if raw_bytes.startswith(b'\x89PNG\r\n\x1a\n'): return 'png'
     return None
+
+
+def sucursal_abre(sucs_abren, sucursal) -> bool:
+    """Si una sucursal abre en un feriado. sucs_abren: 'TODAS', 'NINGUNA' (o vacio) o nombres separados por coma."""
+    if not sucs_abren or sucs_abren == 'NINGUNA': return False
+    if sucs_abren == 'TODAS': return True
+    return sucursal in [s.strip() for s in str(sucs_abren).split(',')]
+
+
+def solicitud_terminada(sol, ahora=None) -> bool:
+    """True cuando ya paso el periodo pedido: la fecha hasta (por dias) o la fecha mas la hora de regreso (por horas)."""
+    from datetime import datetime
+    ahora = ahora or datetime.now()
+    if sol.get('hora_fin'):
+        return f"{sol['fecha_ausencia']} {sol['hora_fin']}" < ahora.strftime("%Y-%m-%d %H:%M")
+    return (sol.get('fecha_fin') or sol['fecha_ausencia']) < ahora.strftime("%Y-%m-%d")
 
 
 # === CONEXION A LA BASE ===
@@ -145,6 +161,9 @@ async def init_db_schema():
         # existen; cualquier otro error se propaga y frena el arranque (no se silencia).
         await conn.execute("ALTER TABLE fichajes ADD COLUMN IF NOT EXISTS motivo_entrada TEXT DEFAULT ''")
         await conn.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS fecha_baja TEXT DEFAULT NULL")
+        # 2.12.0: segundo documento (constancia al volver) por tipo de solicitud.
+        await conn.execute("ALTER TABLE tipos_solicitud ADD COLUMN IF NOT EXISTS requiere_cierre INTEGER DEFAULT 0")
+        await conn.execute("ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS archivo_cierre TEXT DEFAULT ''")
 
         # Anuncios generales: los destinatarios se fijan al publicar (usuarios activos en ese momento),
         # asi el reporte de vistos/firmados no cambia con altas o bajas posteriores.

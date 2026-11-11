@@ -39,9 +39,11 @@ cascarón sin red, pero el fichaje y las solicitudes exigen conexión. Tema clar
   rechaza, salvo que el "GPS estricto" esté desactivado. Marca las llegadas tarde según la
   tolerancia, evita fichajes duplicados (anti-rebote) y no deja fichar la salida antes de la
   jornada mínima.
-- **Solicitudes** según los conceptos definidos por el admin (algunos exigen foto o documento
-  adjunto, algunos descuentan días de vacaciones). Las vacaciones se piden con un aviso previo
-  mínimo configurable.
+- **Solicitudes** según los conceptos definidos por el admin (certificado opcional u obligatorio,
+  algunos descuentan días de vacaciones). Siempre se puede adjuntar un PDF, JPG o PNG de hasta 5 MB.
+  Un concepto puede pedir **dos documentos**: el de la solicitud y una constancia de cierre que la
+  app reclama (campana, Inicio y Avisos) cuando el permiso terminó. Las vacaciones se piden con un
+  aviso previo mínimo configurable.
 - **Agenda** (solo administrador): calendario con feriados, vacaciones aprobadas, medios francos y
   convocatorias, y la lista de medios francos propios.
 
@@ -119,7 +121,7 @@ La app crea el esquema sola al arrancar (y agrega columnas nuevas si faltan):
 | `sucursales` | Nombre, coordenadas (para el GPS) y horarios, incluidos los de feriado |
 | `fichajes` | Entradas y salidas con ubicación, distancia a la sucursal y llegada tarde |
 | `solicitudes`, `tipos_solicitud` | Solicitudes del personal y los conceptos que las definen |
-| `mediofrancos`, `feriados`, `feriados_convocados` | Medio francos, feriados (y qué sucursales abren) y personal convocado |
+| `mediofrancos`, `feriados`, `feriados_convocados` | Medio francos, feriados (`sucs_abren`: `TODAS`, `NINGUNA` o nombres separados por coma) y personal convocado |
 | `configuracion` | Una sola fila (`id=1`) con los parámetros del sistema |
 | `jztech_sessions` | Sesiones abiertas: hash del token, DNI y vencimiento |
 | `claves_api` | Claves de API para integraciones: nombre, hash SHA-256, pista `jzp_ab12…`, último uso, revocada |
@@ -142,7 +144,9 @@ La app crea el esquema sola al arrancar (y agrega columnas nuevas si faltan):
   5/min) y bloqueo de la cuenta tras N intentos fallidos (configurable). La IP real se toma de
   `X-Forwarded-For` solo desde los proxies de `TRUSTED_PROXIES`. Un DNI inexistente tarda lo
   mismo que uno real (no revela qué DNI existen).
-- **Adjuntos:** se valida el tipo real del archivo (magic bytes), no la extensión.
+- **Adjuntos:** se valida el tipo real del archivo (magic bytes), no la extensión. Se guardan en
+  disco (`uploads/`, fuera de la base) con nombre aleatorio; la base guarda solo el nombre y la
+  descarga pasa por `/api/archivo/{nombre}` con control por rol y sucursal.
 - **Cabeceras:** CSP, `X-Frame-Options: DENY`, `X-Content-Type-Options`, `Referrer-Policy`,
   HSTS y `Permissions-Policy` (geolocalización habilitada solo para el propio sitio, por el
   fichaje; cámara y micrófono bloqueados).

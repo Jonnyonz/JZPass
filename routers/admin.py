@@ -14,7 +14,7 @@ from fastapi.responses import JSONResponse, Response
 
 from jztech_core import sessions
 
-from database import DB, VERSION, get_db, requiere_panel, hash_pw, gen_temp_pw, check_magic_bytes, logger
+from database import DB, VERSION, get_db, requiere_panel, hash_pw, gen_temp_pw, check_magic_bytes, sucursal_abre, logger
 
 
 class CSVInvalido(ValueError):
@@ -112,7 +112,7 @@ async def admin_actions(request: Request, action: str, adm: dict = Depends(requi
             elif action == "guardar_concepto":
                 nombre = str(form.get('nombre') or '').strip()
                 if not nombre: return JSONResponse(status_code=400, content={"msg": "El concepto necesita un nombre."})
-                await db.execute("INSERT INTO tipos_solicitud (nombre, tipo, requiere_foto, descuenta_dias, horas_por_dia) VALUES ($1,$2,$3,$4,$5) ON CONFLICT (nombre) DO UPDATE SET tipo=EXCLUDED.tipo, requiere_foto=EXCLUDED.requiere_foto, descuenta_dias=EXCLUDED.descuenta_dias, horas_por_dia=EXCLUDED.horas_por_dia", nombre, str(form.get('tipo')), int(form.get('foto')), int(form.get('desc')), float(form.get('horas')))
+                await db.execute("INSERT INTO tipos_solicitud (nombre, tipo, requiere_foto, descuenta_dias, horas_por_dia, requiere_cierre) VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT (nombre) DO UPDATE SET tipo=EXCLUDED.tipo, requiere_foto=EXCLUDED.requiere_foto, descuenta_dias=EXCLUDED.descuenta_dias, horas_por_dia=EXCLUDED.horas_por_dia, requiere_cierre=EXCLUDED.requiere_cierre", nombre, str(form.get('tipo')), int(form.get('foto')), int(form.get('desc')), float(form.get('horas')), int(form.get('cierre') or 0))
             elif action == "borrar_concepto":
                 await db.execute("DELETE FROM tipos_solicitud WHERE nombre=$1", str(form.get('nombre')))
             elif action == "guardar_config":
@@ -169,8 +169,9 @@ async def admin_actions(request: Request, action: str, adm: dict = Depends(requi
             dnis_str = form.get('d1')
             dnis = dnis_str.split(',') if dnis_str else []
             if adm['rol'] == 1: suc_target = adm['sucursal']
+            # El encargado convoca hasta las 18:00 del dia anterior; el administrador puede corregir despues (el reporte lo usa).
             limite = datetime.strptime(fecha, "%Y-%m-%d").replace(hour=18, minute=0, second=0) - timedelta(days=1)
-            if datetime.now() > limite: return JSONResponse(status_code=400, content={"msg": "Tiempo límite operativo excedido."})
+            if adm['rol'] == 1 and datetime.now() > limite: return JSONResponse(status_code=400, content={"msg": "Tiempo límite operativo excedido."})
 
             valid_dnis = []
             for d in dnis:
@@ -400,7 +401,7 @@ async def calcular_asistencia(d_desde: str, d_hasta: str, suc: str = "", dni: st
         d = {"fecha": f_str, "estado": "", "ingreso": "", "salida": "", "salida_estimada": False, "horas": 0,
              "tarde": False, "falta": False, "vacacion": False, "trabajado": False, "franco": "", "motivo_entrada": "", "motivo_salida": ""}
         fer_abren = fer_map.get(f_str)
-        es_feriado_abierto = fer_abren and (fer_abren == 'TODAS' or e['sucursal'] in fer_abren)
+        es_feriado_abierto = fer_abren is not None and sucursal_abre(fer_abren, e['sucursal'])
         permiso_multidia = next((v for v in multidias_db if v['dni'] == e['dni'] and v['fecha_ausencia'] <= f_str <= v['fecha_fin']), None)
         fich = fich_map.get(e['dni'], {}).get(f_str)
         if fich:
@@ -417,7 +418,7 @@ async def calcular_asistencia(d_desde: str, d_hasta: str, suc: str = "", dni: st
             if permiso_multidia['horas_por_dia'] > 0: d["horas"] = permiso_multidia['horas_por_dia']
         elif fich:
             d["trabajado"] = True
-            d["estado"] = "Trabajado (feriado)" if fer_abren else "Trabajado"
+            d["estado"] = "Trabajado (feriado)" if fer_abren is not None else "Trabajado"
             franco = fran_map.get((e['dni'], f_str))
             d["franco"] = franco or ""
             if fich['tarde'] and not franco: d["tarde"] = True
@@ -438,7 +439,7 @@ async def calcular_asistencia(d_desde: str, d_hasta: str, suc: str = "", dni: st
             d["horas"] = max(0, hs)
         elif es_feriado_abierto and ((e['dni'], f_str) in convocados_set):
             d["falta"] = True; d["estado"] = "Falta (feriado convocado)"
-        elif not fer_abren:
+        elif fer_abren is None:
             d["falta"] = True; d["estado"] = "Falta"
         else:
             d["estado"] = "Feriado"

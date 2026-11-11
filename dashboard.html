@@ -112,6 +112,7 @@
     input[type="date"], input[type="time"], input.mono { font-family:var(--m); font-size:12.5px; }
     input[type="checkbox"] { width:15px; height:15px; accent-color:var(--ac); padding:0; margin:0; }
     .chk { display:flex; align-items:center; gap:7px; font:600 12.5px/1 var(--f); color:var(--tp); cursor:pointer; }
+    .chks { display:flex; flex-wrap:wrap; gap:6px 14px; padding:8px 10px; border:1px solid var(--ln); border-radius:8px; background:var(--sf2); } .chks .chk { padding:4px 0; }
     .fgrid { display:grid; grid-template-columns:1fr 1fr; gap:16px; align-content:start; }
     .fg { display:flex; flex-direction:column; gap:7px; }
     .fg label { font:600 12px/1 var(--f); color:var(--ts); }
@@ -602,7 +603,7 @@
 
 <div id="m-convocatoria" class="modal hidden" onclick="if(event.target===this) cerrarM(this.id)"><div class="panel">
     <div class="panel-h"><h3>Personal convocado</h3><button class="x" onclick="cerrarM('m-convocatoria')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div>
-    <div class="panel-b"><p>Quiénes trabajan el día <b class="mono" id="conv-fecha-txt"></b> (feriado con sucursales abiertas).</p><input type="hidden" id="conv-fecha"><div class="fg" style="margin-bottom:12px;"><label>Sucursal</label><select id="conv-sucursal" onchange="dibujarChecklistConvocados()"></select></div><div id="conv-checklist" style="border:1px solid var(--ln); border-radius:8px; background:var(--sf2); padding:6px;"></div></div>
+    <div class="panel-b"><p>Quiénes trabajan el día <b class="mono" id="conv-fecha-txt"></b> (feriado con sucursales abiertas).</p><input type="hidden" id="conv-fecha"><div class="fg" style="margin-bottom:12px;"><label>Sucursal</label><select id="conv-sucursal" onchange="dibujarChecklistConvocados()"></select></div><p id="conv-aviso" class="sec" style="margin:0 0 10px; color:var(--wnt);"></p><div id="conv-checklist" style="border:1px solid var(--ln); border-radius:8px; background:var(--sf2); padding:6px;"></div></div>
     <div class="panel-ft"><button class="btn" onclick="cerrarM('m-convocatoria')">Cancelar</button><button class="btn btn-p" onclick="guardarConvocatoria()">Guardar Convocatoria</button></div>
 </div></div>
 
@@ -663,8 +664,8 @@
 
 <div id="m-feriado" class="modal hidden" onclick="if(event.target===this) cerrarM(this.id)"><div class="panel">
     <div class="panel-h"><h3>Cargar feriado</h3><button class="x" onclick="cerrarM('m-feriado')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div>
-    <div class="panel-b"><div class="fgrid"><div class="fg"><label>Fecha</label><input type="date" id="cFerFecha"></div><div class="fg"><label>Sucursales que abren</label><select id="cFerSucs"><option value="TODAS">TODAS</option></select></div><div class="fg span"><label>Motivo</label><input type="text" id="cFerMotivo" placeholder="Ej: Día de la Soberanía Nacional"></div></div><p style="margin-top:14px;">Las sucursales que abren usan el horario de feriados de cada local. Al personal convocado se lo elige desde el día en el calendario.</p></div>
-    <div class="panel-ft"><button class="btn" onclick="cerrarM('m-feriado')">Cancelar</button><button class="btn btn-p" onclick="if(v('cFerFecha')&&v('cFerMotivo')){accion('guardar_feriado', {d1:v('cFerFecha'), d2:v('cFerMotivo'), d3:v('cFerSucs')}); cerrarM('m-feriado')} else alert('Falta la fecha o el motivo.')">Guardar Feriado</button></div>
+    <div class="panel-b"><div class="fgrid"><div class="fg"><label>Fecha</label><input type="date" id="cFerFecha"></div><div class="fg span"><label>Motivo</label><input type="text" id="cFerMotivo" placeholder="Ej: Día de la Soberanía Nacional"></div><div class="fg span"><label>Sucursales que abren</label><div id="cFerSucs" class="chks"></div></div></div><p style="margin-top:14px;">Sin ninguna marcada, el feriado es cerrado para todos. En las sucursales que abren nadie está obligado a ir salvo el personal convocado, que se elige al guardar (y después desde el día en el calendario).</p></div>
+    <div class="panel-ft"><button class="btn" onclick="cerrarM('m-feriado')">Cancelar</button><button class="btn btn-p" onclick="guardarFeriado(v('cFerFecha'), v('cFerMotivo'), sucsElegidas('cFerSucs'), 'm-feriado')">Guardar Feriado</button></div>
 </div></div>
 
 <div id="m-s" class="modal hidden" onclick="if(event.target===this) cerrarM(this.id)"><div class="panel">
@@ -678,7 +679,7 @@
     <div class="panel-b" style="display:flex; flex-direction:column; gap:22px;">
         <input type="hidden" id="cal-selected-date">
         <div id="cal-dia-eventos"></div>
-        <div id="box-admin-cal" class="hidden"><div class="cap" style="margin-bottom:10px;">Feriado</div><div class="fgrid"><div class="fg span"><label>Motivo</label><input type="text" id="cFerMotivo2" placeholder="Identificador del feriado"></div><div class="fg"><label>Sucursales que abren</label><select id="cFerSucs2"><option value="TODAS">TODAS</option></select></div><div class="fg" style="justify-content:flex-end;"><button class="btn" onclick="if(v('cFerMotivo2')){accion('guardar_feriado', {d1:v('cal-selected-date'), d2:v('cFerMotivo2'), d3:v('cFerSucs2')}); cerrarM('m-cal-opts')} else alert('Falta el motivo.')">Registrar feriado</button></div></div><div id="cal-borrar-fer" style="margin-top:8px;"></div></div>
+        <div id="box-admin-cal" class="hidden"><div class="cap" style="margin-bottom:10px;">Feriado</div><div class="fgrid"><div class="fg span"><label>Motivo</label><input type="text" id="cFerMotivo2" placeholder="Identificador del feriado"></div><div class="fg span"><label>Sucursales que abren</label><div id="cFerSucs2" class="chks"></div></div><div class="fg span" style="align-items:flex-end;"><button class="btn" onclick="guardarFeriado(v('cal-selected-date'), v('cFerMotivo2'), sucsElegidas('cFerSucs2'), 'm-cal-opts')">Registrar feriado</button></div></div><div id="cal-borrar-fer" style="margin-top:8px;"></div></div>
         <div><div class="cap" style="margin-bottom:10px;">Convocatoria</div><button class="btn" style="width:100%;" onclick="abrirConvocatoria()">Ver / editar personal convocado</button></div>
         <div><div class="cap" style="margin-bottom:10px;">Medio franco</div><div class="fgrid"><div class="fg span"><label>Empleado</label><input type="text" id="cFranDni2" class="mono" list="cFranDniList2" placeholder="Nombre o legajo" autocomplete="off"><datalist id="cFranDniList2"></datalist></div><div class="fg"><label>Turno libre</label><select id="cFranTurno2"><option value="MAÑANA">MAÑANA</option><option value="TARDE">TARDE</option></select></div><div class="fg" style="justify-content:flex-end;"><button class="btn" onclick="if(v('cFranDni2')){accion('asignar_franco', {d1:v('cFranDni2'), d2:v('cal-selected-date'), d3:v('cFranTurno2')}); cerrarM('m-cal-opts')} else alert('Falta el empleado.')">Asignar franco</button></div></div></div>
     </div>
@@ -699,7 +700,7 @@
 
 <div id="m-concepto" class="modal hidden" onclick="if(event.target===this) cerrarM(this.id)"><div class="panel">
     <div class="panel-h"><h3 id="tp-title">Nuevo tipo de solicitud</h3><button class="x" onclick="cerrarM('m-concepto')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div>
-    <div class="panel-b"><div class="fgrid"><div class="fg span"><label>Nombre</label><input type="text" id="tp_nombre" placeholder="Ej: MUDANZA" style="text-transform:uppercase;"></div><div class="fg"><label>Naturaleza</label><select id="tp_tipo"><option value="HORAS">Por horas</option><option value="DIAS">Por días</option></select></div><div class="fg"><label>Certificado</label><select id="tp_foto"><option value="0">Opcional</option><option value="1">Obligatorio</option></select></div><div class="fg"><label>Descuenta vacaciones</label><select id="tp_desc"><option value="0">No</option><option value="1">Sí</option></select></div><div class="fg"><label>Horas pagas por día</label><input type="number" id="tp_horas" value="0" step="0.5"></div></div></div>
+    <div class="panel-b"><div class="fgrid"><div class="fg span"><label>Nombre</label><input type="text" id="tp_nombre" placeholder="Ej: MUDANZA" style="text-transform:uppercase;"></div><div class="fg"><label>Naturaleza</label><select id="tp_tipo"><option value="HORAS">Por horas</option><option value="DIAS">Por días</option></select></div><div class="fg"><label>Certificado</label><select id="tp_foto"><option value="0">Opcional</option><option value="1">Obligatorio</option></select></div><div class="fg"><label>Documentos</label><select id="tp_cierre"><option value="0">Uno, al pedir</option><option value="1">Dos: al pedir y al volver</option></select></div><div class="fg"><label>Descuenta vacaciones</label><select id="tp_desc"><option value="0">No</option><option value="1">Sí</option></select></div><div class="fg"><label>Horas pagas por día</label><input type="number" id="tp_horas" value="0" step="0.5"></div></div></div>
     <div class="panel-ft"><button class="btn" onclick="cerrarM('m-concepto')">Cancelar</button><button class="btn btn-p" id="btn-crear-concepto" onclick="crearConcepto()">Guardar</button></div>
 </div></div>
 
@@ -800,6 +801,11 @@
     function usuario(dni) { return dG.usuarios.find(u => u.dni === dni) || {}; }
     function rolTxt(r) { return r === 0 ? 'Administrador' : r === 1 ? 'Encargado' : 'Empleado'; }
     function tieneArchivo(a) { return a && a !== 'null' && String(a).trim() !== ''; }
+    // Misma regla que solicitud_terminada() en el servidor.
+    function terminadaSol(s) { let hoyS = hoy(), hm = new Date().toTimeString().substring(0,5); return s.hora_fin ? (s.fecha_ausencia + ' ' + s.hora_fin) < (hoyS + ' ' + hm) : (s.fecha_fin || s.fecha_ausencia) < hoyS; }
+    function faltaCierre(s) { let ts = dG.tipos_solicitud.find(t => t.nombre === s.concepto); return !!ts && ts.requiere_cierre === 1 && s.estado === 'APROBADA' && !tieneArchivo(s.archivo_cierre) && terminadaSol(s); }
+    // Feriados: 'TODAS', 'NINGUNA' o nombres separados por coma.
+    function sucAbre(f, suc) { return !!f && (f.sucs_abren === 'TODAS' || (f.sucs_abren || '').split(',').map(x => x.trim()).includes(suc)); }
     const CONC_B = { 'MEDICO': 'b-dg', 'MÉDICO': 'b-dg', 'ENFERMEDAD': 'b-dg', 'VACACIONES': 'b-ok', 'ESTUDIO': 'b-in', 'EXAMEN': 'b-in', 'PERMISO': 'b-wn', 'TRAMITE': 'b-wn', 'TRÁMITE': 'b-wn' };
     const concB = c => CONC_B[String(c||'').toUpperCase()] || 'b-ne';
 
@@ -825,13 +831,14 @@
         if(dG.config && dG.config.empresa_nombre) { document.title = 'JZPass - ' + dG.config.empresa_nombre; document.getElementById('side-empresa').textContent = dG.config.empresa_nombre; }
 
         if(dG.rol === 1) {
-            ['fSuc_asist', 'fSuc_users', 'conv-sucursal', 'rS', 'cFerSucs', 'cFerSucs2', 'eS'].forEach(id => {
+            ['fSuc_asist', 'fSuc_users', 'conv-sucursal', 'rS', 'eS'].forEach(id => {
                 let el = document.getElementById(id); if(el) { el.innerHTML = `<option value="${esc(dG.sucursal)}">${esc(dG.sucursal)}</option>`; el.disabled = true; }
             });
             document.getElementById('fSuc_users').classList.add('hidden');
         } else {
             let selSucs = `<option value="">Todas</option>` + dG.sucursales.map(s => `<option value="${esc(s.nombre)}">${esc(s.nombre)}</option>`).join('');
-            ['rS','fSuc_asist', 'fSuc_users', 'eS', 'cFerSucs', 'cFerSucs2'].forEach(id => { document.getElementById(id).innerHTML = (id==='cFerSucs'||id==='cFerSucs2') ? `<option value="TODAS">TODAS</option>` + selSucs : selSucs; });
+            ['rS','fSuc_asist', 'fSuc_users', 'eS'].forEach(id => { document.getElementById(id).innerHTML = selSucs; });
+            pintarChkSucs('cFerSucs', 'TODAS');
             document.getElementById('conv-sucursal').innerHTML = dG.sucursales.map(s => `<option value="${esc(s.nombre)}">${esc(s.nombre)}</option>`).join('');
         }
         llenarEmpleadosReporte();
@@ -899,7 +906,7 @@
         let acts = {
             't-hub': dG.rol === 0 ? P('Nuevo anuncio', 'plus', 'abrirNuevoAnuncio()') : '',
             't-asist': S('Descargar Reporte', 'down', "asistModo('registros'); bajarExcel()"),
-            't-fer': P('Cargar feriado', 'plus', "abrirM('m-feriado')"),
+            't-fer': P('Cargar feriado', 'plus', "abrirFeriado()"),
             't-francos': P('Asignar medio franco', 'plus', "abrirM('m-franco')"),
             't-notif': P('Nuevo anuncio', 'plus', 'abrirNuevoAnuncio()'),
             't-emp': (dG.rol === 0 ? S('Importar CSV', 'down', "ver('t-ajustes'); switchAjustesTab('sub-import')") : '') + P('Nuevo empleado', 'plus', 'abrirU(null)'),
@@ -956,7 +963,7 @@
         let f_date = x.fecha_hora.split(' ')[0], f_in = x.fecha_hora.split(' ')[1].substring(0,5);
         let u = usuario(x.dni), sucObj = dG.sucursales.find(s => s.nombre === x.sucursal) || {};
         let franco = dG.francos.find(f => f.dni === x.dni && f.fecha === f_date);
-        let esFer = dG.feriados.find(f => f.fecha === f_date && (f.sucs_abren === 'TODAS' || f.sucs_abren.includes(x.sucursal)));
+        let esFer = dG.feriados.find(f => f.fecha === f_date && sucAbre(f, x.sucursal));
         let t_ent, t_sal;
         if(esFer) { t_ent = timeToMins(sucObj.hora_apertura_feriado || "10:00"); t_sal = timeToMins(sucObj.hora_cierre_feriado || "14:00"); }
         else {
@@ -982,7 +989,7 @@
             if(u.activo !== 1 || u.rol === 0 || fichados.has(u.dni)) return;
             if(tN && !(u.nombre.toLowerCase().includes(tN) || u.dni.includes(tN))) return;
             if(tS && !u.sucursal.toLowerCase().includes(tS)) return;
-            let es_feriado_abierto = fersHoy && (fersHoy.sucs_abren === 'TODAS' || u.sucursal === fersHoy.sucs_abren || fersHoy.sucs_abren.includes(u.sucursal));
+            let es_feriado_abierto = sucAbre(fersHoy, u.sucursal);
             let es_convocado = dG.convocados.find(c => c.dni === u.dni && c.fecha === d);
             let franco = dG.francos.find(f => f.fecha === d && f.dni === u.dni);
             let sol = dG.solicitudes.find(s => s.dni === u.dni && s.estado === 'APROBADA' && s.fecha_ausencia <= d && (s.fecha_fin >= d || s.fecha_fin === ''));
@@ -998,7 +1005,7 @@
 
     function bucketsSolicitudes() {
         let hoyStr = hoy(), currentTime = new Date().toTimeString().substring(0,5);
-        let b = { 'PENDIENTE': [], 'APROBADA': [], 'EN_CURSO': [], 'CULMINADAS': [], 'RECHAZADA': [], 'CADUCADAS': [] };
+        let b = { 'PENDIENTE': [], 'APROBADA': [], 'EN_CURSO': [], 'CULMINADAS': [], 'RECHAZADA': [], 'CADUCADAS': [], 'DOC_PENDIENTE': [] };
         (dG.solicitudes || []).forEach(s => {
             if(s.estado === 'RECHAZADA') { b.RECHAZADA.push(s); return; }
             if(s.estado === 'PENDIENTE') { (hoyStr > s.fecha_ausencia ? b.CADUCADAS : b.PENDIENTE).push(s); return; }
@@ -1007,6 +1014,7 @@
                 if(multi) { if(hoyStr >= s.fecha_ausencia && hoyStr <= s.fecha_fin) enCurso = true; else if(hoyStr > s.fecha_fin) culminada = true; }
                 else { if(hoyStr === s.fecha_ausencia && currentTime >= s.hora_inicio && currentTime <= s.hora_fin) enCurso = true; else if(hoyStr > s.fecha_ausencia || (hoyStr === s.fecha_ausencia && currentTime > s.hora_fin)) culminada = true; }
                 (enCurso ? b.EN_CURSO : culminada ? b.CULMINADAS : b.APROBADA).push(s);
+                if(faltaCierre(s)) b.DOC_PENDIENTE.push(s);
             }
         });
         lastKanbanBuckets = b;
@@ -1018,7 +1026,7 @@
     // Eventos del calendario entre dos fechas (incluidas): feriados, francos, licencias aprobadas y convocatorias.
     function eventosEntre(desde, hasta) {
         let ev = [];
-        dG.feriados.filter(f => f.fecha >= desde && f.fecha <= hasta).forEach(f => ev.push({ fecha: f.fecha, tipo: 'fer', t: f.nombre, s: 'Feriado · ' + (f.sucs_abren === 'TODAS' ? 'abren todas' : f.sucs_abren === '' || f.sucs_abren === 'NINGUNA' ? 'cerrado' : 'abre ' + f.sucs_abren) }));
+        dG.feriados.filter(f => f.fecha >= desde && f.fecha <= hasta).forEach(f => ev.push({ fecha: f.fecha, tipo: 'fer', t: f.nombre, s: 'Feriado · ' + (f.sucs_abren === 'TODAS' ? 'abren todas' : f.sucs_abren === '' || f.sucs_abren === 'NINGUNA' ? 'cerrado' : 'abre ' + f.sucs_abren.split(',').join(', ')) }));
         dG.francos.filter(f => f.fecha >= desde && f.fecha <= hasta).forEach(f => ev.push({ fecha: f.fecha, tipo: 'fr', t: (f.nombre || f.dni) + ' · F. ' + String(f.turno).toLowerCase(), s: 'Medio franco · ' + f.sucursal }));
         dG.solicitudes.filter(s => s.estado === 'APROBADA').forEach(s => {
             let fin = s.fecha_fin || s.fecha_ausencia;
@@ -1081,6 +1089,7 @@
         fuera.forEach(f => at.push({ ic: 'pin', cls: 'b-dg', t: `${esc(f.x.nombre)} fichó a ${Math.round(f.c.dist)} m de ${esc(f.x.sucursal)}`, d: `${f.c.f_in} · radio permitido ${dG.config.distancia_gps} m`, cta: 'Ver registro', go: `asistModoActual='registros'; ver('t-asist'); document.getElementById('fA_n').value='${esc(f.x.dni)}'; renderAsist()` }));
         sinAviso.forEach(a => at.push({ ic: 'alert', cls: 'b-dg', t: `${esc(a.u.nombre)} no fichó`, d: `${esc(a.u.sucursal)} · entra ${esc(a.u.hora_entrada)} · ${esc(a.razon).toLowerCase()}`, cta: 'Ver ficha', go: `empSel='${esc(a.u.dni)}'; ver('t-emp')` }));
         if(pend) at.push({ ic: 'solic', cls: 'b-wn', t: `${pend} solicitud${pend > 1 ? 'es esperan' : ' espera'} aprobación`, d: [...new Set(b.PENDIENTE.map(s => s.concepto))].slice(0, 4).join(', '), cta: 'Revisar', go: "solBandeja='PENDIENTE'; ver('t-solic')" });
+        if(b.DOC_PENDIENTE.length) at.push({ ic: 'doc', cls: 'b-dg', t: `${b.DOC_PENDIENTE.length} permiso${b.DOC_PENDIENTE.length > 1 ? 's terminaron' : ' terminó'} sin la constancia de cierre`, d: [...new Set(b.DOC_PENDIENTE.map(s => s.nombre))].slice(0, 4).join(', '), cta: 'Ver', go: "solBandeja='DOC_PENDIENTE'; ver('t-solic')" });
         if(b.CADUCADAS.length) at.push({ ic: 'solic', cls: 'b-ne', t: `${b.CADUCADAS.length} solicitud${b.CADUCADAS.length > 1 ? 'es caducaron' : ' caducó'} sin respuesta`, d: 'Pendientes cuya fecha ya pasó', cta: 'Archivar', go: "solBandeja='CADUCADAS'; ver('t-solic')" });
         if(anunciosResumen) anunciosResumen.anuncios.filter(a => !a.anulado_en && a.firmados < a.destinatarios).slice(0, 2).forEach(a => at.push({ ic: 'notif', cls: 'b-in', t: `Anuncio #${a.id} · ${a.destinatarios - a.firmados} firmas pendientes`, d: esc(a.titulo), cta: 'Ver firmas', go: `verDetalleNotif(${a.id})` }));
         document.getElementById('at-n').textContent = at.length;
@@ -1171,8 +1180,8 @@
     }
 
     // ===== SOLICITUDES: bandejas + lista + detalle =====
-    const BANDEJAS = [['PENDIENTE', 'Pendientes'], ['APROBADA', 'Aprobadas'], ['EN_CURSO', 'En curso'], ['CULMINADAS', 'Culminadas'], ['RECHAZADA', 'Rechazadas'], ['CADUCADAS', 'Caducadas']];
-    const EST_B = { PENDIENTE: ['b-wn', 'PENDIENTE'], APROBADA: ['b-ok', 'APROBADA'], EN_CURSO: ['b-in', 'EN CURSO HOY'], CULMINADAS: ['b-ne', 'CULMINADA'], RECHAZADA: ['b-dg', 'RECHAZADA'], CADUCADAS: ['b-ne', 'CADUCADA'] };
+    const BANDEJAS = [['PENDIENTE', 'Pendientes'], ['APROBADA', 'Aprobadas'], ['EN_CURSO', 'En curso'], ['CULMINADAS', 'Culminadas'], ['RECHAZADA', 'Rechazadas'], ['CADUCADAS', 'Caducadas'], ['DOC_PENDIENTE', 'Falta documentación']];
+    const EST_B = { PENDIENTE: ['b-wn', 'PENDIENTE'], APROBADA: ['b-ok', 'APROBADA'], EN_CURSO: ['b-in', 'EN CURSO HOY'], CULMINADAS: ['b-ne', 'CULMINADA'], RECHAZADA: ['b-dg', 'RECHAZADA'], CADUCADAS: ['b-ne', 'CADUCADA'], DOC_PENDIENTE: ['b-dg', 'FALTA DOCUMENTACIÓN'] };
     function renderKanban() {
         let b = bucketsSolicitudes();
         document.getElementById('bandejas').innerHTML = BANDEJAS.map(([id, l]) => `<button class="${solBandeja === id ? 'on' : ''}" onclick="solBandeja='${id}'; solSel=null; renderKanban()">${l}<span>${b[id].length}</span></button>`).join('');
@@ -1197,7 +1206,9 @@
         if(s.estado === 'APROBADA') hist.push({ t: 'Aprobada', f: solBandeja === 'EN_CURSO' ? 'en curso hoy' : solBandeja === 'CULMINADAS' ? 'culminada' : 'vigente', c: 'var(--ok)' });
         if(s.estado === 'RECHAZADA') hist.push({ t: 'Rechazada', f: 'archivada', c: 'var(--dg)' });
         if(solBandeja === 'CADUCADAS') hist.push({ t: 'Caducó sin respuesta', f: fmtFA(s.fecha_ausencia), c: 'var(--tm)' });
-        let adj = tieneArchivo(s.archivo) ? `<a class="adj" href="/api/archivo/${esc(s.archivo)}" target="_blank"><span class="ic badge b-in" style="padding:0;">${svg('doc', 18)}</span><div><b>Documento adjunto</b><small>Subido con la solicitud · clic para ver</small></div></a>` : `<div class="adj"><span class="ic badge b-ne" style="padding:0;">${svg('doc', 18)}</span><div><b>Sin adjunto</b><small>${ts.requiere_foto === 1 ? 'Este concepto exige certificado' : 'Este concepto no exige certificado'}</small></div></div>`;
+        let docRow = (a, titulo, sub, alerta) => tieneArchivo(a) ? `<a class="adj" href="/api/archivo/${esc(a)}" target="_blank"><span class="ic badge b-in" style="padding:0;">${svg('doc', 18)}</span><div><b>${titulo}</b><small>${sub} · clic para ver</small></div></a>` : `<div class="adj"><span class="ic badge ${alerta ? 'b-dg' : 'b-ne'}" style="padding:0;">${svg('doc', 18)}</span><div><b>${titulo}: sin adjuntar</b><small>${sub}</small></div></div>`;
+        let adj = docRow(s.archivo, 'Documento de la solicitud', ts.requiere_foto === 1 ? 'Este concepto exige certificado' : 'Este concepto no exige certificado', ts.requiere_foto === 1);
+        if(ts.requiere_cierre === 1) adj += docRow(s.archivo_cierre, 'Constancia de cierre', faltaCierre(s) ? 'Pendiente: el permiso ya terminó y el empleado tiene el aviso en la app' : tieneArchivo(s.archivo_cierre) ? 'Subida al volver' : 'Se pide cuando termina el permiso', faltaCierre(s));
         let foot = '';
         if(solBandeja === 'PENDIENTE') {
             let fechas = multi ? `<span style="display:flex; gap:6px; align-items:center;"><input type="date" id="v-inicio-${s.id}" value="${s.fecha_ausencia}"><span class="muted">→</span><input type="date" id="v-fin-${s.id}" value="${s.fecha_fin}"></span>` : '';
@@ -1206,14 +1217,16 @@
         } else if(solBandeja === 'APROBADA' || solBandeja === 'EN_CURSO') foot = `<div class="det-f"><span class="sp"></span><button class="btn btn-dg-o" onclick="if(confirm('¿Revocar la aprobación? La solicitud pasa a rechazada.')) accion('estado_solicitud',{d1:${s.id}, d2:'RECHAZADA'})">Revocar aprobación</button></div>`;
         else if(solBandeja === 'CADUCADAS') foot = `<div class="det-f"><span class="sp"></span><button class="btn btn-dg-o" onclick="accion('estado_solicitud',{d1:${s.id}, d2:'RECHAZADA'})">Archivar como rechazada</button></div>`;
         box.innerHTML = `<div class="det-h"><div class="who"><span class="av">${ini(s.nombre)}</span><div><b>${esc(s.nombre)}</b><small>Legajo <span class="mono">${esc(s.dni)}</span> · ${[esc(u.sucursal || s.sucursal), rolTxt(u.rol)].filter(Boolean).join(' · ')} · <span class="mono">#${s.id}</span></small></div></div><span class="badge ${ecls}">${etxt}</span></div>
-        <div class="det-b"><div class="colu"><div class="datos"><div><span class="cap">Concepto</span><b>${esc(s.concepto)}</b></div><div><span class="cap">Fechas</span><b class="mono" style="font-size:13px;">${esc(fechasSol(s))}</b></div><div><span class="cap">Naturaleza</span><b>${multi ? 'Por días' + (dias ? ' · ' + dias : '') : 'Por horas' + (s.horas ? ' · ' + s.horas + ' h' : '')}</b></div><div><span class="cap">Certificado</span><b>${ts.requiere_foto === 1 ? 'Obligatorio' : 'Opcional'}</b></div></div>
+        <div class="det-b"><div class="colu"><div class="datos"><div><span class="cap">Concepto</span><b>${esc(s.concepto)}</b></div><div><span class="cap">Fechas</span><b class="mono" style="font-size:13px;">${esc(fechasSol(s))}</b></div><div><span class="cap">Naturaleza</span><b>${multi ? 'Por días' + (dias ? ' · ' + dias : '') : 'Por horas' + (s.horas ? ' · ' + s.horas + ' h' : '')}</b></div><div><span class="cap">Certificado</span><b>${ts.requiere_foto === 1 ? 'Obligatorio' : 'Opcional'}${ts.requiere_cierre === 1 ? ' + constancia al volver' : ''}</b></div></div>
         <div><div class="cap" style="margin-bottom:8px;">Motivo detallado</div><div style="font:500 14px/1.6 var(--f);">${esc(s.motivo) || '<span class="muted">Sin motivo.</span>'}</div></div>${adj}</div>
         <div class="colu"><div class="imp"><div class="cap">Impacto</div><div><span>Vacaciones disponibles</span><b>${vac}</b></div><div><span>Cobertura ${esc(u.sucursal || '')} ese día</span><b style="color:${cob < cobTot * 0.6 ? 'var(--wnt)' : 'var(--okt)'}">${cob} de ${cobTot}</b></div><div><span>Solicitudes en ${anio}</span><b>${nAnio}</b></div></div>
         <div><div class="cap" style="margin-bottom:10px;">Historial</div>${hist.map(h => `<div class="tl"><i style="background:${h.c}"></i><div><b>${h.t}</b><small>${esc(h.f)}</small></div></div>`).join('')}</div></div></div>${foot}`;
     }
     function abrirHistorial(d) {
         let u = usuario(d); document.getElementById('hNombre').innerText = u.nombre;
-        document.getElementById('h-solicitudes').innerHTML = dG.solicitudes.filter(s => s.dni === d).map(s => `<div class="lista-modal-item"><div class="lista-modal-header"><div><span class="badge ${concB(s.concepto)}">${esc(s.concepto)}</span> <span class="mono sec" style="font-size:12px;">${esc(fechasSol(s))}</span><div class="sec" style="margin-top:6px;">${esc(s.motivo)}</div></div><span class="badge ${s.estado === 'APROBADA' ? 'b-ok' : s.estado === 'RECHAZADA' ? 'b-dg' : 'b-wn'}">${s.estado}</span></div></div>`).join('') || '<div class="vacio">Sin solicitudes previas.</div>';
+        let sols = dG.solicitudes.filter(s => s.dni === d), nDocs = sols.reduce((n, s) => n + (tieneArchivo(s.archivo) ? 1 : 0) + (tieneArchivo(s.archivo_cierre) ? 1 : 0), 0);
+        let docsDe = s => [tieneArchivo(s.archivo) ? `<a class="lnk" href="/api/archivo/${esc(s.archivo)}" target="_blank">${svg('doc', 13)}Documento</a>` : '', tieneArchivo(s.archivo_cierre) ? `<a class="lnk" href="/api/archivo/${esc(s.archivo_cierre)}" target="_blank">${svg('doc', 13)}Constancia de cierre</a>` : faltaCierre(s) ? `<span class="badge b-dg">Falta la constancia de cierre</span>` : ''].filter(Boolean).join(' ');
+        document.getElementById('h-solicitudes').innerHTML = `<p class="sec" style="margin:0 0 12px;">${sols.length} solicitud${sols.length === 1 ? '' : 'es'} · ${nDocs} documento${nDocs === 1 ? '' : 's'} adjunto${nDocs === 1 ? '' : 's'}</p>` + (sols.map(s => `<div class="lista-modal-item"><div class="lista-modal-header"><div><span class="badge ${concB(s.concepto)}">${esc(s.concepto)}</span> <span class="mono sec" style="font-size:12px;">${esc(fechasSol(s))}</span><div class="sec" style="margin-top:6px;">${esc(s.motivo)}</div><div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:6px;">${docsDe(s)}</div></div><span class="badge ${s.estado === 'APROBADA' ? 'b-ok' : s.estado === 'RECHAZADA' ? 'b-dg' : 'b-wn'}">${s.estado}</span></div></div>`).join('') || '<div class="vacio">Sin solicitudes previas.</div>');
         abrirM('m-h');
     }
 
@@ -1244,23 +1257,43 @@
         document.getElementById('cal-dia-eventos').innerHTML = evs.length ? evs.map(e => `<div class="tl"><i style="background:${EV_COLOR[e.tipo]}"></i><div><b>${esc(e.t)}</b><small>${esc(e.s)}</small></div></div>`).join('') : '<p>Sin eventos cargados para este día.</p>';
         let fer = dG.feriados.find(f => f.fecha === fecha);
         document.getElementById('cFerMotivo2').value = fer ? fer.nombre : '';
+        pintarChkSucs('cFerSucs2', fer ? fer.sucs_abren : 'TODAS');
         document.getElementById('cal-borrar-fer').innerHTML = fer ? `<button class="btn-link dg" onclick="if(confirm('¿Quitar el feriado del ${fmtFA(fecha)}?')) { accion('borrar_feriado', {d1:'${fecha}'}); cerrarM('m-cal-opts'); }">Quitar este feriado</button>` : '';
         document.getElementById('box-admin-cal').classList.toggle('hidden', dG.rol !== 0);
         document.getElementById('cFranDni2').value = '';
         abrirM('m-cal-opts');
     }
+    // Casilleros de sucursales para el feriado. valor: 'TODAS', 'NINGUNA' o nombres separados por coma.
+    function pintarChkSucs(id, valor) {
+        let sucs = dG.rol === 1 ? [dG.sucursal] : dG.sucursales.map(s => s.nombre);
+        let set = valor === 'TODAS' ? new Set(sucs) : new Set((valor || '').split(',').map(x => x.trim()));
+        document.getElementById(id).innerHTML = (sucs.length > 1 ? `<label class="chk"><input type="checkbox" ${set.size >= sucs.length ? 'checked' : ''} onchange="document.querySelectorAll('#${id} .chk-suc').forEach(c => c.checked = this.checked)"> <b>Todas</b></label>` : '') + sucs.map(n => `<label class="chk"><input type="checkbox" class="chk-suc" value="${esc(n)}" ${set.has(n) ? 'checked' : ''}> ${esc(n)}</label>`).join('');
+    }
+    function sucsElegidas(id) {
+        let all = Array.from(document.querySelectorAll('#' + id + ' .chk-suc')), on = all.filter(c => c.checked).map(c => c.value);
+        return all.length && on.length === all.length ? 'TODAS' : on.length ? on.join(',') : 'NINGUNA';
+    }
+    function abrirFeriado() { pintarChkSucs('cFerSucs', 'TODAS'); ['cFerFecha', 'cFerMotivo'].forEach(id => document.getElementById(id).value = ''); abrirM('m-feriado'); }   // pinta las sucursales al abrir (pueden haber cambiado)
+    async function guardarFeriado(fecha, motivo, sucs, modal) {
+        if(!fecha || !motivo) { alert('Falta la fecha o el motivo.'); return; }
+        cerrarM(modal);
+        await accion('guardar_feriado', {d1: fecha, d2: motivo, d3: sucs});
+        if(sucs !== 'NINGUNA') { abrirOpcionesDia(fecha); abrirConvocatoria(); }   // elegir el personal convocado en el mismo paso
+    }
     function abrirConvocatoria() {
+        cerrarM('m-cal-opts');   // si queda abierto tapa el modal de convocatoria (mismo z-index)
         document.getElementById('conv-fecha').value = v('cal-selected-date'); document.getElementById('conv-fecha-txt').textContent = fmtFA(v('cal-selected-date'));
         dibujarChecklistConvocados(); abrirM('m-convocatoria');
     }
     function dibujarChecklistConvocados() {
-        let suc = v('conv-sucursal'), fecha = v('conv-fecha');
+        let suc = v('conv-sucursal'), fecha = v('conv-fecha'), fer = dG.feriados.find(f => f.fecha === fecha);
+        document.getElementById('conv-aviso').textContent = !fer ? 'Ese día no tiene feriado cargado.' : !sucAbre(fer, suc) ? 'Esta sucursal no abre ese feriado: no hace falta convocar a nadie.' : '';
         let convs = new Set(dG.convocados.filter(c => c.fecha === fecha).map(c => c.dni));
         document.getElementById('conv-checklist').innerHTML = dG.usuarios.filter(u => u.activo === 1 && u.sucursal === suc).map(e => `<label class="chk" style="padding:8px; font-weight:500;"><input type="checkbox" class="chk-conv" value="${esc(e.dni)}" ${convs.has(e.dni) ? 'checked' : ''}> <span class="mono muted" style="font-size:12px;">${esc(e.dni)}</span> ${esc(e.nombre)}</label>`).join('') || '<div class="vacio">No hay empleados en esta sucursal.</div>';
     }
     async function guardarConvocatoria() {
         let sel = Array.from(document.querySelectorAll('.chk-conv:checked')).map(cb => cb.value);
-        await accion('guardar_convocados', { d1: sel.join(','), d2: v('conv-fecha'), d3: v('conv-sucursal') }); cerrarM('m-convocatoria');
+        cerrarM('m-convocatoria'); await accion('guardar_convocados', { d1: sel.join(','), d2: v('conv-fecha'), d3: v('conv-sucursal') });
     }
 
     // ===== MEDIOS FRANCOS =====
@@ -1348,7 +1381,7 @@
             + (u.activo ? `<button class="btn btn-dg" onclick="darDeBaja('${esc(u.dni)}')">Dar de baja</button>` : `<button class="btn" style="color:var(--okt);" onclick="reactivar('${esc(u.dni)}')">Reactivar</button>`);
         box.innerHTML = `<div class="ficha-h"><div class="who"><span class="av">${ini(u.nombre)}</span><div><div class="nm"><span>${esc(u.nombre)}</span>${estado}</div><small>${[rolTxt(u.rol), esc(u.sucursal)].filter(Boolean).join(' · ')} · Legajo <span class="mono">${esc(u.dni)}</span></small></div></div><div class="acts">${acts}</div></div>
         <div class="ficha-b"><div class="stats"><div><span class="cap">Días de vacaciones</span><b>${u.dias_vacaciones ?? '—'}</b></div><div><span class="cap">Horas en el mes</span><b>${delMes.length ? minsToHM(horas) : '—'}</b></div><div><span class="cap">Llegadas tarde (mes)</span><b style="color:${tardes ? 'var(--wnt)' : 'var(--tp)'}">${tardes}</b></div><div><span class="cap">Fuera de radio (mes)</span><b style="color:${fuera ? 'var(--dgt)' : 'var(--tp)'}">${fuera}</b></div></div>
-        <div class="g2" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:22px;"><div><div class="cap" style="margin-bottom:6px;">Datos del legajo</div>${datos.map(([k, val]) => `<div class="kv"><span>${k}</span><b>${val}</b></div>`).join('')}<div style="display:flex; gap:8px; margin-top:14px;">${tieneArchivo(u.mapa) ? `<a class="lnk" href="/api/archivo/${esc(u.mapa)}" target="_blank">${svg('doc', 14)}Documento adjunto</a>` : ''}<button class="lnk" onclick="abrirHistorial('${esc(u.dni)}')">${svg('solic', 14)}Historial de solicitudes</button></div></div>
+        <div class="g2" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:22px;"><div><div class="cap" style="margin-bottom:6px;">Datos del legajo</div>${datos.map(([k, val]) => `<div class="kv"><span>${k}</span><b>${val}</b></div>`).join('')}<div style="display:flex; gap:8px; margin-top:14px;">${tieneArchivo(u.mapa) ? `<a class="lnk" href="/api/archivo/${esc(u.mapa)}" target="_blank">${svg('doc', 14)}Documento adjunto</a>` : ''}<button class="lnk" onclick="abrirHistorial('${esc(u.dni)}')">${svg('solic', 14)}Historial y documentos</button></div></div>
         <div><div class="cap" style="margin-bottom:6px;">Últimos fichajes</div>${mios.slice(0, 6).map(x => { let c = calcFichaje(x); return `<div class="fx"><span>${fmtF(c.f_date)}</span><b>${c.f_in} → ${c.salida || '…'}</b><span class="badge ${c.tarde ? 'b-wn' : c.fuera ? 'b-dg' : c.total === null ? 'b-in' : 'b-ok'}" style="font-family:var(--m);">${c.total === null ? 'en curso' : minsToHM(c.total)}</span></div>`; }).join('') || '<div class="muted" style="font-size:13px; padding:10px 0;">Sin fichajes registrados.</div>'}</div></div></div>`;
     }
     function abrirU(d) {
@@ -1434,14 +1467,14 @@
         accion('guardar_config', { empresa: v('c_empresa'), color: v('c_color'), gps: v('c_gps'), tol: v('c_tol'), anti: v('c_anti'), vac_ant: v('c_vac'), intentos: v('c_log'), jornada: v('c_jornada'), f_manana: v('c_fmanana'), f_tarde: v('c_ftarde'), gps_est: v('c_gps_est'), enc_aprueba: v('c_enc_aprueba'), pw_pre: v('c_pwpre'), pw_suf: v('c_pwsuf'), vac_base: v('c_vac_base') });
     }
     function renderConceptos() {
-        document.getElementById('b-conceptos').innerHTML = dG.tipos_solicitud.map(t => `<div class="c"><div class="l1"><b>${esc(t.nombre)}</b><span class="badge b-ne">Por ${t.tipo === 'DIAS' ? 'días' : 'horas'}</span></div><div class="rg"><div><span>Exige certificado</span><b style="color:${t.requiere_foto === 1 ? 'var(--dgt)' : 'var(--ts)'}">${t.requiere_foto === 1 ? 'Obligatorio' : 'Opcional'}</b></div><div><span>Resta vacaciones</span><b style="color:${t.descuenta_dias === 1 ? 'var(--wnt)' : 'var(--ts)'}">${t.descuenta_dias === 1 ? 'Sí' : 'No'}</b></div><div><span>Carga horaria</span><b class="mono">${t.horas_por_dia} h / día</b></div></div><div class="ft"><button class="btn-link" onclick="abrirConcepto('${esc(t.nombre)}')">Editar</button><button class="btn-link dg ml" onclick="if(confirm('¿Eliminar el concepto ${esc(t.nombre)}?')) accion('borrar_concepto',{nombre:'${esc(t.nombre)}'})">Borrar</button></div></div>`).join('')
+        document.getElementById('b-conceptos').innerHTML = dG.tipos_solicitud.map(t => `<div class="c"><div class="l1"><b>${esc(t.nombre)}</b><span class="badge b-ne">Por ${t.tipo === 'DIAS' ? 'días' : 'horas'}</span></div><div class="rg"><div><span>Exige certificado</span><b style="color:${t.requiere_foto === 1 ? 'var(--dgt)' : 'var(--ts)'}">${t.requiere_foto === 1 ? 'Obligatorio' : 'Opcional'}</b></div><div><span>Documentos</span><b>${t.requiere_cierre === 1 ? 'Dos (constancia al volver)' : 'Uno'}</b></div><div><span>Resta vacaciones</span><b style="color:${t.descuenta_dias === 1 ? 'var(--wnt)' : 'var(--ts)'}">${t.descuenta_dias === 1 ? 'Sí' : 'No'}</b></div><div><span>Carga horaria</span><b class="mono">${t.horas_por_dia} h / día</b></div></div><div class="ft"><button class="btn-link" onclick="abrirConcepto('${esc(t.nombre)}')">Editar</button><button class="btn-link dg ml" onclick="if(confirm('¿Eliminar el concepto ${esc(t.nombre)}?')) accion('borrar_concepto',{nombre:'${esc(t.nombre)}'})">Borrar</button></div></div>`).join('')
             + `<button class="add" onclick="abrirConcepto(null)">${svg('plus', 20)}Añadir Parámetro</button>`;
     }
     function abrirConcepto(n) {
         let t = n ? dG.tipos_solicitud.find(x => x.nombre === n) : null;
         document.getElementById('tp-title').textContent = t ? 'Editar · ' + t.nombre : 'Nuevo tipo de solicitud';
         document.getElementById('tp_nombre').value = t ? t.nombre : ''; document.getElementById('tp_nombre').readOnly = !!t;
-        document.getElementById('tp_tipo').value = t ? t.tipo : 'HORAS'; document.getElementById('tp_foto').value = t ? t.requiere_foto : 0; document.getElementById('tp_desc').value = t ? t.descuenta_dias : 0; document.getElementById('tp_horas').value = t ? t.horas_por_dia : 0;
+        document.getElementById('tp_tipo').value = t ? t.tipo : 'HORAS'; document.getElementById('tp_foto').value = t ? t.requiere_foto : 0; document.getElementById('tp_desc').value = t ? t.descuenta_dias : 0; document.getElementById('tp_cierre').value = t ? (t.requiere_cierre || 0) : 0; document.getElementById('tp_horas').value = t ? t.horas_por_dia : 0;
         document.getElementById('btn-crear-concepto').textContent = t ? 'Guardar cambios' : 'Añadir Parámetro';
         abrirM('m-concepto');
     }
@@ -1449,7 +1482,7 @@
         let nombre = v('tp_nombre').trim();
         if(!nombre) { alert('Escribí un nombre para el concepto (Ej: MUDANZA).'); return; }
         let btn = document.getElementById('btn-crear-concepto'); btn.disabled = true;
-        try { cerrarM('m-concepto'); await accion('guardar_concepto', {nombre: nombre.toUpperCase(), tipo: v('tp_tipo'), foto: v('tp_foto'), desc: v('tp_desc'), horas: v('tp_horas')}); } finally { btn.disabled = false; }
+        try { cerrarM('m-concepto'); await accion('guardar_concepto', {nombre: nombre.toUpperCase(), tipo: v('tp_tipo'), foto: v('tp_foto'), desc: v('tp_desc'), horas: v('tp_horas'), cierre: v('tp_cierre')}); } finally { btn.disabled = false; }
     }
     // Importacion CSV: zona de arrastre sobre el input de archivo de siempre.
     function csvElegido() { let f = document.getElementById('csv_file').files[0]; document.getElementById('drop-t').textContent = f ? 'Archivo elegido: ' + f.name : 'Soltá el archivo .csv acá o hacé clic para elegirlo'; }
@@ -1498,7 +1531,7 @@
         let its = [];
         NAV.forEach(([g, items]) => items.forEach(([id, l, ic]) => { if(dG.rol === 0 || !SOLO_ADMIN.includes(id)) its.push({ l: 'Ir a ' + l, k: 'MÓDULO', ic, go: () => ver(id) }); }));
         if(dG.rol === 0) its.push({ l: 'Publicar anuncio', k: 'ACCIÓN', ic: 'notif', go: abrirNuevoAnuncio });
-        its.push({ l: 'Cargar feriado', k: 'ACCIÓN', ic: 'cal', go: () => abrirM('m-feriado') }, { l: 'Asignar medio franco', k: 'ACCIÓN', ic: 'francos', go: () => abrirM('m-franco') }, { l: 'Nuevo empleado', k: 'ACCIÓN', ic: 'plus', go: () => abrirU(null) }, { l: 'Descargar reporte de asistencia', k: 'ACCIÓN', ic: 'down', go: () => { asistModoActual = 'registros'; ver('t-asist'); } });
+        its.push({ l: 'Cargar feriado', k: 'ACCIÓN', ic: 'cal', go: () => abrirFeriado() }, { l: 'Asignar medio franco', k: 'ACCIÓN', ic: 'francos', go: () => abrirM('m-franco') }, { l: 'Nuevo empleado', k: 'ACCIÓN', ic: 'plus', go: () => abrirU(null) }, { l: 'Descargar reporte de asistencia', k: 'ACCIÓN', ic: 'down', go: () => { asistModoActual = 'registros'; ver('t-asist'); } });
         dG.usuarios.forEach(u => its.push({ l: u.nombre + ' · ' + u.dni, k: u.activo ? 'EMPLEADO' : 'INACTIVO', ic: 'user', go: () => { if(!u.activo) document.getElementById('fI').checked = true; document.getElementById('fU_n').value = ''; empSel = u.dni; ver('t-emp'); } }));
         return its;
     }

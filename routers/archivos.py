@@ -20,7 +20,7 @@ async def descargar_archivo(request: Request, filename: str, user: dict = Depend
     if not os.path.isfile(path): return Response(status_code=404)
     async with get_db() as db:
         u = await db.fetchrow("SELECT rol, sucursal FROM usuarios WHERE dni=$1", user['dni'])
-        sol = await db.fetchrow("SELECT s.dni, us.sucursal FROM solicitudes s JOIN usuarios us ON s.dni=us.dni WHERE s.archivo=$1", safe_name)
+        sol = await db.fetchrow("SELECT s.dni, us.sucursal FROM solicitudes s JOIN usuarios us ON s.dni=us.dni WHERE s.archivo=$1 OR s.archivo_cierre=$1", safe_name)
         if safe_name.startswith("map_"):
             target = await db.fetchrow("SELECT sucursal FROM usuarios WHERE mapa=$1", safe_name)
             if u['rol'] == 2: return Response(status_code=403)

@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, Form, Request, UploadFile, File
 from fastapi.responses import JSONResponse
 
-from database import get_db, requiere_sesion, check_magic_bytes, limiter
+from database import get_db, requiere_sesion, check_magic_bytes, limiter, sucursal_abre, solicitud_terminada
 
 router = APIRouter()
 
@@ -75,7 +75,7 @@ async def fichar(request: Request, lat: float = Form(...), lon: float = Form(...
             return JSONResponse(status_code=403, content={"msg": f"Fuera de rango establecido ({int(dist)}m. Límite: {int(cfg.get('distancia_gps', 50))}m)"})
 
         fer = await db.fetchrow("SELECT sucs_abren FROM feriados WHERE fecha=$1", hoy)
-        es_feriado_abierto = fer and (fer['sucs_abren'] == 'TODAS' or u['sucursal'] in fer['sucs_abren'])
+        es_feriado_abierto = fer and sucursal_abre(fer['sucs_abren'], u['sucursal'])
         franco = await db.fetchrow("SELECT turno FROM mediofrancos WHERE dni=$1 AND fecha=$2", user['dni'], hoy)
 
         if ult_hoy:
@@ -176,17 +176,29 @@ async def crear_solicitud(request: Request, concepto: str = Form(...), fecha_aus
 
 @router.post("/api/solicitud/adjuntar")
 @limiter.limit("10/minute")
-async def adjuntar_comprobante(request: Request, solicitud_id: int = Form(...), comprobante: UploadFile = File(...), user: dict = Depends(requiere_sesion)):
+async def adjuntar_comprobante(request: Request, solicitud_id: int = Form(...), comprobante: UploadFile = File(...), cual: str = Form("inicio"), user: dict = Depends(requiere_sesion)):
+    """Adjunta el documento de la solicitud (cual=inicio, solo mientras esta pendiente) o la constancia de cierre
+    (cual=cierre: el concepto la pide, la solicitud esta aprobada y el permiso ya termino)."""
     raw = await comprobante.read(5 * 1024 * 1024 + 1)
     if len(raw) > 5 * 1024 * 1024: return JSONResponse(status_code=413, content={"msg": "El archivo excede los 5MB."})
     ext = check_magic_bytes(raw)
     if not ext: return JSONResponse(status_code=400, content={"msg": "Formato no autorizado."})
-    filename = f"{uuid.uuid4().hex}.{ext}"
-    with open(os.path.join("uploads", filename), "wb") as f: f.write(raw)
     async with get_db() as db:
-        sol = await db.fetchrow("SELECT s.dni, ts.requiere_foto FROM solicitudes s JOIN tipos_solicitud ts ON s.concepto=ts.nombre WHERE s.id=$1", int(solicitud_id))
+        sol = await db.fetchrow("SELECT s.*, ts.requiere_cierre FROM solicitudes s JOIN tipos_solicitud ts ON s.concepto=ts.nombre WHERE s.id=$1", int(solicitud_id))
         if not sol or sol['dni'] != user['dni']: return JSONResponse(status_code=403, content={"msg": "Acceso denegado."})
-        await db.execute("UPDATE solicitudes SET archivo=$1 WHERE id=$2", filename, int(solicitud_id))
+        if cual == 'cierre':
+            if sol['requiere_cierre'] != 1: return JSONResponse(status_code=400, content={"msg": "Este concepto no pide constancia de cierre."})
+            if sol['estado'] != 'APROBADA': return JSONResponse(status_code=400, content={"msg": "La solicitud tiene que estar aprobada."})
+            if not solicitud_terminada(dict(sol)): return JSONResponse(status_code=400, content={"msg": "La constancia de cierre se sube cuando termina el permiso."})
+            col = 'archivo_cierre'
+        else:
+            if sol['estado'] != 'PENDIENTE': return JSONResponse(status_code=400, content={"msg": "El documento se adjunta mientras la solicitud está pendiente."})
+            col = 'archivo'
+        filename = f"{uuid.uuid4().hex}.{ext}"
+        with open(os.path.join("uploads", filename), "wb") as f: f.write(raw)
+        await db.execute(f"UPDATE solicitudes SET {col}=$1 WHERE id=$2", filename, int(solicitud_id))
+    viejo = sol[col]
+    if viejo and viejo != "null" and os.path.isfile(os.path.join("uploads", viejo)): os.remove(os.path.join("uploads", viejo))
     return {"msg": "ok"}
 
 
@@ -194,14 +206,13 @@ async def adjuntar_comprobante(request: Request, solicitud_id: int = Form(...), 
 @limiter.limit("10/minute")
 async def cancelar_solicitud(request: Request, solicitud_id: int = Form(...), user: dict = Depends(requiere_sesion)):
     async with get_db() as db:
-        sol = await db.fetchrow("SELECT id, archivo FROM solicitudes WHERE id=$1 AND dni=$2 AND estado='PENDIENTE'", solicitud_id, user['dni'])
+        sol = await db.fetchrow("SELECT id, archivo, archivo_cierre FROM solicitudes WHERE id=$1 AND dni=$2 AND estado='PENDIENTE'", solicitud_id, user['dni'])
         if not sol:
             return JSONResponse(status_code=400, content={"msg": "La solicitud no se encuentra o ya fue procesada."})
 
-        if sol['archivo'] and sol['archivo'] != "null":
-            path = os.path.join("uploads", sol['archivo'])
-            if os.path.isfile(path):
-                os.remove(path)
+        for a in (sol['archivo'], sol['archivo_cierre']):
+            if a and a != "null" and os.path.isfile(os.path.join("uploads", a)):
+                os.remove(os.path.join("uploads", a))
 
         await db.execute("DELETE FROM solicitudes WHERE id=$1", solicitud_id)
     return {"msg": "Solicitud cancelada de manera exitosa."}

@@ -2,6 +2,39 @@
 
 Cambios de JZPass, del más nuevo al más viejo. Cada entrada corresponde a un push a `main`.
 
+## 2.12.0 — 2026-11-11
+
+Tag `v2.12.0`.
+
+### Nuevo
+- **Dos documentos por concepto:** en Ajustes > Conceptos, "Documentos: uno al pedir / dos: al pedir y al
+  volver". Con dos, la solicitud aprobada pide la **constancia de cierre** cuando termina el permiso (pasó la
+  fecha hasta, o la fecha más la hora de regreso). Columnas nuevas `tipos_solicitud.requiere_cierre` y
+  `solicitudes.archivo_cierre` (se agregan solas al arrancar).
+- **Aviso de documentación pendiente en la app:** la campana y el Inicio suman los permisos terminados sin
+  constancia, la pestaña Avisos los lista con el botón "Subir constancia" y la tarjeta de la solicitud muestra
+  "Falta la constancia de cierre · Subir". `POST /api/solicitud/adjuntar` recibe `cual=inicio|cierre` y valida
+  (concepto con cierre, solicitud aprobada, permiso terminado; el de inicio solo mientras está pendiente).
+- **Panel:** bandeja **Falta documentación** en Solicitudes, aviso en "Requiere tu atención" del Inicio, los dos
+  documentos en el detalle, y la ficha del empleado abre **Historial y documentos** (cada solicitud con sus
+  adjuntos y el total de documentos).
+- **Feriados en varias sucursales:** "Sucursales que abren" pasa de un desplegable de una sola a casilleros
+  (Todas / cada sucursal); se guarda la lista separada por coma en `feriados.sucs_abren` (sin cambio de
+  esquema). Al guardar un feriado con sucursales abiertas se abre directo la convocatoria del día.
+
+### Arreglado
+- **El campo de adjunto en la app aparecía solo con certificado "Obligatorio":** con "Opcional" no se podía
+  adjuntar nada. Ahora se muestra siempre (con el texto según el concepto) y, si falta, la solicitud pendiente
+  tiene "Adjuntar documento".
+- **"Ver / editar personal convocado" se abría debajo del panel del día** (mismo z-index, antes en el DOM) y
+  no se podía elegir a nadie. Ahora el panel del día se cierra al abrir la convocatoria. El modal avisa si el
+  día no tiene feriado o la sucursal no abre ese día.
+- **El administrador puede corregir la convocatoria después de las 18:00 del día anterior** (el reporte la usa
+  para marcar falta); el límite sigue para el encargado.
+- **Feriado con "sucursales que abren" vacío marcaba Falta a todos** en el reporte; ahora cuenta como feriado
+  cerrado. La comparación de sucursal en feriados era por subcadena ("Centro" coincidía con "Centro Norte");
+  ahora es exacta (`database.sucursal_abre`, compartida por fichaje, reporte y panel).
+
 ## 2.11.0 — 2026-11-07
 
 Tag `v2.11.0`.
