@@ -100,7 +100,20 @@ async def admin_actions(request: Request, action: str, adm: dict = Depends(requi
             elif action == "editar_suc":
                 await db.execute("UPDATE sucursales SET nombre=$1, lat=$2, lon=$3, hora_cierre=$4, hora_apertura_feriado=$5, hora_cierre_feriado=$6 WHERE nombre=$7", str(form.get('d2')), float(form.get('d3')), float(form.get('d4')), str(form.get('d5')), str(form.get('d6')), str(form.get('d7')), str(form.get('d1')))
             elif action == "borrar_suc":
-                await db.execute("DELETE FROM sucursales WHERE nombre=$1", str(form.get('d1')))
+                # Borrar solo si no quedo nada apuntando a la sucursal (los usuarios y fichajes la referencian por nombre).
+                nombre = str(form.get('d1'))
+                n_emp = await db.fetchval("SELECT COUNT(*) FROM usuarios WHERE sucursal=$1", nombre)
+                n_fich = await db.fetchval("SELECT COUNT(*) FROM fichajes WHERE sucursal=$1", nombre)
+                if n_emp or n_fich:
+                    return JSONResponse(status_code=400, content={"msg": f"La sucursal tiene {n_emp} empleado(s) y {n_fich} fichaje(s): desactivala en vez de borrarla."})
+                await db.execute("DELETE FROM sucursales WHERE nombre=$1", nombre)
+            elif action == "activar_suc":
+                nombre = str(form.get('d1')); activa = 1 if str(form.get('d2')) == '1' else 0
+                if not activa:
+                    n_act = await db.fetchval("SELECT COUNT(*) FROM usuarios WHERE sucursal=$1 AND activo=1", nombre)
+                    if n_act:
+                        return JSONResponse(status_code=400, content={"msg": f"La sucursal tiene {n_act} empleado(s) activo(s): reasignalos o dalos de baja antes de desactivarla."})
+                await db.execute("UPDATE sucursales SET activa=$2 WHERE nombre=$1", nombre, activa)
             elif action == "guardar_feriado":
                 await db.execute("INSERT INTO feriados (fecha, nombre, sucs_abren) VALUES ($1,$2,$3) ON CONFLICT (fecha) DO UPDATE SET nombre=EXCLUDED.nombre, sucs_abren=EXCLUDED.sucs_abren", str(form.get('d1')), str(form.get('d2')), str(form.get('d3')))
             elif action == "borrar_feriado":

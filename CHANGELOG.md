@@ -2,6 +2,21 @@
 
 Cambios de JZPass, del más nuevo al más viejo. Cada entrada corresponde a un push a `main`.
 
+## 2.13.0 — 2026-11-11
+
+Tag `v2.13.0`.
+
+### Nuevo
+- **Desactivar sucursales:** en Sucursales cada tarjeta tiene **Desactivar / Reactivar** (columna nueva
+  `sucursales.activa`, se agrega sola). Una sucursal inactiva deja de aparecer para asignar personal, convocar,
+  abrir en feriados, en el tablero en vivo y en la plantilla CSV, pero conserva fichajes, reportes e historial;
+  en los filtros de Asistencias, Empleados y Reportes figura como "(inactiva)". No se puede desactivar con
+  empleados activos asignados (reasignarlos o darlos de baja primero). `/api/v1/sucursales` devuelve `activa`.
+
+### Arreglado
+- **Eliminar sucursal ya no deja datos huérfanos:** el servidor rechaza el borrado si la sucursal tiene
+  empleados o fichajes (antes borraba la fila y los empleados quedaban sin local, con el fichaje roto).
+
 ## 2.12.0 — 2026-11-11
 
 Tag `v2.12.0`.

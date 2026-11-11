@@ -118,7 +118,7 @@ La app crea el esquema sola al arrancar (y agrega columnas nuevas si faltan):
 | Tabla | Contenido |
 |---|---|
 | `usuarios` | Personal (clave: `dni`): rol, sucursal, horario, saldo de vacaciones, hash de clave, bloqueo, datos de contacto, estado activo/inactivo y fecha de baja |
-| `sucursales` | Nombre, coordenadas (para el GPS) y horarios, incluidos los de feriado |
+| `sucursales` | Nombre, coordenadas (para el GPS), horarios (incluidos los de feriado) y `activa` (una sucursal que cerró se desactiva: conserva fichajes y reportes; solo se borra si no tiene empleados ni fichajes) |
 | `fichajes` | Entradas y salidas con ubicación, distancia a la sucursal y llegada tarde |
 | `solicitudes`, `tipos_solicitud` | Solicitudes del personal y los conceptos que las definen |
 | `mediofrancos`, `feriados`, `feriados_convocados` | Medio francos, feriados (`sucs_abren`: `TODAS`, `NINGUNA` o nombres separados por coma) y personal convocado |

@@ -15,7 +15,7 @@ from jztech_core.passwords import hash_password, needs_rehash, verify_legacy_pas
 logger = logging.getLogger("jzpass")
 
 # Version instalada (una sola fuente). Se sube al publicar cada version en GitHub Releases (tag v<VERSION>).
-VERSION = "2.12.0"
+VERSION = "2.13.0"
 from slowapi import Limiter
 
 
@@ -164,6 +164,8 @@ async def init_db_schema():
         # 2.12.0: segundo documento (constancia al volver) por tipo de solicitud.
         await conn.execute("ALTER TABLE tipos_solicitud ADD COLUMN IF NOT EXISTS requiere_cierre INTEGER DEFAULT 0")
         await conn.execute("ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS archivo_cierre TEXT DEFAULT ''")
+        # 2.13.0: sucursales que cierran se desactivan (se conservan fichajes, reportes e historial).
+        await conn.execute("ALTER TABLE sucursales ADD COLUMN IF NOT EXISTS activa INTEGER DEFAULT 1")
 
         # Anuncios generales: los destinatarios se fijan al publicar (usuarios activos en ese momento),
         # asi el reporte de vistos/firmados no cambia con altas o bajas posteriores.

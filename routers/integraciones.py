@@ -100,4 +100,4 @@ async def empleados(sucursal: str = "", activos: bool = True):
 @v1.get("/sucursales")
 async def sucursales():
     async with get_db() as db:
-        return [dict(r) for r in await db.fetch("SELECT nombre, hora_cierre, hora_apertura_feriado, hora_cierre_feriado FROM sucursales ORDER BY nombre")]
+        return [dict(r) for r in await db.fetch("SELECT nombre, hora_cierre, hora_apertura_feriado, hora_cierre_feriado, activa FROM sucursales ORDER BY nombre")]
