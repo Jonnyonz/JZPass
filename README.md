@@ -38,7 +38,13 @@ cascarón sin red, pero el fichaje y las solicitudes exigen conexión. Tema clar
   sucursal del empleado. Si supera el límite configurado (50 m por defecto), el fichaje se
   rechaza, salvo que el "GPS estricto" esté desactivado. Marca las llegadas tarde según la
   tolerancia, evita fichajes duplicados (anti-rebote) y no deja fichar la salida antes de la
-  jornada mínima.
+  jornada mínima. Si la sucursal del empleado está desactivada o no existe, el fichaje se rechaza
+  con un aviso para que el administrador lo reasigne.
+- **Feriados y convocatorias:** cada feriado indica qué sucursales abren (todas, ninguna o una
+  lista). En las que abren nadie está obligado a ir salvo el personal convocado para ese día, que
+  se elige al guardar el feriado o desde el día en el calendario; el reporte marca falta solo a
+  los convocados que no ficharon. El encargado convoca hasta las 18:00 del día anterior; el
+  administrador puede corregir la convocatoria después.
 - **Solicitudes** según los conceptos definidos por el admin (certificado opcional u obligatorio,
   algunos descuentan días de vacaciones). Siempre se puede adjuntar un PDF, JPG o PNG de hasta 5 MB.
   Un concepto puede pedir **dos documentos**: el de la solicitud y una constancia de cierre que la
@@ -53,9 +59,14 @@ formularios en panel lateral y modo claro/oscuro. Secciones: Inicio (tablero en 
 tardanzas, pendientes, alertas de fichaje, presentismo por sucursal, histograma de llegadas, lo que
 requiere atención y los próximos 30 días), Asistencias (En vivo por sucursal y Registros con salida
 manual, corrección de entradas y reporte Excel), Solicitudes (bandejas con lista y detalle, aprobar o
-rechazar desde el detalle), Calendario (feriados, convocatorias, francos y licencias), Medios Francos,
-Notificaciones, Empleados (lista con ficha: horas y tardanzas del mes, legajo, últimos fichajes),
-Sucursales, Personalización y Ajustes del Sistema (parámetros, conceptos, importación CSV, API).
+rechazar desde el detalle; bandeja "Falta documentación" con los permisos terminados sin constancia de
+cierre; los dos documentos visibles en el detalle), Calendario (feriados con casilleros de sucursales,
+convocatorias, francos y licencias), Medios Francos, Notificaciones, Empleados (lista con ficha: horas y
+tardanzas del mes, legajo, últimos fichajes e "Historial y documentos" con todos los adjuntos),
+Sucursales (tarjetas con Editar, Ver personal y Desactivar / Reactivar: una sucursal que cerró se
+desactiva y conserva fichajes y reportes; solo se elimina si no tiene empleados ni fichajes),
+Personalización y Ajustes del Sistema (parámetros, conceptos con "Documentos: uno o dos", importación
+CSV, API).
 Todo se calcula en el cliente con los datos de `/api/datos_panel`: el rediseño no agregó endpoints.
 El encargado ve solo Inicio, Asistencias, Solicitudes, Calendario, Medios Francos y Empleados de su
 sucursal. Reporte consolidado en Excel por rango de fechas y sucursal, resumido o detallado; incluye
@@ -353,6 +364,18 @@ docker compose down        # detener (la base queda en el volumen pgdata)
 ```
 
 Incluir también la carpeta `uploads/` (adjuntos y logo) en las copias de seguridad.
+
+Si al construir la imagen Docker Hub responde `429 Too Many Requests` (límite de descargas anónimas
+por IP, compartido por todos los equipos de la red), iniciar sesión una vez con `docker login`
+(cuenta gratuita: el límite pasa a ser por cuenta) y repetir. Alternativa sin cuenta: traer la imagen
+base del espejo público de Amazon y construir con el constructor clásico, que no vuelve a consultar
+Docker Hub:
+
+```bash
+docker pull public.ecr.aws/docker/library/python:3.11-slim
+docker tag public.ecr.aws/docker/library/python:3.11-slim python:3.11-slim
+DOCKER_BUILDKIT=0 docker compose up -d --build
+```
 
 ---
 
