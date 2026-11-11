@@ -2,6 +2,15 @@
 
 Cambios de JZPass, del más nuevo al más viejo. Cada entrada corresponde a un push a `main`.
 
+## 2.13.1 — 2026-11-11
+
+Tag `v2.13.1`.
+
+### Arreglado
+- **El fichaje rechaza una sucursal inactiva o inexistente** con un mensaje claro (403), en vez de fallar con error
+  interno. Hoy no puede ocurrir porque desactivar exige que no queden empleados activos, pero cierra el hueco
+  si esa regla cambia o si la sucursal se borró por fuera de la app.
+
 ## 2.13.0 — 2026-11-11
 
 Tag `v2.13.0`.

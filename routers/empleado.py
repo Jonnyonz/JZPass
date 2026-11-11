@@ -66,7 +66,9 @@ async def fichar(request: Request, lat: float = Form(...), lon: float = Form(...
         if u['activo'] == 0: return JSONResponse(status_code=403, content={"msg": "Usuario inactivo."})
 
         ult_hoy = await db.fetchrow("SELECT id, fecha_hora, salida_manual FROM fichajes WHERE dni=$1 AND fecha_hora LIKE $2 ORDER BY id DESC LIMIT 1", user['dni'], f"{hoy}%")
-        suc = await db.fetchrow("SELECT lat, lon, hora_apertura_feriado FROM sucursales WHERE nombre=$1", u['sucursal'])
+        suc = await db.fetchrow("SELECT lat, lon, hora_apertura_feriado, activa FROM sucursales WHERE nombre=$1", u['sucursal'])
+        # Sucursal borrada o desactivada (2.13.1): no se ficha contra un local que no opera; el admin reasigna al empleado.
+        if not suc or suc['activa'] == 0: return JSONResponse(status_code=403, content={"msg": "Tu sucursal no está activa: avisá al administrador para que te reasigne."})
 
         dist = calc_dist(lat, lon, suc['lat'], suc['lon'])
         is_fuera_rango = dist > cfg.get('distancia_gps', 50)
