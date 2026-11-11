@@ -2,6 +2,18 @@
 
 Cambios de JZPass, del más nuevo al más viejo. Cada entrada corresponde a un push a `main`.
 
+## 2.14.0 — 2026-11-11
+
+Tag `v2.14.0`.
+
+### Cambiado
+- **El panel toma el sistema visual de la suite desde jztech-core 0.2.0:** `main.py` monta `/jz/suite.css`
+  (`montar_ui`) y `dashboard.html` lo enlaza antes de su propio `<style>`. Los tokens claro/oscuro, alias,
+  animaciones, `.btn` y `.badge` salen de ahí; en el HTML queda solo lo propio del panel. Mismo aspecto que
+  antes, pero una sola fuente de verdad para Tracker360, JZPass y las demás apps. La app móvil (`index.html`)
+  conserva sus propios tokens hasta que se unifique su handoff.
+- Dependencia `jztech-core` 0.1.7 → 0.2.0 (lockfile regenerado en Linux).
+
 ## 2.13.1 — 2026-11-11
 
 Tag `v2.13.1`.

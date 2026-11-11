@@ -4,42 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="/api/archivo/favicon.png">
+<link rel="stylesheet" href="/jz/suite.css?v=0.2.0">
 <title>JZPass - Panel Admin</title>
 <style>
-    /* Tokens del handoff design_handoff_jzpass_admin. Las fuentes de Google no pasan el CSP (default-src 'self'),
-       por eso se usan si estan instaladas y si no cae a la fuente del sistema. */
-    :root {
-        --f: 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
-        --m: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-        --bg:#f3f4f7; --sf:#ffffff; --sf2:#f8f9fb; --ln:#e4e6eb; --ln2:#eef0f3; --tp:#121722; --ts:#5b6170; --tm:#8e93a0;
-        --ac:#2962ff; --ach:#1f4fd1; --acs:#eaf0ff; --act:#1a3fb8;
-        --ok:#00a84a; --oks:#e6f6ec; --okt:#0f6b34;
-        --dg:#d50000; --dgs:#fdecec; --dgt:#a31515;
-        --wn:#f2a900; --wns:#fff5dc; --wnt:#8a5a00;
-        --ne:#eef0f3; --net:#5b6170;
-        --ink:#0e1424; --ink2:#182036; --inkln:#242d45; --inktx:#c5cbda; --inkmu:#7b84a0;
-        /* alias para el codigo viejo que quede */
-        --accent: var(--ac); --danger: var(--dg); --warning: var(--wn); --success: var(--ok);
-        --text-primary: var(--tp); --text-secondary: var(--ts); --text-muted: var(--tm); --border: var(--ln); --bg-page: var(--bg); --bg-surface: var(--sf);
-    }
-    [data-theme="dark"] {
-        --bg:#0b0e15; --sf:#131824; --sf2:#171d2b; --ln:#252c3d; --ln2:#1d2331; --tp:#e6e9f0; --ts:#a2a9b9; --tm:#6d7488;
-        --ac:#4d7cff; --ach:#6b92ff; --acs:rgba(77,124,255,.14); --act:#9db6ff;
-        --ok:#2fd47a; --oks:rgba(47,212,122,.12); --okt:#7ee8ad;
-        --dg:#ff5a5a; --dgs:rgba(255,90,90,.12); --dgt:#ff9d9d;
-        --wn:#ffc940; --wns:rgba(255,201,64,.12); --wnt:#ffdd85;
-        --ne:rgba(255,255,255,.06); --net:#b4bac8;
-        --ink:#080b12; --ink2:#121826; --inkln:#1c2334;
-    }
-    * { box-sizing: border-box; }
+    /* Tokens, .btn y .badge vienen de /jz/suite.css (jztech-core 0.2.0). Aca queda solo lo propio del panel. */
     html, body { height: 100%; }
     body { margin:0; background:var(--bg); color:var(--tp); font-family:var(--f); font-size:14px; -webkit-font-smoothing:antialiased; overflow:hidden; }
-    a { color:var(--ac); text-decoration:none; } a:hover { color:var(--ach); }
-    .mono { font-family: var(--m); }
-    .hidden { display:none !important; }
-    @keyframes jzin { from { transform:translateY(8px); opacity:0 } to { transform:none; opacity:1 } }
-    @keyframes jzlive { 0%,100% { opacity:1 } 50% { opacity:.35 } }
-    @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 
     /* ===== Layout ===== */
     .app { display:grid; grid-template-columns:236px minmax(0,1fr); height:100vh; overflow:hidden; position:relative; }
@@ -89,20 +59,8 @@
     .card-h { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:16px 20px; border-bottom:1px solid var(--ln); }
     .card-h h3 { margin:0; font:600 15px/1 var(--f); }
     .card-b { padding:20px; }
-    .muted { color:var(--tm); } .sec { color:var(--ts); }
     .vacio { padding:34px; text-align:center; color:var(--tm); font:500 13px/1.5 var(--f); }
-    .cap { font:600 10.5px/1 var(--f); letter-spacing:.08em; text-transform:uppercase; color:var(--tm); }
 
-    button { font-family:inherit; }
-    .btn { cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:7px; white-space:nowrap; border-radius:8px; padding:9px 14px; font:600 13px/1 var(--f); border:1px solid var(--ln); background:var(--sf); color:var(--tp); transition:.15s; }
-    .btn:hover { background:var(--sf2); }
-    .btn-p { background:var(--ac); border-color:var(--ac); color:#fff; } .btn-p:hover { background:var(--ach); border-color:var(--ach); }
-    .btn-ok { background:var(--ok); border-color:var(--ok); color:#fff; } .btn-ok:hover { filter:brightness(1.05); background:var(--ok); }
-    .btn-dg { color:var(--dg); } .btn-dg:hover { border-color:var(--dg); background:var(--dgs); }
-    .btn-dg-o { color:var(--dg); border-color:var(--dg); background:transparent; } .btn-dg-o:hover { background:var(--dgs); }
-    .btn-sm { padding:7px 10px; font-size:12px; border-radius:7px; }
-    .btn-link { cursor:pointer; border:none; background:transparent; color:var(--ac); font:600 12px/1 var(--f); padding:0; }
-    .btn-link:hover { color:var(--ach); } .btn-link.dg { color:var(--dg); }
     .btn:disabled, button:disabled { opacity:.55; cursor:default; }
     .ib { cursor:pointer; width:32px; height:32px; border-radius:7px; border:1px solid var(--ln); background:var(--sf); color:var(--ts); display:inline-flex; align-items:center; justify-content:center; }
     .ib:hover { color:var(--tp); background:var(--sf2); }
@@ -125,9 +83,6 @@
     .toolbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; padding:12px 14px; border-bottom:1px solid var(--ln); background:var(--sf2); }
     .toolbar .sp { flex:1; }
 
-    .badge { display:inline-flex; align-items:center; gap:5px; border-radius:5px; padding:4px 7px; font:700 10.5px/1 var(--f); letter-spacing:.05em; text-transform:uppercase; white-space:nowrap; }
-    .b-ok { background:var(--oks); color:var(--okt); } .b-dg { background:var(--dgs); color:var(--dgt); } .b-wn { background:var(--wns); color:var(--wnt); }
-    .b-in { background:var(--acs); color:var(--act); } .b-ne { background:var(--ne); color:var(--net); }
     .av { width:30px; height:30px; flex:none; border-radius:15px; background:var(--ne); display:flex; align-items:center; justify-content:center; font:700 11px/1 var(--f); color:var(--ts); position:relative; }
     .av .st { position:absolute; right:-1px; bottom:-1px; width:9px; height:9px; border-radius:5px; border:2px solid var(--sf); }
 

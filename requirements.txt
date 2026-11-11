@@ -338,8 +338,8 @@ itsdangerous==2.2.0 \
     --hash=sha256:c6242fc49e35958c8b15141343aa660db5fc54d4f13a1db01a3f5891b98700ef \
     --hash=sha256:e0050c0b7da1eea53ffaf149c0cfbb5c6e2e2b69c4bef22c81fa6eb73e5f6173
     # via -r requirements.in
-jztech-core @ https://github.com/Jonnyonz/jztech-core/releases/download/v0.1.7/jztech_core-0.1.7-py3-none-any.whl \
-    --hash=sha256:d32e3668832d77523b7769695fffca1e41474b376144e9bbd714e9fe4f85133f
+jztech-core @ https://github.com/Jonnyonz/jztech-core/releases/download/v0.2.0/jztech_core-0.2.0-py3-none-any.whl \
+    --hash=sha256:b12689ea2a7f8d4142e382ba6eed74b4343ccb0c129bad7c883dc451d63bdb0c
     # via -r requirements.in
 limits==5.8.0 \
     --hash=sha256:ae1b008a43eb43073c3c579398bd4eb4c795de60952532dc24720ab45e1ac6b8 \

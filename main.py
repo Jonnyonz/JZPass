@@ -8,6 +8,7 @@ from slowapi.errors import RateLimitExceeded
 from jztech_core import sessions
 from jztech_core.logging_setup import configure_logging, install_generic_error_handler
 from jztech_core.security_headers import SecurityHeadersMiddleware
+from jztech_core.ui import montar_ui
 
 # Antes de importar database: ese modulo ya puede loguear al cargarse (p. ej. TRUSTED_PROXIES).
 configure_logging()
@@ -89,6 +90,8 @@ app.include_router(auth.router)
 app.include_router(empleado.router)
 app.include_router(admin.router)
 app.include_router(archivos.router)
+# Sistema visual comun de la suite (jztech-core 0.2.0): /jz/suite.css, enlazado por dashboard.html.
+montar_ui(app)
 app.include_router(anuncios.router)
 app.include_router(integraciones.claves)   # /api/claves (administrador, con sesion)
 app.include_router(integraciones.v1)       # /api/v1 (solo lectura, con clave de API)

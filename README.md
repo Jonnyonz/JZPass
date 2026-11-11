@@ -96,7 +96,9 @@ pueden ingresar y se ven en Personal con "Mostrar inactivos".
 | PostgreSQL | 15 (imagen `postgres:15-alpine`) |
 | [jztech-core](https://github.com/Jonnyonz/jztech-core) | 0.1.6 (librería de seguridad común de JZTech) |
 
-Dependencias fijadas con hash: `requirements.in` (directas) → `requirements.txt` (lockfile,
+El panel enlaza `/jz/suite.css`, el sistema visual común que sirve `jztech-core` 0.2.0 (`montar_ui`
+en `main.py`): tokens claro/oscuro, botones y badges de toda la suite; `dashboard.html` solo tiene lo
+propio del panel. Dependencias fijadas con hash: `requirements.in` (directas) → `requirements.txt` (lockfile,
 se instala con `pip install --require-hashes`).
 
 ### Estructura
