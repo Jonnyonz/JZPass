@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Términos y Condiciones de Uso - JZ Pass</title>
+<link rel="icon" href="/icono.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/jz/suite.css?v=0.2.0">
+<style>
+    /* Pagina de texto: tokens de /jz/suite.css; aca solo la columna de lectura. */
+    body { margin: 0; background: var(--bg); color: var(--tp); font: 400 15px/1.65 var(--f); }
+    .barra { display: flex; align-items: center; gap: 12px; padding: 14px 18px; background: var(--sf); border-bottom: 1px solid var(--ln); position: sticky; top: 0; }
+    .barra strong { flex: 1; font-size: 16px; }
+    main { max-width: 760px; margin: 0 auto; padding: 22px 18px 40px; }
+    h2 { font-size: 17px; line-height: 1.3; margin: 28px 0 8px; }
+    ul { padding-left: 20px; }
+    li + li { margin-top: 6px; }
+    a { color: var(--ac); }
+    footer { text-align: center; font-size: 12px; color: var(--tm); padding: 0 16px 28px; }
+</style>
+<script>
+    (function () { let t = null; try { t = localStorage.getItem('theme'); } catch (e) {} if (!t) t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; document.documentElement.setAttribute('data-theme', t); })();
+    // Volver: a la pantalla anterior si la hay (app o panel); si se abrio suelta, al inicio. Esc hace lo mismo.
+    function volver() { if (history.length > 1) history.back(); else location.href = '/'; return false; }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') volver(); });
+</script>
+</head>
+<body>
+<header class="barra">
+    <a class="btn" href="/" onclick="return volver()">&larr; Volver</a>
+    <strong>Términos y Condiciones de Uso</strong>
+</header>
+
+<main>
+    <p class="muted">Última actualización: noviembre de 2026.</p>
+    <p>Estos términos regulan el uso de JZ Pass, el sistema de asistencia y gestión de personal desarrollado por JZ Tech Solutions, por parte de la organización que lo instala y de las personas que lo usan. Se rigen por las leyes de la República Argentina.</p>
+    <p>JZ Tech Solutions es el nombre de fantasía (<strong>JZTech-Solutions</strong>) de Jonaiker Jimenez, CUIT 20-95803618-4, Responsable Monotributo, con domicilio en General Urquiza 1240, Ciudad Autónoma de Buenos Aires.</p>
+
+    <h2>1. Aceptación</h2>
+    <p>Al ingresar y usar JZ Pass, la organización y cada usuario aceptan estos términos y la <a href="/privacy.html">Política de Privacidad</a>. El sistema es una herramienta de trabajo que la organización pone a disposición de su personal.</p>
+
+    <h2>2. Licencia y propiedad intelectual</h2>
+    <p>JZ Pass es software libre, distribuido bajo la <strong>Licencia Pública General Affero de GNU, versión 3 (GNU AGPLv3)</strong>. Se puede usar, estudiar, modificar y redistribuir según esa licencia. Si se ofrece una versión modificada para que otros la usen a través de la red, hay que poner a su disposición el código fuente de esa versión.</p>
+    <p>El software está protegido por la Ley 11.723 de Propiedad Intelectual; la licencia no transfiere la titularidad del código ni el uso de los nombres y logos de JZ Pass y JZ Tech Solutions para identificar productos o versiones de terceros.</p>
+
+    <h2>3. Cuentas</h2>
+    <ul>
+        <li>Se ingresa con el DNI y una contraseña. La cuenta es personal: no se comparte ni se presta.</li>
+        <li>La contraseña provisoria que entrega la administración debe cambiarse por una propia.</li>
+        <li>Cada persona es responsable de mantener en reserva su contraseña. Lo que se registre con su cuenta se considera hecho por ella, salvo que se demuestre lo contrario; si cree que alguien más la usó, debe avisar a la administración.</li>
+        <li>La organización decide quién accede y con qué rol, y da de baja las cuentas de quienes ya no trabajan en ella.</li>
+    </ul>
+
+    <h2>4. Fichajes y ubicación</h2>
+    <ul>
+        <li>Cada persona ficha su propia entrada y salida, en el momento y en el lugar en que ocurren.</li>
+        <li>Al fichar, la app usa la ubicación del dispositivo para comprobar la distancia a la sucursal, como explica la <a href="/privacy.html">Política de Privacidad</a>.</li>
+        <li>Fichar por otra persona, alterar la ubicación del dispositivo o adjuntar comprobantes falsos es un uso indebido del sistema, que la organización puede tratar conforme a la legislación laboral.</li>
+        <li>Si un fichaje quedó mal o no se pudo hacer, la corrección la carga la administración, con su motivo.</li>
+    </ul>
+
+    <h2>5. Solicitudes, adjuntos y anuncios</h2>
+    <ul>
+        <li>Lo que se declara en una solicitud de licencia, permiso o vacaciones y los archivos que se adjuntan deben ser verdaderos.</li>
+        <li>Conviene adjuntar solo lo necesario para justificar el pedido.</li>
+        <li>Firmar el acuse de un anuncio deja constancia de que la persona lo leyó, con la fecha y la hora.</li>
+    </ul>
+
+    <h2>6. Responsabilidades de la organización</h2>
+    <ul>
+        <li>Es responsable de los datos que carga y de que su uso cumpla la ley, en especial la Ley 25.326 de Protección de los Datos Personales y la legislación laboral: informar a su personal qué se registra y para qué, incluida la ubicación al fichar (ver la <a href="/privacy.html">Política de Privacidad</a>).</li>
+        <li>JZ Pass es una herramienta de apoyo: <strong>no liquida sueldos ni reemplaza los libros y registros laborales que exige la ley</strong>. Los reportes de horas y faltas deben ser revisados por la organización antes de usarlos.</li>
+        <li>Las claves de la API las crea la administración. La organización es responsable de a quién se las entrega y de revocarlas cuando ya no se usan.</li>
+        <li>La organización es responsable de mantener su servidor seguro, con conexión cifrada (HTTPS), copias de respaldo de la base y de los adjuntos, y actualizado.</li>
+    </ul>
+
+    <h2>7. Soporte y actualizaciones</h2>
+    <p>JZ Tech Solutions publica actualizaciones con mejoras y correcciones de seguridad. Se recomienda mantener el sistema actualizado. El soporte, la instalación y otros servicios que se contraten aparte se rigen por lo que se acuerde con cada organización.</p>
+
+    <h2>8. Garantía y responsabilidad</h2>
+    <p>Como establece la licencia GNU AGPLv3, el software se entrega "tal cual", sin garantías de ningún tipo, <strong>en la medida en que lo permita la ley argentina</strong>. JZ Tech Solutions no será responsable por daños indirectos ni por interrupciones o errores causados por fallas de red, de hardware, de la ubicación que informa el dispositivo, de servicios de terceros o por el uso del sistema contrario a estos términos.</p>
+    <p>Nada de lo anterior limita la responsabilidad por dolo o culpa grave (art. 1743 del Código Civil y Comercial) ni los derechos que la Ley 24.240 de Defensa del Consumidor reconoce de forma irrenunciable, cuando esa ley sea aplicable. Estos términos tampoco modifican los derechos y obligaciones que la legislación laboral establece entre la organización y su personal.</p>
+
+    <h2>9. Cambios</h2>
+    <p>Estos términos pueden actualizarse cuando cambie el sistema o la normativa. La versión vigente es la publicada en esta página, con su fecha; los cambios importantes se informan en las notas de cada versión (CHANGELOG). Seguir usando el sistema después de un cambio implica aceptarlo.</p>
+
+    <h2>10. Ley aplicable y jurisdicción</h2>
+    <p>Estos términos se rigen por las leyes de la República Argentina. Ante cualquier diferencia entre la organización y JZ Tech Solutions, las partes intentarán resolverla de buena fe por el medio de contacto indicado abajo; si no se logra, intervendrán los tribunales ordinarios competentes según la ley.</p>
+
+    <h2>11. Contacto</h2>
+    <p>Las consultas del personal sobre sus fichajes, licencias o datos se dirigen a la organización. Por el sistema: <a href="mailto:jonaiker.jimenez.g@gmail.com?subject=JZ%20Pass">jonaiker.jimenez.g@gmail.com</a>.</p>
+</main>
+<footer>JZ Pass · Powered by JZ Tech Solutions</footer>
+</body>
+</html>

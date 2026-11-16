@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Política de Privacidad - JZ Pass</title>
+<link rel="icon" href="/icono.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/jz/suite.css?v=0.2.0">
+<style>
+    /* Pagina de texto: tokens de /jz/suite.css; aca solo la columna de lectura. */
+    body { margin: 0; background: var(--bg); color: var(--tp); font: 400 15px/1.65 var(--f); }
+    .barra { display: flex; align-items: center; gap: 12px; padding: 14px 18px; background: var(--sf); border-bottom: 1px solid var(--ln); position: sticky; top: 0; }
+    .barra strong { flex: 1; font-size: 16px; }
+    main { max-width: 760px; margin: 0 auto; padding: 22px 18px 40px; }
+    h2 { font-size: 17px; line-height: 1.3; margin: 28px 0 8px; }
+    ul { padding-left: 20px; }
+    li + li { margin-top: 6px; }
+    a { color: var(--ac); }
+    .nota { padding: 12px 14px; border-left: 3px solid var(--ac); background: var(--acs); border-radius: 6px; font-size: 13px; }
+    footer { text-align: center; font-size: 12px; color: var(--tm); padding: 0 16px 28px; }
+</style>
+<script>
+    (function () { let t = null; try { t = localStorage.getItem('theme'); } catch (e) {} if (!t) t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; document.documentElement.setAttribute('data-theme', t); })();
+    // Volver: a la pantalla anterior si la hay (app o panel); si se abrio suelta, al inicio. Esc hace lo mismo.
+    function volver() { if (history.length > 1) history.back(); else location.href = '/'; return false; }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') volver(); });
+</script>
+</head>
+<body>
+<header class="barra">
+    <a class="btn" href="/" onclick="return volver()">&larr; Volver</a>
+    <strong>Política de Privacidad</strong>
+</header>
+
+<main>
+    <p class="muted">Última actualización: noviembre de 2026.</p>
+    <p>JZ Pass es un sistema de asistencia y gestión de personal que cada organización instala en su propio servidor. Esta política explica qué datos personales se tratan, para qué y qué derechos tienen las personas, conforme a la <strong>Ley 25.326 de Protección de los Datos Personales</strong>, su Decreto reglamentario 1558/2001 y las normas de la Agencia de Acceso a la Información Pública (AAIP).</p>
+    <ul>
+        <li><strong>Responsable de los datos:</strong> la organización que usa JZ Pass, es decir, el empleador. Es la que decide qué datos se cargan, para qué y por cuánto tiempo, y ante quien se ejercen los derechos.</li>
+        <li><strong>JZ Tech Solutions</strong> provee el software, su instalación y el soporte técnico. Cuando accede a los datos para dar soporte o administra el servidor por cuenta de la organización, actúa como <strong>prestador de servicios de tratamiento</strong> (art. 25 de la Ley 25.326): los usa solo para esa tarea, los mantiene en reserva, no los cede a terceros y, al terminar el servicio, no conserva copias. JZ Tech Solutions es el nombre de fantasía (<strong>JZTech-Solutions</strong>) de Jonaiker Jimenez, CUIT 20-95803618-4, Responsable Monotributo, con domicilio en General Urquiza 1240, Ciudad Autónoma de Buenos Aires.</li>
+    </ul>
+
+    <h2>1. Qué datos se tratan</h2>
+    <ul>
+        <li><strong>Legajo:</strong> DNI (es también el usuario de ingreso), nombre, rol, sucursal, horario, días de vacaciones, domicilio, correo, teléfono y, si la administración lo carga, un documento adjunto al legajo (por ejemplo una copia del DNI). La contraseña nunca se guarda: se guarda solo su resumen protegido con Argon2id.</li>
+        <li><strong>Fichajes:</strong> fecha y hora de cada entrada y salida, y las correcciones que haga la administración, con su motivo.</li>
+        <li><strong>Ubicación:</strong> ver el punto 2.</li>
+        <li><strong>Solicitudes</strong> de licencias, permisos y vacaciones: concepto, motivo, fechas, estado y los archivos que se adjunten (PDF, JPG o PNG de hasta 5 MB), por ejemplo un certificado médico.</li>
+        <li><strong>Anuncios:</strong> cuándo vio cada persona un anuncio y, si firmó el acuse, cuándo y desde qué dirección IP.</li>
+    </ul>
+    <p>JZ Pass <strong>no usa huellas, reconocimiento facial ni otro dato biométrico</strong>, y no usa la cámara ni el micrófono del dispositivo.</p>
+    <p><strong>Datos de salud.</strong> Un certificado médico o el motivo de una licencia pueden revelar datos de salud, que la ley trata como datos sensibles (arts. 2, 7 y 8 de la Ley 25.326). Se cargan solo para justificar ausencias y licencias, como prevé la Ley 20.744 de Contrato de Trabajo (arts. 209 y 210), y los ve únicamente quien se indica en el punto 5. Conviene adjuntar solo lo necesario para justificar la ausencia, sin más detalle médico que ese.</p>
+
+    <h2>2. Ubicación (GPS)</h2>
+    <ul>
+        <li>La app pide la ubicación del dispositivo <strong>solo en el momento de tocar el botón de fichar</strong>. No hay seguimiento continuo ni se registra la ubicación fuera de ese momento.</li>
+        <li>En la <strong>entrada</strong> se guardan las coordenadas y la distancia a la sucursal, junto con el fichaje.</li>
+        <li>En la <strong>salida</strong> las coordenadas se usan para comprobar la distancia y no se guardan; si se fichó fuera del rango permitido, queda anotada la distancia.</li>
+        <li>Un fichaje rechazado no guarda nada.</li>
+        <li>El dispositivo pide permiso para usar la ubicación. Sin ese permiso la app no puede comprobar que el fichaje se hace en la sucursal.</li>
+    </ul>
+
+    <h2>3. Para qué se usan</h2>
+    <ul>
+        <li>Dar acceso a cada persona según su rol.</li>
+        <li>Registrar la asistencia y calcular jornadas, horas y faltas.</li>
+        <li>Pedir, aprobar y dejar constancia de licencias, permisos y vacaciones.</li>
+        <li>Publicar anuncios al personal y dejar constancia de su lectura.</li>
+        <li>Proteger el sistema contra accesos no autorizados.</li>
+    </ul>
+    <p>Los datos no se usan para fines distintos de estos (art. 4 de la Ley 25.326): <strong>ni para publicidad ni para crear perfiles de las personas</strong>.</p>
+
+    <h2>4. Base del tratamiento</h2>
+    <p>Los datos se tratan porque son necesarios para la relación laboral entre la persona y la organización; en ese caso la ley no exige un consentimiento aparte (art. 5, inc. 2, de la Ley 25.326). El registro de la ubicación al fichar es un control de la actividad laboral: la organización debe informarlo a su personal y usarlo solo para comprobar la asistencia (art. 6 de la Ley 25.326 y arts. 70 y 71 de la Ley 20.744).</p>
+
+    <h2>5. Quién ve los datos</h2>
+    <ul>
+        <li><strong>Cada persona</strong> ve sus propios datos, fichajes, solicitudes y adjuntos.</li>
+        <li><strong>Los encargados</strong> ven, solo de su sucursal, los legajos, los fichajes con su ubicación y las solicitudes con su motivo y sus adjuntos.</li>
+        <li><strong>La administración</strong> (Recursos Humanos) ve todo.</li>
+    </ul>
+    <p>Los datos quedan en el servidor de la organización. <strong>No se venden, no se alquilan y no se ceden a terceros con fines comerciales o publicitarios.</strong> Solo salen del servidor en estos casos, que decide la organización:</p>
+    <ul>
+        <li><strong>API de solo lectura</strong> para conectar otros sistemas: quien tenga una clave creada por la administración puede leer la asistencia (DNI, nombre, sucursal, jornadas, horas, faltas y el concepto de la licencia de cada día), la lista de personal (DNI, nombre, rol, sucursal, estado, horarios y vacaciones) y las sucursales. No entrega ubicaciones, adjuntos, motivos ni datos de contacto. Si el sistema que la usa es de un tercero o está fuera del país, la organización debe verificar que cumpla las reglas de cesión y de transferencia internacional (arts. 11 y 12 de la Ley 25.326).</li>
+        <li><strong>Consulta de actualizaciones:</strong> cuando un administrador abre el panel, el servidor consulta la última versión pública en GitHub, <strong>sin enviar datos</strong> de la organización.</li>
+        <li><strong>Soporte técnico:</strong> JZ Tech Solutions puede acceder a los datos solo cuando la organización lo pide para resolver un problema, en las condiciones del art. 25 indicadas arriba.</li>
+        <li><strong>Autoridades:</strong> cuando lo ordene un juez o lo exija una ley.</li>
+    </ul>
+    <p>JZ Pass no envía correos ni notificaciones y no carga recursos de otros sitios (mapas, fuentes, medición de visitas).</p>
+
+    <h2>6. Cookies y almacenamiento en el dispositivo</h2>
+    <ul>
+        <li><strong>Cookie de sesión:</strong> identifica la sesión iniciada. Es <code>HttpOnly</code>, <code>Secure</code> y <code>SameSite=Strict</code> y dura 7 días; se cierra antes al salir o al cambiar la contraseña.</li>
+        <li><strong>En el dispositivo</strong> quedan el DNI del último ingreso, para no escribirlo cada vez, y el tema (claro u oscuro).</li>
+        <li><strong>App instalada:</strong> guarda en el dispositivo las pantallas de la app para abrir más rápido. No guarda ahí fichajes, solicitudes ni adjuntos.</li>
+    </ul>
+    <p>Son técnicas, necesarias para que el sistema funcione. <strong>No se usan cookies publicitarias, de análisis ni de seguimiento.</strong></p>
+
+    <h2>7. Seguridad y confidencialidad</h2>
+    <p>JZ Pass incluye estas medidas técnicas para proteger los datos (arts. 9 y 10 de la Ley 25.326):</p>
+    <ul>
+        <li>Contraseñas protegidas con Argon2id, con requisitos mínimos de longitud y composición.</li>
+        <li>Bloqueo temporal de la cuenta tras varios intentos fallidos y límite de intentos por dirección IP.</li>
+        <li>Sesiones guardadas en el servidor solo como resumen, que se cierran al salir, al cambiar la contraseña o al restablecerla, y protección contra CSRF.</li>
+        <li>Los adjuntos se guardan con un nombre al azar, se aceptan solo PDF, JPG y PNG verificados por su contenido, y se descargan únicamente con sesión iniciada y según el rol.</li>
+        <li>Las claves de la API se guardan solo como resumen y se muestran una única vez.</li>
+    </ul>
+    <p>La conexión cifrada (HTTPS) y la seguridad del servidor (accesos, copias de respaldo, actualizaciones) están a cargo de la organización o de quien ella designe. <strong>La base de datos y los adjuntos no se cifran en el disco:</strong> su protección depende de la del servidor. Como guía se recomiendan las medidas de la Resolución AAIP 47/2018. Quienes acceden a los datos deben guardar secreto sobre ellos, aun después de terminada su relación con la organización (art. 10).</p>
+
+    <h2>8. Cuánto tiempo se conservan</h2>
+    <ul>
+        <li>El sistema <strong>no borra datos por su cuenta</strong>. La organización define cuánto los conserva: solo mientras sean necesarios para la finalidad por la que se cargaron (art. 4, inc. 7, de la Ley 25.326) o mientras lo exijan las normas laborales y previsionales.</li>
+        <li>Cuando una persona deja la organización, su legajo queda inactivo con la fecha de baja y ya no puede ingresar; sus fichajes se conservan.</li>
+        <li>Las coordenadas de cada entrada se conservan junto con el fichaje.</li>
+        <li>Una solicitud pendiente que cancela quien la hizo se borra con su adjunto. Las aprobadas y las rechazadas quedan, con sus adjuntos.</li>
+        <li>Las copias de la base previas a cada actualización quedan en el servidor. En la instalación nativa se guardan las últimas 10; en la instalación con Docker las depura la organización. Esas copias no incluyen los adjuntos.</li>
+    </ul>
+
+    <h2>9. Derechos de las personas</h2>
+    <p>Toda persona cuyos datos estén en el sistema puede pedirle a la organización que usa JZ Pass:</p>
+    <ul>
+        <li><strong>Acceso:</strong> saber qué datos suyos hay y para qué se usan. Es gratuito si se pide a intervalos no menores a seis meses, y la respuesta debe darse dentro de los diez días corridos (art. 14).</li>
+        <li><strong>Rectificación, actualización o supresión</strong> de los datos que sean inexactos, estén incompletos o ya no sean necesarios. La organización debe resolverlo dentro de los cinco días hábiles (art. 16), salvo que una norma la obligue a conservarlos.</li>
+    </ul>
+    <p class="nota"><strong>El titular de los datos personales tiene la facultad de ejercer el derecho de acceso a los mismos en forma gratuita a intervalos no inferiores a seis meses, salvo que se acredite un interés legítimo al efecto conforme lo establecido en el artículo 14, inciso 3 de la Ley Nº 25.326. La AGENCIA DE ACCESO A LA INFORMACIÓN PÚBLICA, en su carácter de Órgano de Control de la Ley Nº 25.326, tiene la atribución de atender las denuncias y reclamos que interpongan quienes resulten afectados en sus derechos por incumplimiento de las normas vigentes en materia de protección de datos personales.</strong> (<a href="https://www.argentina.gob.ar/aaip" target="_blank" rel="noopener">www.argentina.gob.ar/aaip</a>)</p>
+
+    <h2>10. Qué le corresponde a la organización</h2>
+    <ul>
+        <li>Informar a su personal que sus datos se cargan en el sistema y para qué, en especial el registro de la ubicación al fichar (art. 6).</li>
+        <li>Pedir solo la documentación médica necesaria y limitar quién es encargado y quién administra.</li>
+        <li>Inscribir sus bases de datos en el Registro Nacional de Bases de Datos de la AAIP cuando corresponda (art. 21).</li>
+        <li>Atender los pedidos de acceso, rectificación y supresión en los plazos de la ley.</li>
+        <li>Mantener el servidor seguro y actualizado, y resguardar las copias y los adjuntos.</li>
+    </ul>
+
+    <h2>11. Cambios y contacto</h2>
+    <p>Esta política puede actualizarse cuando cambie el sistema o la normativa; la fecha de arriba indica la última versión. Los pedidos sobre datos personales se dirigen a la organización que usa JZ Pass. Para consultas técnicas sobre el tratamiento de los datos en el sistema: <a href="mailto:jonaiker.jimenez.g@gmail.com?subject=Privacidad%20JZ%20Pass">jonaiker.jimenez.g@gmail.com</a>.</p>
+    <p>Ver también los <a href="/terms.html">Términos y Condiciones de Uso</a>.</p>
+</main>
+<footer>JZ Pass · Powered by JZ Tech Solutions</footer>
+</body>
+</html>

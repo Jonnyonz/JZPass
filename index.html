@@ -209,7 +209,7 @@
             <div id="l-msg" class="msg"></div>
             <button id="btn-login" class="btn" type="submit" style="margin-top:2px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg> Ingresar</button>
         </form>
-        <div class="pie">Powered by JZ Tech Solutions<br><a href="#" onclick="abrirHoja('h-privacidad'); return false;">Privacidad</a> · <a href="#" onclick="abrirHoja('h-terminos'); return false;">Términos de Uso</a></div>
+        <div class="pie">Powered by JZ Tech Solutions<br><a href="/privacy.html">Privacidad</a> · <a href="/terms.html">Términos de Uso</a></div>
     </div>
 
     <!-- Cambio de clave provisoria -->
@@ -280,33 +280,6 @@
             <div class="fg"><label class="lbl">Tu DNI, para dejar constancia</label><input id="fa-dni" class="mono" inputmode="numeric" autocomplete="off"></div>
             <div id="fa-msg" class="msg"></div>
             <button id="btn-fa" class="btn" onclick="confirmarFirma()">Confirmar recibido</button>
-        </div>
-    </div>
-
-    <!-- Hojas legales -->
-    <div id="h-privacidad" class="sheet-wrap hidden" onclick="if(event.target===this) cerrarHoja('h-privacidad')">
-        <div class="sheet">
-            <div class="handle"></div>
-            <div class="sheet-h"><span>Política de Privacidad</span><button onclick="cerrarHoja('h-privacidad')" aria-label="Cerrar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div>
-            <div class="legal">
-                <p><strong>1. Captura de Datos Personales</strong><br>El Portal de Empleados gestiona datos de identificación laboral (DNI, Nombre, Contacto) con el único fin de administrar la relación laboral y el control de asistencia.</p>
-                <p><strong>2. Tratamiento de Geolocalización (GPS)</strong><br>El sistema solicita acceso a la ubicación del dispositivo exclusivamente en el momento en que se activa la acción de fichaje. No se realiza seguimiento satelital constante ni fuera del horario de registro.</p>
-                <p><strong>3. Privacidad de Documentos Médicos y Licencias</strong><br>Los archivos digitales adjuntados en las solicitudes de permisos son resguardados bajo estándares de confidencialidad y solo se encuentran disponibles para el área de Administración y Recursos Humanos.</p>
-                <p><strong>4. Seguridad del Almacenamiento</strong><br>Toda la información transaccional se almacena de forma cifrada y auditada, sin comunicación con agentes externos u organizaciones de terceros.</p>
-            </div>
-            <button class="btn" onclick="cerrarHoja('h-privacidad')">Entendido</button>
-        </div>
-    </div>
-    <div id="h-terminos" class="sheet-wrap hidden" onclick="if(event.target===this) cerrarHoja('h-terminos')">
-        <div class="sheet">
-            <div class="handle"></div>
-            <div class="sheet-h"><span>Términos de Uso</span><button onclick="cerrarHoja('h-terminos')" aria-label="Cerrar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div>
-            <div class="legal">
-                <p><strong>1. Carácter del Acceso</strong><br>El uso de este portal es un recurso operativo proporcionado por la empresa para sus empleados activos. Las credenciales de acceso son estrictamente personales e intransferibles.</p>
-                <p><strong>2. Integridad de las Declaraciones</strong><br>El empleado declara que los registros de entrada y salida representan fidedignamente su horario y ubicación laboral. La evasión, simulación GPS o falsificación de comprobantes es causal de sanciones administrativas disciplinarias.</p>
-                <p><strong>3. Responsabilidad de la Credencial</strong><br>Toda acción registrada en el sistema bajo el DNI y clave de un usuario se presumirá ejecutada por el titular de la cuenta.</p>
-            </div>
-            <button class="btn" onclick="cerrarHoja('h-terminos')">Entendido</button>
         </div>
     </div>
 
@@ -673,7 +646,7 @@
             <button class="btn-sf" onclick="toggleTheme()">${svg('luna', 17)}${oscuro ? 'Tema oscuro activado' : 'Tema claro activado'}</button>
             ${D.rol <= 1 ? `<button class="btn-sf" onclick="location.href='/panel'">${svg('admin', 17)}${D.rol === 0 ? 'Administrar el sistema (panel)' : 'Ir al panel (francos y convocatorias)'}</button>` : ''}
             <button class="btn-salir" onclick="logout()">${svg('salir', 16)}Cerrar sesión</button>
-            <div class="pie" style="margin-top:0">JZ PASS · Powered by JZ Tech Solutions<br><a href="#" onclick="abrirHoja('h-privacidad'); return false;">Privacidad</a> · <a href="#" onclick="abrirHoja('h-terminos'); return false;">Términos de Uso</a></div></div>`;
+            <div class="pie" style="margin-top:0">JZ PASS · Powered by JZ Tech Solutions<br><a href="/privacy.html">Privacidad</a> · <a href="/terms.html">Términos de Uso</a></div></div>`;
     }
 
     // Reloj del anillo: mientras la jornada esta abierta, las horas de hoy avanzan solas.

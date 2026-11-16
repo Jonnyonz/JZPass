@@ -107,6 +107,17 @@ async def panel():
     with open("dashboard.html", "r", encoding="utf-8") as f: return f.read()
 
 
+# Paginas legales (2.15.0): texto estatico, sin datos. Las enlazan el pie de la app y el del panel.
+@app.get("/privacy.html")
+async def privacidad():
+    return FileResponse("privacy.html", media_type="text/html")
+
+
+@app.get("/terms.html")
+async def terminos():
+    return FileResponse("terms.html", media_type="text/html")
+
+
 # PWA (2.10.0): la app del personal se instala en el celular. El manifest y el icono son estaticos; el service
 # worker lleva la version para renovar su cache en cada release (no-cache: el navegador lo relee en cada visita).
 @app.get("/manifest.webmanifest")

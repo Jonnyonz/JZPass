@@ -2,6 +2,24 @@
 
 Cambios de JZPass, del más nuevo al más viejo. Cada entrada corresponde a un push a `main`.
 
+## 2.15.0 — 2026-11-16
+
+Tag `v2.15.0`.
+
+### Nuevo
+- **Política de Privacidad y Términos y Condiciones de Uso como páginas propias:** `/privacy.html` y `/terms.html`,
+  públicas y con botón Volver (también con Esc). Las enlazan el pie de la app del personal y el del panel.
+
+### Cambiado
+- **Textos legales reescritos según lo que el sistema hace hoy.** Los cuatro párrafos anteriores, repetidos en la
+  app y en el panel, afirmaban cosas que no eran ciertas: que la información se guardaba cifrada y auditada, que no
+  había comunicación con terceros y que los adjuntos los veía solo Recursos Humanos. La política nueva sigue la Ley
+  25.326 y dice: qué datos tiene el legajo; que la ubicación se pide solo al fichar, se guarda en la entrada y no en
+  la salida; que un certificado médico es un dato de salud; que los encargados ven los adjuntos de su sucursal; qué
+  entrega la API de solo lectura; que la base y los adjuntos no se cifran en el disco; y cuánto se conserva cada
+  cosa. Los términos cubren la cuenta personal, los fichajes, las solicitudes y lo que le toca a la organización.
+- Se quitan de `index.html` y `dashboard.html` las ventanas con los textos viejos.
+
 ## 2.14.0 — 2026-11-11
 
 Tag `v2.14.0`.
