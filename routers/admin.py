@@ -32,14 +32,14 @@ async def get_datos(request: Request, adm: dict = Depends(requiere_panel)):
         tipos = [dict(r) for r in await db.fetch("SELECT * FROM tipos_solicitud")]
 
         if adm['rol'] == 0:
-            usuarios = [dict(r) for r in await db.fetch("SELECT dni, nombre, rol, sucursal, bloqueado_hasta, activo, hora_entrada, hora_salida, dias_vacaciones, calle, altura, depto, cp, mail, telefono, mapa, fecha_baja FROM usuarios")]
+            usuarios = [dict(r) for r in await db.fetch("SELECT dni, nombre, rol, sucursal, bloqueado_hasta, activo, hora_entrada, hora_salida, dias_vacaciones, calle, altura, depto, cp, mail, telefono, mapa, fecha_baja, dias_laborables FROM usuarios")]
             sol = [dict(r) for r in await db.fetch("SELECT s.*, u.nombre, u.sucursal FROM solicitudes s JOIN usuarios u ON s.dni=u.dni ORDER BY s.id DESC")]
             fr = [dict(r) for r in await db.fetch("SELECT m.*, u.nombre, u.sucursal FROM mediofrancos m JOIN usuarios u ON m.dni=u.dni ORDER BY m.fecha DESC")]
             conv = [dict(r) for r in await db.fetch("SELECT fc.dni, fc.fecha, u.nombre, u.sucursal FROM feriados_convocados fc JOIN usuarios u ON fc.dni=u.dni")]
             fichajes = [dict(r) for r in await db.fetch("SELECT f.*, u.nombre, u.hora_entrada, u.hora_salida FROM fichajes f JOIN usuarios u ON f.dni=u.dni ORDER BY f.fecha_hora DESC LIMIT 1500")]
         else:
             suc = adm['sucursal']
-            usuarios = [dict(r) for r in await db.fetch("SELECT dni, nombre, rol, sucursal, bloqueado_hasta, activo, hora_entrada, hora_salida, dias_vacaciones, calle, altura, depto, cp, mail, telefono, mapa, fecha_baja FROM usuarios WHERE sucursal=$1", suc)]
+            usuarios = [dict(r) for r in await db.fetch("SELECT dni, nombre, rol, sucursal, bloqueado_hasta, activo, hora_entrada, hora_salida, dias_vacaciones, calle, altura, depto, cp, mail, telefono, mapa, fecha_baja, dias_laborables FROM usuarios WHERE sucursal=$1", suc)]
             sol = [dict(r) for r in await db.fetch("SELECT s.*, u.nombre, u.sucursal FROM solicitudes s JOIN usuarios u ON s.dni=u.dni WHERE u.sucursal=$1 ORDER BY s.id DESC", suc)]
             fr = [dict(r) for r in await db.fetch("SELECT m.*, u.nombre, u.sucursal FROM mediofrancos m JOIN usuarios u ON m.dni=u.dni WHERE u.sucursal=$1 ORDER BY m.fecha DESC", suc)]
             conv = [dict(r) for r in await db.fetch("SELECT fc.dni, fc.fecha, u.nombre, u.sucursal FROM feriados_convocados fc JOIN usuarios u ON fc.dni=u.dni WHERE u.sucursal=$1", suc)]
@@ -204,10 +204,12 @@ async def admin_actions(request: Request, action: str, adm: dict = Depends(requi
 
             d1, d2, d3, d4, d5, d6 = form.get('d1').strip(), form.get('d2'), int(form.get('d3','2')), form.get('d4'), form.get('d5'), form.get('d6')
             d9 = int(form.get('d9', v_base))
+            try: dias = norm_dias(form.get('dias')) or DIAS_LAB_DEFECTO
+            except ValueError as ex: return JSONResponse(status_code=400, content={"msg": str(ex)})
 
             temp_pw = gen_temp_pw()
             hashed = await asyncio.to_thread(hash_pw, temp_pw)
-            res = await db.execute("INSERT INTO usuarios (dni,nombre,rol,sucursal,hora_entrada,hora_salida,password,activo,dias_vacaciones,req_cambio) VALUES ($1,$2,$3,$4,$5,$6,$7,1,$8,1) ON CONFLICT (dni) DO NOTHING", str(d1), str(d2), int(d3), str(d4), str(d5), str(d6), hashed, int(d9))
+            res = await db.execute("INSERT INTO usuarios (dni,nombre,rol,sucursal,hora_entrada,hora_salida,password,activo,dias_vacaciones,req_cambio,dias_laborables) VALUES ($1,$2,$3,$4,$5,$6,$7,1,$8,1,$9) ON CONFLICT (dni) DO NOTHING", str(d1), str(d2), int(d3), str(d4), str(d5), str(d6), hashed, int(d9), dias)
             if res == "INSERT 0 0":
                 return JSONResponse(status_code=400, content={"msg": "Ya existe un usuario con ese DNI."})
             return {"msg": f"Registro creado. Credencial provisoria (mostrar una sola vez): {temp_pw}"}
@@ -215,6 +217,9 @@ async def admin_actions(request: Request, action: str, adm: dict = Depends(requi
         elif action == "editar_user":
             d1, d2, d3, d4, d5, d6, d8, d9 = form.get('d1').strip(), form.get('d2'), int(form.get('d3','2')), form.get('d4'), form.get('d5'), form.get('d6'), int(form.get('d8','1')), int(form.get('d9','14'))
             d_new = str(form.get('d_new', d1)).strip()
+            # Dias laborables: None (no vino en el formulario) deja los que tenia.
+            try: dias = norm_dias(form.get('dias'))
+            except ValueError as ex: return JSONResponse(status_code=400, content={"msg": str(ex)})
             if adm['rol'] == 1:
                 # Un encargado solo edita empleados (rol 2) de su sucursal y no puede:
                 # asignar rol admin/encargado, mover de sucursal, ni renombrar el DNI. Asi no
@@ -253,9 +258,9 @@ async def admin_actions(request: Request, action: str, adm: dict = Depends(requi
                     with open(os.path.join("uploads", filename_mapa), "wb") as f: f.write(raw)
 
             if filename_mapa:
-                await db.execute("UPDATE usuarios SET dni=$1, nombre=$2, rol=$3, sucursal=$4, hora_entrada=$5, hora_salida=$6, activo=$7, dias_vacaciones=$8, calle=$9, altura=$10, depto=$11, cp=$12, mail=$13, telefono=$14, mapa=$15, fecha_baja=$17 WHERE dni=$16", d_new, str(d2), int(d3), str(d4), str(d5), str(d6), d8, int(d9), str(calle), str(altura), str(depto), str(cp), str(mail), str(tel), filename_mapa, str(d1), f_baja)
+                await db.execute("UPDATE usuarios SET dni=$1, nombre=$2, rol=$3, sucursal=$4, hora_entrada=$5, hora_salida=$6, activo=$7, dias_vacaciones=$8, calle=$9, altura=$10, depto=$11, cp=$12, mail=$13, telefono=$14, mapa=$15, fecha_baja=$17, dias_laborables=COALESCE($18, dias_laborables) WHERE dni=$16", d_new, str(d2), int(d3), str(d4), str(d5), str(d6), d8, int(d9), str(calle), str(altura), str(depto), str(cp), str(mail), str(tel), filename_mapa, str(d1), f_baja, dias)
             else:
-                await db.execute("UPDATE usuarios SET dni=$1, nombre=$2, rol=$3, sucursal=$4, hora_entrada=$5, hora_salida=$6, activo=$7, dias_vacaciones=$8, calle=$9, altura=$10, depto=$11, cp=$12, mail=$13, telefono=$14, fecha_baja=$16 WHERE dni=$15", d_new, str(d2), int(d3), str(d4), str(d5), str(d6), d8, int(d9), str(calle), str(altura), str(depto), str(cp), str(mail), str(tel), str(d1), f_baja)
+                await db.execute("UPDATE usuarios SET dni=$1, nombre=$2, rol=$3, sucursal=$4, hora_entrada=$5, hora_salida=$6, activo=$7, dias_vacaciones=$8, calle=$9, altura=$10, depto=$11, cp=$12, mail=$13, telefono=$14, fecha_baja=$16, dias_laborables=COALESCE($17, dias_laborables) WHERE dni=$15", d_new, str(d2), int(d3), str(d4), str(d5), str(d6), d8, int(d9), str(calle), str(altura), str(depto), str(cp), str(mail), str(tel), str(d1), f_baja, dias)
 
         elif action == "reset_pass":
             dni_target = form.get('d1').strip()
@@ -367,6 +372,20 @@ async def admin_actions(request: Request, action: str, adm: dict = Depends(requi
 
 
 DIAS_SEMANA = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
+DIAS_LAB_DEFECTO = "0,1,2,3,4,5"   # lunes a sabado (weekday() de Python: 0=lunes)
+
+
+def norm_dias(v) -> str | None:
+    """Dias laborables del formulario ('0,1,4') normalizados. None si el campo no vino; ValueError si es invalido."""
+    if v is None: return None
+    partes = [p.strip() for p in str(v).split(',') if p.strip()]
+    if not partes or any(p not in "0123456" or len(p) != 1 for p in partes):
+        raise ValueError("Elegí al menos un día laborable.")
+    return ",".join(sorted(set(partes)))
+
+
+def es_laborable(e: dict, curr) -> bool:
+    return str(curr.weekday()) in (e.get('dias_laborables') or DIAS_LAB_DEFECTO).split(',')
 
 
 async def calcular_asistencia(d_desde: str, d_hasta: str, suc: str = "", dni: str = "") -> list[dict]:
@@ -423,8 +442,12 @@ async def calcular_asistencia(d_desde: str, d_hasta: str, suc: str = "", dni: st
             d["motivo_entrada"] = fich.get('motivo_entrada') or ""
             d["motivo_salida"] = fich.get('motivo_salida') or ""
 
-        if curr.weekday() == 6:
+        laborable = es_laborable(e, curr)
+        if curr.weekday() == 6 and not laborable:
             d["estado"] = "Domingo"
+        elif not laborable and not fich:
+            # Dia que el empleado no trabaja: no es falta ni consume licencia. Si igual ficho, cuenta como trabajado.
+            d["estado"] = "No laborable"
         elif permiso_multidia:
             d["estado"] = permiso_multidia['concepto']
             if permiso_multidia['descuenta_dias'] == 1: d["vacacion"] = True

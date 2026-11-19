@@ -15,7 +15,7 @@ from jztech_core.passwords import hash_password, needs_rehash, verify_legacy_pas
 logger = logging.getLogger("jzpass")
 
 # Version instalada (una sola fuente). Se sube al publicar cada version en GitHub Releases (tag v<VERSION>).
-VERSION = "2.15.0"
+VERSION = "2.16.0"
 from slowapi import Limiter
 
 
@@ -161,6 +161,8 @@ async def init_db_schema():
         # existen; cualquier otro error se propaga y frena el arranque (no se silencia).
         await conn.execute("ALTER TABLE fichajes ADD COLUMN IF NOT EXISTS motivo_entrada TEXT DEFAULT ''")
         await conn.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS fecha_baja TEXT DEFAULT NULL")
+        # 2.16.0: dias laborables por empleado (0=lunes ... 6=domingo). Por defecto lunes a sabado, como antes.
+        await conn.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS dias_laborables TEXT DEFAULT '0,1,2,3,4,5'")
         # 2.12.0: segundo documento (constancia al volver) por tipo de solicitud.
         await conn.execute("ALTER TABLE tipos_solicitud ADD COLUMN IF NOT EXISTS requiere_cierre INTEGER DEFAULT 0")
         await conn.execute("ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS archivo_cierre TEXT DEFAULT ''")

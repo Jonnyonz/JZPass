@@ -585,6 +585,7 @@
         <div class="fg"><label>Días de vacaciones</label><input type="number" id="eVac" required></div>
         <div class="fg"><label>Hora de entrada</label><input type="time" id="eHE" required></div>
         <div class="fg"><label>Hora de salida</label><input type="time" id="eHS" required></div>
+        <div class="fg span"><label>Días laborables</label><div id="eDias" style="display:flex; flex-wrap:wrap; gap:6px 14px;" title="Los días sin tildar no cuentan como falta."></div></div>
         <div class="fg"><label>Estado</label><select id="eA" onchange="toggleFechaBaja()"><option value="1">Activo</option><option value="0">Inactivo</option></select></div>
         <div class="fg hidden" id="g-fecha-baja"><label>Fecha de baja</label><input type="date" id="eFB" title="Último día que se informa en el reporte. Vacío: hoy."></div>
         <div class="fg"><label>Correo</label><input type="email" id="eMail"></div>
@@ -932,7 +933,8 @@
             let franco = dG.francos.find(f => f.fecha === d && f.dni === u.dni);
             let sol = dG.solicitudes.find(s => s.dni === u.dni && s.estado === 'APROBADA' && s.fecha_ausencia <= d && (s.fecha_fin >= d || s.fecha_fin === ''));
             let razon = "Falta injustificada", sinAviso = true;
-            if(fersHoy && !es_feriado_abierto) { razon = "Feriado cerrado"; sinAviso = false; }
+            if(!esLaborable(u, d)) { razon = "No laborable"; sinAviso = false; }
+            else if(fersHoy && !es_feriado_abierto) { razon = "Feriado cerrado"; sinAviso = false; }
             else if(es_feriado_abierto) { razon = es_convocado ? "Falta (feriado, convocado)" : "Feriado libre"; sinAviso = !!es_convocado; }
             else if(sol) { razon = "Permiso: " + sol.concepto; sinAviso = false; }
             else if(franco) razon = "Falta injustificada (medio franco " + franco.turno + ")";
@@ -1312,7 +1314,7 @@
         let horas = delMes.reduce((s, c) => s + (c.total || 0), 0), tardes = delMes.filter(c => c.tarde).length, fuera = delMes.filter(c => c.fuera).length;
         let estado = bloqueado ? '<span class="badge b-dg">Bloqueado</span>' : u.activo ? '<span class="badge b-ok">Activo</span>' : `<span class="badge b-ne">Inactivo${u.fecha_baja ? ' · baja ' + fmtFA(u.fecha_baja) : ''}</span>`;
         let dom = [u.calle, u.altura].filter(Boolean).join(' ') + (u.depto ? ' · ' + u.depto : '') + (u.cp ? ' · CP ' + u.cp : '');
-        let datos = [['DNI / Legajo', `<span class="mono">${esc(u.dni)}</span>`], ['Rol', rolTxt(u.rol)], ['Sucursal', esc(u.sucursal)], ['Turno fijo', `<span class="mono">${esc(u.hora_entrada)} – ${esc(u.hora_salida)}</span>`], ['Correo', esc(u.mail) || '—'], ['Teléfono', `<span class="mono">${esc(u.telefono) || '—'}</span>`], ['Domicilio', esc(dom) || '—']];
+        let datos = [['DNI / Legajo', `<span class="mono">${esc(u.dni)}</span>`], ['Rol', rolTxt(u.rol)], ['Sucursal', esc(u.sucursal)], ['Turno fijo', `<span class="mono">${esc(u.hora_entrada)} – ${esc(u.hora_salida)}</span>`], ['Días laborables', diasLab(u).map(i => DIAS_CORTOS[i]).join(' · ')], ['Correo', esc(u.mail) || '—'], ['Teléfono', `<span class="mono">${esc(u.telefono) || '—'}</span>`], ['Domicilio', esc(dom) || '—']];
         let acts = `<button class="btn btn-p" onclick="abrirU('${esc(u.dni)}')">Editar</button>`
             + (bloqueado ? `<button class="btn" style="color:var(--wnt);" onclick="accion('desbloquear_user', {d1:'${esc(u.dni)}'})">Desbloquear</button>` : '')
             + `<button class="btn" onclick="if(confirm('¿Generar una clave nueva para ${esc(u.nombre)}? Se muestra una sola vez.')) accion('reset_pass',{d1:'${esc(u.dni)}'})">Restablecer clave</button>`
@@ -1334,14 +1336,20 @@
             document.getElementById('u-modal-title').innerText = "Nuevo empleado"; document.getElementById('eOld').value=''; document.getElementById('btn-reset-pw').classList.add('hidden');
             document.getElementById('eHE').value = '09:00'; document.getElementById('eHS').value = '18:00'; document.getElementById('eVac').value = dG.config.vacaciones_base || 14;
         }
+        let lab = diasLab(d ? usuario(d) : null);
+        document.getElementById('eDias').innerHTML = DIAS_CORTOS.map((n, i) => `<label class="chk"><input type="checkbox" class="chk-dia" value="${i}" ${lab.includes(String(i)) ? 'checked' : ''}> ${n}</label>`).join('');
         toggleFechaBaja(); abrirM('m-u');
     }
+    // Dias laborables del empleado: '0,1,2' con 0 = lunes (igual que el servidor).
+    const DIAS_CORTOS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    function diasLab(u) { return ((u && u.dias_laborables) || '0,1,2,3,4,5').split(','); }
+    function esLaborable(u, f) { let [y, m, d] = f.split('-').map(Number); return diasLab(u).includes(String((new Date(y, m - 1, d).getDay() + 6) % 7)); }
     function darDeBaja(d) { abrirU(d); document.getElementById('eA').value = '0'; document.getElementById('eFB').value = hoy(); toggleFechaBaja(); }
     function reactivar(d) { abrirU(d); document.getElementById('eA').value = '1'; document.getElementById('eFB').value = ''; toggleFechaBaja(); }
     function toggleFechaBaja() { document.getElementById('g-fecha-baja').classList.toggle('hidden', v('eA') !== '0'); }
     async function guardarUsuario(e) {
         e.preventDefault();
-        let payload = { d1: v('eD'), d2: v('eN'), d3: v('eR'), d4: v('eS'), d5: v('eHE'), d6: v('eHS'), d8: v('eA'), d9: v('eVac'), fecha_baja: v('eFB'), calle: v('eCalle'), altura: v('eAltura'), depto: v('eDepto'), cp: v('eCP'), mail: v('eMail'), tel: v('eTel') };
+        let payload = { d1: v('eD'), d2: v('eN'), d3: v('eR'), d4: v('eS'), d5: v('eHE'), d6: v('eHS'), d8: v('eA'), d9: v('eVac'), dias: [...document.querySelectorAll('.chk-dia:checked')].map(c => c.value).join(','), fecha_baja: v('eFB'), calle: v('eCalle'), altura: v('eAltura'), depto: v('eDepto'), cp: v('eCP'), mail: v('eMail'), tel: v('eTel') };
         let fileInput = document.getElementById('eMapa'); if(fileInput.files.length > 0) payload.mapa = fileInput.files[0];
         let action = v('eOld') === '' ? 'crear_user' : 'editar_user';
         if(action === 'editar_user') { payload.d_new = payload.d1; payload.d1 = v('eOld'); }

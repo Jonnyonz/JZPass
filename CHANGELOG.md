@@ -2,6 +2,20 @@
 
 Cambios de JZPass, del más nuevo al más viejo. Cada entrada corresponde a un push a `main`.
 
+## 2.16.0 — 2026-11-19
+
+Tag `v2.16.0`.
+
+### Nuevo
+- **Días laborables por empleado.** El legajo (Nuevo / Editar empleado) tiene siete casillas, de lunes a domingo.
+  Un día sin tildar no cuenta como falta en los reportes ni en la API (`estado` "No laborable"), y en Inicio y
+  Asistencia el empleado figura como "No laborable" en vez de "Falta injustificada". Si ficha igual ese día, se
+  cuenta como trabajado. Un día no laborable tampoco suma como día de licencia tomado, igual que ya pasaba con el
+  domingo.
+- Todos los empleados existentes quedan de lunes a sábado, como hasta ahora: hay que destildar el sábado a quien
+  no lo trabaja. La columna nueva `usuarios.dias_laborables` se crea sola al arrancar.
+- El domingo sigue sin computar, salvo para quien lo tenga tildado como laborable.
+
 ## 2.15.0 — 2026-11-16
 
 Tag `v2.15.0`.
