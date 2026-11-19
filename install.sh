@@ -6,7 +6,8 @@
 #   sudo JZPASS_DOMAIN=rrhh.empresa.com bash install.sh  dominio publico con el que se va a entrar
 #
 # Instala Docker si falta, trae la ultima version (git pull --ff-only), respalda la base en backups/ antes de
-# reconstruir y deja la app escuchando por http en APP_BIND:APP_PORT (por defecto 0.0.0.0:8000). No instala
+# actualizar, baja la imagen publicada de esa version (ghcr.io/jonnyonz/jzpass; si no puede, la compila aca;
+# JZPASS_BUILD=1 fuerza compilar) y deja la app escuchando por http en APP_BIND:APP_PORT (por defecto 0.0.0.0:8000). No instala
 # ningun proxy: el HTTPS lo pone el proxy del servidor (sin HTTPS no se guarda la sesion desde otra PC ni el
 # celular da la ubicacion para fichar). Nunca borra la carpeta: ahi viven el .env y uploads/ (adjuntos del personal).
 #
@@ -215,11 +216,34 @@ if compose ps --status running --services 2>/dev/null | grep -qx jzpass-db; then
 fi
 
 
-# 6. Construir y levantar. Sin --remove-orphans: en un servidor compartido Docker puede contar como "huerfanos"
+# 6. Imagen de la app: se baja la publicada de esta version (GitHub Container Registry) y, si no se puede, se
+#    compila en este servidor como siempre. Solo se baja si el codigo esta parado justo en el tag de su version
+#    (v<VERSION>): asi la imagen y el codigo son lo mismo. JZPASS_BUILD=1 fuerza compilar.
+IMAGEN=""
+VERSION="$(sed -n 's/^VERSION = "\(.*\)"/\1/p' database.py | head -n1 | tr -d '\r')"
+if [ "${JZPASS_BUILD:-}" != "1" ] && [ -n "$VERSION" ] && [ -d .git ] \
+    && [ "$(git -c safe.directory="$PWD" describe --tags --exact-match HEAD 2> /dev/null)" = "v$VERSION" ]; then
+  IMAGEN="ghcr.io/jonnyonz/jzpass:v$VERSION"
+  echo "Bajando la imagen de JZPass $VERSION..."
+  if ! docker pull -q "$IMAGEN" > /dev/null 2>&1; then
+    echo "No se pudo bajar $IMAGEN (todavia no esta publicada o no hay conexion con ghcr.io): se compila en este servidor."
+    IMAGEN=""
+  fi
+fi
+# JZPASS_IMAGE queda en el .env para que un "docker compose up -d" a mano use la misma imagen.
+sed -i '/^JZPASS_IMAGE=/d' .env
+
+#    Levantar. Sin --remove-orphans: en un servidor compartido Docker puede contar como "huerfanos"
 #    del proyecto contenedores de otras aplicaciones y los borraria. El Caddy de las instalaciones anteriores se
 #    saca por su nombre.
-echo "Construyendo y levantando los contenedores (la primera vez tarda unos minutos)..."
-compose up -d --build --quiet-pull
+if [ -n "$IMAGEN" ]; then
+  poner JZPASS_IMAGE "$IMAGEN"
+  echo "Levantando los contenedores..."
+  compose up -d --no-build --quiet-pull
+else
+  echo "Construyendo y levantando los contenedores (la primera vez tarda unos minutos)..."
+  compose up -d --build --quiet-pull
+fi
 if docker ps -a --format '{{.Names}}' | grep -qx jzpass_caddy; then
   docker rm -f jzpass_caddy > /dev/null
 fi
@@ -239,6 +263,7 @@ echo "================================================================="
 echo "INSTALACION COMPLETADA"
 echo "================================================================="
 echo "Escuchando en: http://$ESCUCHA:$PUERTO"
+if [ -n "$IMAGEN" ]; then echo "Imagen: $IMAGEN"; else echo "Imagen: compilada en este servidor"; fi
 if [ -n "$DOMAIN" ]; then
   echo "Direccion publica: https://$DOMAIN (tiene que llegar a http://$ESCUCHA:$PUERTO)"
 fi

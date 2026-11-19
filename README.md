@@ -197,6 +197,12 @@ la dirección pública y el token inicial. No instala ningún proxy: el HTTPS lo
 [Acceso desde la red](#acceso-desde-la-red-https)). Si el proxy está en otro equipo, `JZPASS_PROXY_IP=<su IP>`
 lo suma a `TRUSTED_PROXIES`.
 
+**Imagen publicada.** Desde la 2.17.0 cada versión se publica como imagen en GitHub Container Registry
+(`ghcr.io/jonnyonz/jzpass:vX.Y.Z`, la arma GitHub al crear el tag). `install.sh` baja la de la versión instalada
+en vez de compilar en el servidor, y deja `JZPASS_IMAGE` en el `.env`. Si no puede bajarla (todavía no está
+publicada, no hay conexión con `ghcr.io`, o el código no está parado en el tag de su versión), compila en el
+servidor como antes. `JZPASS_BUILD=1` fuerza compilar. Al terminar dice cuál de las dos usó.
+
 Se puede volver a correr para actualizar: hace `git pull` y respeta el `.env`, la base y
 `uploads/`. Si falta el `.env` pero quedó la base de una instalación anterior, **se detiene sin
 borrar nada** y explica las opciones: restaurar el `.env`, o empezar de cero borrando esos datos
@@ -354,7 +360,9 @@ planilla. No hace falta un usuario de solo lectura en Postgres.
 docker compose ps
 docker compose logs -f jzpass-app
 
-# Actualizar a la última versión (o volver a correr install.sh, que hace lo mismo)
+# Actualizar a la última versión: volver a correr install.sh (respalda la base y baja la imagen publicada)
+sudo bash install.sh
+# A mano, compilando en el servidor (si el .env tiene JZPASS_IMAGE, sacar esa línea antes):
 git pull
 docker compose up -d --build
 

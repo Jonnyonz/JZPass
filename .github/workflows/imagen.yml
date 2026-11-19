@@ -1,0 +1,42 @@
+# Publica la imagen Docker de JZPass en GitHub Container Registry cada vez que se sube un tag vX.Y.Z:
+#   ghcr.io/jonnyonz/jzpass:vX.Y.Z   (la que baja install.sh)   y   ghcr.io/jonnyonz/jzpass:latest
+# Asi el servidor no compila: baja la imagen ya armada. Compilar en el servidor sigue andando (JZPASS_BUILD=1).
+name: Imagen Docker
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  imagen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: El tag coincide con VERSION de database.py
+        run: grep -qx "VERSION = \"${GITHUB_REF_NAME#v}\"" database.py
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # ponytail: solo linux/amd64 (el servidor de produccion); sumar linux/arm64 en platforms si aparece un ARM.
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/jonnyonz/jzpass:${{ github.ref_name }}
+            ghcr.io/jonnyonz/jzpass:latest
+          labels: |
+            org.opencontainers.image.source=https://github.com/Jonnyonz/JZPass
+            org.opencontainers.image.version=${{ github.ref_name }}
+            org.opencontainers.image.licenses=AGPL-3.0-only

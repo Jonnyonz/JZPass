@@ -1,6 +1,9 @@
 services:
   # BACKEND - JZ PASS COMPATIBILIDAD POSTGRES
   jzpass-app:
+    # install.sh pone JZPASS_IMAGE en el .env cuando baja la imagen publicada de la version instalada
+    # (ghcr.io/jonnyonz/jzpass:vX.Y.Z). Sin esa clave se compila aca con el Dockerfile, como siempre.
+    image: ${JZPASS_IMAGE:-jzpass-app:local}
     build: .
     container_name: jzpass_server
     restart: always
