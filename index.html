@@ -349,6 +349,8 @@
         try {
             let r = await fetch(url, {method: 'POST', body: fd, headers: {'X-CSRF-Token': csrf}});
             let d = {}; try { d = await r.json(); } catch (e) {}
+            // Los errores que no arma la app (503 sin base, 422) traen "detail" en vez de "msg".
+            if (!d.msg && typeof d.detail === 'string') d.msg = d.detail;
             return {ok: r.ok, status: r.status, data: d};
         } catch (e) { return {ok: false, status: 0, data: {msg: "Sin conexión. El fichaje y las solicitudes necesitan red."}}; }
     }

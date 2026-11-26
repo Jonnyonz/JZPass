@@ -880,7 +880,7 @@
         let fd = new FormData(); for(let k in data) fd.append(k, data[k]);
         let r = await fetch(url, {method:'POST', body:fd, headers:{'X-CSRF-Token': csrfToken}});
         let resp = {}; try { resp = await r.json(); } catch(e) {}
-        if(!r.ok) alert(resp.msg || "Fallo operacional.");
+        if(!r.ok) alert(resp.msg || (typeof resp.detail === 'string' && resp.detail) || "Fallo operacional.");
         else if(resp.credenciales && resp.credenciales.length) mostrarCredenciales(resp);
         else if(resp.msg && resp.msg !== "ok") alert(resp.msg);
         else toast('Guardado');

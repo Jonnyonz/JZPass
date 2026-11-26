@@ -15,7 +15,7 @@ from jztech_core.passwords import hash_password, needs_rehash, verify_legacy_pas
 logger = logging.getLogger("jzpass")
 
 # Version instalada (una sola fuente). Se sube al publicar cada version en GitHub Releases (tag v<VERSION>).
-VERSION = "2.17.0"
+VERSION = "2.17.1"
 from slowapi import Limiter
 
 
@@ -102,16 +102,29 @@ class DB:
     pool = None
 
 
-async def init_db_schema():
+async def reconectar_db(espera: float = 10):
+    """Sigue intentando hasta que haya pool. main.py la lanza en segundo plano cuando el arranque
+    termino sin base: tras un apagado brusco Postgres puede tardar minutos en recuperarse (2026-11-25:
+    mas de 100 s) y antes la app quedaba en 503 hasta que alguien la reiniciaba a mano."""
+    while DB.pool is None:
+        await asyncio.sleep(espera)
+        try:
+            await init_db_schema(intentos=1)
+        except Exception as e:
+            logger.warning("Reintento de inicializacion de la base fallido: %r", e)
+    logger.info("Conexion a PostgreSQL recuperada.")
+
+
+async def init_db_schema(intentos: int = 15):
     """Crea las tablas (idempotente) y el pool de conexiones. Reintenta la conexion
     inicial; si Postgres sigue sin responder despues de los reintentos, sigue con
     DB.pool=None en vez de crashear el arranque completo (get_db() devuelve 503
-    mientras tanto). Esto tambien permite correr el smoke test de arquitectura
-    (test_architecture.py) sin una Postgres real."""
+    mientras tanto y reconectar_db() sigue probando). Esto tambien permite correr el
+    smoke test de arquitectura (test_architecture.py) sin una Postgres real."""
     os.makedirs("uploads", exist_ok=True)
 
     conn = None
-    for _ in range(15):
+    for _ in range(intentos):
         try:
             conn = await asyncpg.connect(DATABASE_URL)
             break
@@ -120,7 +133,8 @@ async def init_db_schema():
             await asyncio.sleep(2)
 
     if conn is None:
-        logger.error("No se pudo conectar a PostgreSQL: la API respondera 503 hasta reiniciar el servicio.")
+        if intentos > 1:
+            logger.error("No se pudo conectar a PostgreSQL: la API respondera 503 y se sigue reintentando.")
         return
 
     async with conn.transaction():

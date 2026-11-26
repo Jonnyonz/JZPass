@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -15,7 +16,7 @@ configure_logging()
 
 from database import (
     DB, ORIGINES_PERMITIDOS, VERSION, csrf_signer, limiter,
-    init_db_schema, close_db_pool, ErrorAuth,
+    init_db_schema, reconectar_db, close_db_pool, ErrorAuth,
 )
 from routers import auth, empleado, admin, archivos, anuncios, integraciones
 
@@ -23,7 +24,10 @@ from routers import auth, empleado, admin, archivos, anuncios, integraciones
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db_schema()
+    # Sin base al arrancar: se sigue probando en segundo plano en vez de quedar en 503 para siempre.
+    reintento = asyncio.create_task(reconectar_db()) if DB.pool is None else None
     yield
+    if reintento: reintento.cancel()
     await close_db_pool()
 
 

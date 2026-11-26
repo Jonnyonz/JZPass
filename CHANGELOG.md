@@ -2,6 +2,18 @@
 
 Cambios de JZPass, del más nuevo al más viejo. Cada entrada corresponde a un push a `main`.
 
+## 2.17.1 — 2026-11-26
+
+Tag `v2.17.1`.
+
+### Arreglos
+- **La app se reconecta sola a la base.** Si al arrancar PostgreSQL todavía no respondía (por ejemplo, tras un
+  apagado brusco del servidor, cuando tarda minutos en recuperarse), la app quedaba sin base y respondía 503
+  hasta que alguien la reiniciaba a mano. Ahora sigue probando cada 10 segundos y se recupera sin intervención.
+- **El login dice lo que pasa.** Con la base caída, la pantalla de ingreso mostraba "Error de credenciales."
+  aunque la clave estuviera bien. Ahora muestra "Servicio de base de datos no disponible." (la app y el panel
+  leen también el mensaje de los errores que no arma la app).
+
 ## 2.17.0 — 2026-11-19
 
 Tag `v2.17.0`.
